@@ -23,10 +23,11 @@ const Login = () => {
     const res = await authApi(payload);
 
     if (res.ok) {
+      console.log(res.data);
       message.success('Đăng nhập thành công!');
       // res.data giả sử { token, fullName }
-      localStorage.setItem('token', res.data?.token || '');
-      localStorage.setItem('fullName', res.data?.fullName || '');
+      localStorage.setItem('token', res.data?.data.token || '');
+      localStorage.setItem('fullName', res.data?.data.fullName || '');
       navigate('/');
     } else {
       setAlert({
