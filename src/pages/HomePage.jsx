@@ -1,9 +1,11 @@
 import React from 'react';
 import {GuestPage} from "./GuestPage.jsx";
 import {DashboardPage} from "./DashboardPage.jsx";
+import {useToken} from "../hooks/useToken.js";
 
 const HomePage = () => {
-    if (localStorage.getItem("token") != null) {
+    const { token } = useToken();
+    if (token != null) {
         return <>
             <DashboardPage />
         </>

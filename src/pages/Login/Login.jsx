@@ -3,12 +3,14 @@ import { Card, Form, Input, Button, Checkbox, Alert, message } from 'antd';
 import { EyeInvisibleOutlined, EyeTwoTone, UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../api/authApi/authApi';
+import {useToken} from "../../hooks/useToken.js";
 
 const Login = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', type: '' });
   const navigate = useNavigate();
+  const { setToken } = useToken();
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -26,7 +28,8 @@ const Login = () => {
       console.log(res.data);
       message.success('Đăng nhập thành công!');
       // res.data giả sử { token, fullName }
-      localStorage.setItem('token', res.data?.data.token || '');
+
+      setToken(res.data?.data.token || null);
       localStorage.setItem('fullName', res.data?.data.fullName || '');
       navigate('/');
     } else {
