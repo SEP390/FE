@@ -3,6 +3,12 @@ import { AppstoreOutlined, HomeOutlined, InfoCircleOutlined, LoginOutlined } fro
 import { Link } from "react-router-dom";
 import React from "react";
 import { Content, Footer, Header } from "antd/es/layout/layout.js";
+import ktx1 from "../assets/images/dormimg1.png";
+import ktx2 from "../assets/images/dormimg2.png";
+import ktx3 from "../assets/images/dormimg3.png";
+
+
+
 
 export function GuestPage() {
     return (
@@ -93,6 +99,55 @@ export function GuestPage() {
                         </div>
                     </Carousel>
                 </Content>
+                <section className="max-w-6xl mx-auto py-12 space-y-10">
+                    <div className="text-center">
+                        <h2 className="text-3xl font-bold text-orange-500 mb-4">
+                            Thông tin Ký túc xá Đại học FPT
+                        </h2>
+                        <p className="text-gray-600">
+                            Để biết thêm chi tiết về KTX, các bạn có thể truy cập vào file PDF để tìm hiểu thêm.
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6 items-center">
+                        <div>
+                            <p className="text-gray-700 mb-3">
+                                Trường Đại học FPT là một trong những ngôi trường nổi tiếng đào tạo đa ngành với chất lượng đào tạo đạt chuẩn quốc tế.
+                                Nhà trường quan tâm cả đời sống sinh viên bằng việc đầu tư khu Ký túc xá hiện đại, sạch sẽ và đầy đủ tiện nghi.
+                            </p>
+                            <p className="text-gray-700">
+                                KTX được xem như ngôi nhà thứ hai của sinh viên, giúp tạo không gian học tập và sinh hoạt thoải mái, an toàn.
+                            </p>
+                        </div>
+                        <img src={ktx1} alt="Ký túc xá" />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6 items-center">
+                        <img src={ktx2} alt="Ký túc xá" />
+                        <div>
+                            <p className="text-orange-500 font-semibold">
+                                Ký túc xá FPT là chỗ ở dành riêng cho sinh viên của Đại học FPT.
+                            </p>
+                            <p className="text-gray-700 mt-2">
+                                Với vị trí thuận lợi, sinh viên dễ dàng di chuyển giữa khu học và khu ở,
+                                tiết kiệm chi phí và có môi trường sinh hoạt, học tập hiện đại.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6 items-center">
+                        <div>
+                            <p className="text-orange-500 font-semibold">
+                                Thiết kế hiện đại, thoáng mát và đầy đủ tiện nghi
+                            </p>
+                            <p className="text-gray-700 mt-2">
+                                Mỗi phòng có wifi, máy giặt sấy, máy bán nước, điều hòa, giường tầng, bàn học,
+                                tủ đựng đồ, nhà vệ sinh riêng... đảm bảo sinh viên cảm thấy như ở nhà.
+                            </p>
+                        </div>
+                        <img src={ktx3} alt="Ký túc xá" />
+                    </div>
+                </section>
                 <Footer className="text-center bg-white shadow-inner">
                     <p className="text-gray-500">
                         © {new Date().getFullYear()} Hệ Thống Quản Lý Ký Túc Xá FPT. All Rights Reserved.
