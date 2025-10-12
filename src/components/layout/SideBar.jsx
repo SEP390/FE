@@ -1,16 +1,54 @@
 import {
     CalendarOutlined,
-    CarOutlined,
-    CoffeeOutlined,
     DollarOutlined,
     HistoryOutlined,
     HomeOutlined,
     ReadOutlined,
-    ThunderboltOutlined
+    SolutionOutlined,
+    ThunderboltOutlined,
 } from "@ant-design/icons";
 import Sider from "antd/es/layout/Sider.js";
 import {Menu} from "antd";
-import {Link} from "react-router";
+import {Link} from "react-router-dom";
+import {Bed} from "lucide-react";
+
+const items = [
+    {
+        label: <Link to={"/"}>Home</Link>,
+        icon: <HomeOutlined/>,
+        key: "home",
+    },
+    {
+        label: <Link to={"/news"}>Tin tức</Link>,
+        icon: <ReadOutlined/>,
+        key: "news",
+    },
+    {
+        label: <Link to={"/booking"}>Đặt phòng</Link>,
+        icon: <CalendarOutlined/>,
+        key: "booking",
+    },
+    {
+        label: <Link to={"/booking-history"}>Lịch sử đặt phòng</Link>,
+        icon: <HistoryOutlined/>,
+        key: "booking-history",
+    },
+    {
+        label: <Link to={"/survey"}>Survey</Link>,
+        icon: <SolutionOutlined />,
+        key: "survey",
+    },
+    {
+        label: <Link to={"/payment"}>Lịch sử thanh toán</Link>,
+        icon: <DollarOutlined/>,
+        key: "payment",
+    },
+    {
+        label: <Link to={"/"}>Hóa đơn điện nước</Link>,
+        icon: <ThunderboltOutlined/>,
+        key: "electric-water",
+    }
+]
 
 export function SideBar({ collapsed, active }) {
     return <>
@@ -19,54 +57,16 @@ export function SideBar({ collapsed, active }) {
             collapsible
             collapsed={collapsed}
             theme="light"
-            style={{
-                background: "#fff",
-                borderRight: "1px solid #f0f0f0",
-            }}
+            className={"bg-white border-r border-gray-200"}
         >
-            <div
-                className="logo"
-                style={{
-                    height: 32,
-                    margin: 16,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "1.3rem",
-                }}
-            >
-                Dorm
+            <div className="flex items-center justify-center py-4">
+                <Bed />
             </div>
 
-            <Menu mode="inline" defaultSelectedKeys={[active]} style={{borderRight: 0}}>
-                <Menu.Item key="home" icon={<HomeOutlined/>}>
-                    <Link to={"/"}>Home</Link>
-                </Menu.Item>
-                <Menu.Item key="news" icon={<ReadOutlined/>}>
-                    News
-                </Menu.Item>
-                <Menu.Item key="booking" icon={<CalendarOutlined/>}>
-                    <Link to={"/booking"}>Booking</Link>
-                </Menu.Item>
-                <Menu.Item key="booking-history" icon={<HistoryOutlined/>}>
-                    <Link to={"/booking-history"}>Booking History</Link>
-                </Menu.Item>
-                <Menu.Item key="survey" icon={<HistoryOutlined/>}>
-                    <Link to={"/survey"}>Survey</Link>
-                </Menu.Item>
-                <Menu.Item key="5" icon={<ThunderboltOutlined/>}>
-                    Electricity
-                </Menu.Item>
-                <Menu.Item key="6" icon={<DollarOutlined/>}>
-                    Payment
-                </Menu.Item>
-                <Menu.Item key="7" icon={<CarOutlined/>}>
-                    Parking Ticket
-                </Menu.Item>
-                <Menu.Item key="8" icon={<CoffeeOutlined/>}>
-                    Food Ticket
-                </Menu.Item>
-            </Menu>
+            <Menu mode="inline"
+                  defaultSelectedKeys={[active]}
+                  className={"!border-0"}
+                  items={items} />
         </Sider>
     </>
 }
