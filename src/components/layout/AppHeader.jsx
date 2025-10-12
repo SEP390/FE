@@ -2,12 +2,15 @@ import {LogoutOutlined, MenuOutlined} from "@ant-design/icons";
 import {Button, Popconfirm} from "antd";
 import React from "react";
 import {Header} from "antd/es/layout/layout.js";
-import {useNavigate} from "react-router";
+import {useNavigate} from "react-router-dom";
+import {useToken} from "../../hooks/useToken.js";
 
 export function AppHeader({ toggleSideBar }) {
     const navigate = useNavigate();
+    const {setToken} = useToken();
+
     const onLogout = () => {
-        localStorage.removeItem("token");
+        setToken(null);
         navigate("/");
     }
 

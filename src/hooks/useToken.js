@@ -1,15 +1,8 @@
-import {useEffect, useState} from "react";
+import {createContext, useContext} from "react";
+
+export const AuthContext = createContext();
 
 export function useToken() {
-    const [token, setToken] = useState(localStorage.getItem("token"));
-
-    useEffect(() => {
-        if (token == null) {
-            localStorage.removeItem("token");
-        } else {
-            localStorage.setItem("token", token);
-        }
-    }, [token])
-
-    return { token, setToken };
+    const {token, setToken} = useContext(AuthContext);
+    return {token, setToken};
 }

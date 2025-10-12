@@ -1,9 +1,11 @@
 import {BrowserRouter, Route, Routes} from 'react-router-dom';
 import routes from './routes';
+import {AuthProvider} from "./providers/AuthProvider.jsx";
 
 
 function App() {
   return (
+      <AuthProvider>
     <BrowserRouter>
       <Routes>
         {routes.map((route, index) => (
@@ -15,6 +17,7 @@ function App() {
         ))}
       </Routes>
     </BrowserRouter>
+      </AuthProvider>
   );
 }
 
