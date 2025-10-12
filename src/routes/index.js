@@ -1,4 +1,4 @@
-import Survey from "../components/Survery/Survey";
+import Survey from "../pages/Survery/Survey";
 import HomePage from "../pages/HomePage";
 import Login from "../pages/Login/Login";
 
