@@ -1,153 +1,183 @@
-import React, { useState } from "react";
-import { Card, Radio, Checkbox, Button, message } from "antd";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Card,
+  Radio,
+  Typography,
+  Spin,
+  message,
+  Space,
+  Button,
+  Divider,
+  Progress,
+  Empty,
+} from "antd";
+import { AppLayout } from "../../components/layout/AppLayout.jsx";
+import { surveyApi } from "../../api/surveyApi/surveyApi.js";
+import { useToken } from "../../hooks/useToken.js";
 
-function Survey() {
-    const [formData, setFormData] = useState({
-        sleepTime: "",
-        drinkAlcohol: "",
-        currentAbility: [],
-    });
+const { Title, Text } = Typography;
 
-    const handleRadioChange = (name, value) => {
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+const Survey = () => {
+  const { token } = useToken();
+  const [loading, setLoading] = useState(true);
+  const [surveys, setSurveys] = useState([]);
+  const [answers, setAnswers] = useState({});
+
+  useEffect(() => {
+    const fetchSurveys = async () => {
+      if (!token) {
+        message.error("Bạn cần đăng nhập để xem survey!");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await surveyApi.getAll(token);
+        if (res.status === 200 && Array.isArray(res.data)) {
+          const detailed = await Promise.all(
+            res.data.map(async (q) => {
+              const detail = await surveyApi.getById(q.id, token);
+              return detail.status === 200 ? detail.data : q;
+            })
+          );
+          setSurveys(detailed);
+        } else {
+          message.error(res.message || "Không thể lấy survey!");
+        }
+      } catch (err) {
+        message.error("Đã xảy ra lỗi khi tải survey!");
+      }
+      setLoading(false);
     };
 
-    const handleCheckboxChange = (name, value, checked) => {
-        setFormData((prev) => ({
-            ...prev,
-            [name]: checked
-                ? [...prev[name], value]
-                : prev[name].filter((item) => item !== value),
-        }));
-    };
+    fetchSurveys();
+  }, [token]);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log("Survey Data:", formData);
-        message.success("Cảm ơn bạn đã tham gia khảo sát!");
-    };
+  const handleSelectOption = (questionId, optionId) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: optionId,
+    }));
+  };
 
-    return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-100 via-gray-50 to-white flex items-center justify-center py-16 px-6">
-            <Card
-                className="w-full max-w-3xl border border-gray-200 rounded-2xl shadow-xl bg-white"
-                title={
-                    <h2
-                        className="text-center text-3xl font-semibold text-gray-800"
-                        style={{ fontFamily: "Poppins, sans-serif" }}
-                    >
-                        📝 Khảo sát thói quen hằng ngày
-                    </h2>
-                }
-                headStyle={{
-                    backgroundColor: "#f9fafb",
-                    borderBottom: "1px solid #e5e7eb",
-                    padding: "24px",
-                }}
-                bodyStyle={{ padding: "40px" }}
-            >
-                <form onSubmit={handleSubmit} className="space-y-10">
-                    {/* Câu hỏi 1 */}
-                    <div className="p-6 rounded-xl bg-gray-50 border border-gray-200 hover:shadow-sm transition-shadow duration-200">
-                        <label
-                            className="block text-gray-800 font-medium text-lg mb-5"
-                            style={{ fontFamily: "Poppins, sans-serif" }}
-                        >
-                            🕒 Bạn thường đi ngủ lúc mấy giờ?
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-3 gap-x-6">
-                            <Radio
-                                checked={formData.sleepTime === "before10"}
-                                onChange={() => handleRadioChange("sleepTime", "before10")}
-                            >
-                                Trước 22h
-                            </Radio>
-                            <Radio
-                                checked={formData.sleepTime === "around10"}
-                                onChange={() => handleRadioChange("sleepTime", "around10")}
-                            >
-                                22h - 00h
-                            </Radio>
-                            <Radio
-                                checked={formData.sleepTime === "after00"}
-                                onChange={() => handleRadioChange("sleepTime", "after00")}
-                            >
-                                Sau 00h
-                            </Radio>
-                        </div>
+  const total = surveys.length;
+  const answeredCount = useMemo(
+    () => Object.keys(answers).filter((k) => answers[k] != null).length,
+    [answers]
+  );
+  const progress = total ? Math.round((answeredCount / total) * 100) : 0;
+  const canSubmit = total > 0 && answeredCount === total;
+
+  const handleSubmit = () => {
+    console.log("User answers:", answers);
+    message.success("Cảm ơn bạn đã hoàn thành khảo sát!");
+  };
+
+  return (
+    <AppLayout activeSidebar="survey">
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(180deg, #F7F9FC 0%, #FFFFFF 60%)",
+          padding: "40px 24px",
+        }}
+      >
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
+          <Card
+            bordered={false}
+            style={{ borderRadius: 16, boxShadow: "0 8px 30px rgba(0,0,0,0.06)" }}
+            bodyStyle={{ padding: 28 }}
+          >
+            <Space direction="vertical" size={16} style={{ width: "100%" }}>
+              <div>
+                <Title level={2} style={{ marginBottom: 8 }}>
+                  Khảo sát
+                </Title>
+                <Text type="secondary">
+                  Hãy chọn một đáp án cho mỗi câu hỏi. Thời gian hoàn thành ~ 2–3 phút.
+                </Text>
+              </div>
+
+              <Divider style={{ margin: "12px 0 8px" }} />
+
+              {loading ? (
+                <div className="flex justify-center py-10">
+                  <Spin tip="Đang tải câu hỏi..." size="large" />
+                </div>
+              ) : total === 0 ? (
+                <Empty description="Hiện chưa có câu hỏi nào." />
+              ) : (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <Progress percent={progress} status="active" />
                     </div>
+                    <Text strong>
+                      {answeredCount}/{total} đã trả lời
+                    </Text>
+                  </div>
 
-                    {/* Câu hỏi 2 */}
-                    <div className="p-6 rounded-xl bg-gray-50 border border-gray-200 hover:shadow-sm transition-shadow duration-200">
-                        <label
-                            className="block text-gray-800 font-medium text-lg mb-5"
-                            style={{ fontFamily: "Poppins, sans-serif" }}
-                        >
-                            🍺 Bạn có uống rượu/bia không?
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
-                            <Radio
-                                checked={formData.drinkAlcohol === "yes"}
-                                onChange={() => handleRadioChange("drinkAlcohol", "yes")}
-                            >
-                                Có
-                            </Radio>
-                            <Radio
-                                checked={formData.drinkAlcohol === "no"}
-                                onChange={() => handleRadioChange("drinkAlcohol", "no")}
-                            >
-                                Không
-                            </Radio>
-                        </div>
-                    </div>
+                  <Space direction="vertical" size="large" style={{ width: "100%" }}>
+                    {surveys.map((q, index) => (
+                      <Card
+                        key={q.id}
+                        hoverable
+                        size="small"
+                        style={{ borderRadius: 12 }}
+                        bodyStyle={{ padding: "16px 20px" }}
+                      >
+                        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                          <Text strong style={{ fontSize: 16 }}>
+                            Câu hỏi {index + 1}: {q.questionContent}
+                          </Text>
 
-                    {/* Câu hỏi 3 */}
-                    <div className="p-6 rounded-xl bg-gray-50 border border-gray-200 hover:shadow-sm transition-shadow duration-200">
-                        <label
-                            className="block text-gray-800 font-medium text-lg mb-5"
-                            style={{ fontFamily: "Poppins, sans-serif" }}
-                        >
-                            🚶‍♂️ Khả năng đi lại của bạn hiện tại thế nào?
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
-                            <Checkbox
-                                checked={formData.currentAbility.includes("normal")}
-                                onChange={(e) =>
-                                    handleCheckboxChange("currentAbility", "normal", e.target.checked)
-                                }
-                            >
-                                Hoạt động bình thường
-                            </Checkbox>
-                            <Checkbox
-                                checked={formData.currentAbility.includes("difficulty")}
-                                onChange={(e) =>
-                                    handleCheckboxChange("currentAbility", "difficulty", e.target.checked)
-                                }
-                            >
-                                Gặp khó khăn khi đi lại
-                            </Checkbox>
-                        </div>
-                    </div>
+                          <Radio.Group
+                            onChange={(e) => handleSelectOption(q.id, e.target.value)}
+                            value={answers[q.id]}
+                            style={{ width: "100%" }}
+                          >
+                            <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                              {(q.options || []).map((opt) => (
+                                <Radio
+                                  key={opt.id}
+                                  value={opt.id}
+                                  style={{ display: "block", lineHeight: 1.6 }}
+                                >
+                                  {opt.optionContent}
+                                </Radio>
+                              ))}
+                            </Space>
+                          </Radio.Group>
+                        </Space>
+                      </Card>
+                    ))}
+                  </Space>
 
-                    {/* Nút Submit */}
-                    <div className="text-center">
-                        <Button
-                            type="primary"
-                            htmlType="submit"
-                            size="large"
-                            className="bg-blue-600 border-none hover:bg-blue-700 transition-colors duration-300 text-white font-semibold rounded-xl shadow-md"
-                            style={{ fontFamily: "Poppins, sans-serif" }}
-                        >
-                            Gửi khảo sát
-                        </Button>
-                    </div>
-                </form>
-            </Card>
+                  <Divider />
+
+                  <Button
+                    type="primary"
+                    size="large"
+                    block
+                    shape="round"
+                    onClick={handleSubmit}
+                    disabled={!canSubmit}
+                    style={{ height: 48, fontWeight: 600 }}
+                  >
+                    Gửi khảo sát
+                  </Button>
+                  {!canSubmit && (
+                    <Text type="secondary" style={{ display: "block", textAlign: "center", marginTop: 8 }}>
+                      Vui lòng trả lời tất cả câu hỏi trước khi gửi.
+                    </Text>
+                  )}
+                </>
+              )}
+            </Space>
+          </Card>
         </div>
-    );
-}
-
+      </div>
+    </AppLayout>
+  );
+};
 export default Survey;
