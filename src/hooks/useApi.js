@@ -36,7 +36,7 @@ export function useApi() {
             console.log(res.data)
         }).catch(err => {
             setState("error");
-            setError(err?.message || err?.response?.data);
+            setError(err?.response?.data?.message || err.message);
         })
     }, [controllerRef])
 

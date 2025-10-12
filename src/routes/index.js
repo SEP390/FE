@@ -5,6 +5,7 @@ import {BookingPage} from "../pages/booking/BookingPage.jsx";
 import {PaymentResult} from "../pages/booking/PaymentResult.jsx";
 import {BookingHistoryPage} from "../pages/booking/BookingHistoryPage.jsx";
 import {PaymentHistoryPage} from "../pages/booking/PaymentHistoryPage.jsx";
+import {GuardElectricWaterPage} from "../pages/electric-water/GuardElectricWaterPage.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -14,6 +15,7 @@ const routes = [
     { path: "/booking-history", element: BookingHistoryPage },
     { path: "/vnpay", element: PaymentResult },
     { path: "/payment", element: PaymentHistoryPage },
+    { path: "/guard/electric-water", element: GuardElectricWaterPage },
 ];
 
 export default routes;
