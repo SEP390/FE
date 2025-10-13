@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Card, List, Skeleton, Typography, Input } from "antd";
+import { Card, List, Skeleton, Typography, Input, Modal } from "antd";
 import { AppLayout } from "../../components/layout/AppLayout.jsx";
+import { NewsDetailModal } from "../../components/news/NewsDetailModal.jsx";
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -14,18 +15,23 @@ function truncateWords(text, wordLimit) {
 
 function removeVietnameseTones(str) {
     return str
-        .normalize("NFD") // tách chữ và dấu
-        .replace(/[\u0300-\u036f]/g, "") // xóa dấu
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .replace(/đ/g, "d")
         .replace(/Đ/g, "D")
         .toLowerCase();
 }
 
+function normalizeSpaces(str) {
+    return str.replace(/\s+/g, " ").trim();
+}
 
 export function NewsList() {
     const [news, setNews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [selectedNews, setSelectedNews] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
 
     useEffect(() => {
         fetch("/news.json")
@@ -38,16 +44,17 @@ export function NewsList() {
     }, []);
 
     const filteredNews = news.filter(item =>
-        removeVietnameseTones(item.title).includes(removeVietnameseTones(search)) ||
-        removeVietnameseTones(item.content).includes(removeVietnameseTones(search))
+        removeVietnameseTones(normalizeSpaces(item.title)).includes(
+            removeVietnameseTones(normalizeSpaces(search))
+        ) ||
+        removeVietnameseTones(normalizeSpaces(item.content)).includes(
+            removeVietnameseTones(normalizeSpaces(search))
+        )
     );
-
-
-    // const filteredNews = news.filter(
-    //     item =>
-    //         item.title.toLowerCase().includes(search.toLowerCase()) ||
-    //         item.content.toLowerCase().includes(search.toLowerCase())
-    // );
+    const handleItemClick = (item) => {
+        setSelectedNews(item);
+        setModalVisible(true);
+    };
 
     return (
         <AppLayout activeSidebar="news">
@@ -55,7 +62,7 @@ export function NewsList() {
                 <Search
                     placeholder="Search news"
                     allowClear
-                    onChange={e => setSearch(e.target.value)}
+                    onChange={e => setSearch(normalizeSpaces(e.target.value))}
                     style={{ marginBottom: 20, maxWidth: 400 }}
                 />
                 {loading ? (
@@ -75,12 +82,12 @@ export function NewsList() {
                                     marginBottom: 16,
                                     marginLeft: 5,
                                     boxShadow: "0 2px 8px rgba(255, 165, 64, 0.1)",
+                                    cursor: "pointer"
                                 }}
+                                onClick={() => handleItemClick(item)}
                             >
                                 <List.Item.Meta
-                                    style={{
-                                        marginLeft: 10,
-                                    }}
+                                    style={{ marginLeft: 10 }}
                                     title={
                                         <Title level={4} style={{ color: "#fa8c16", margin: 0 }}>
                                             {item.title}
@@ -99,7 +106,17 @@ export function NewsList() {
                         )}
                     />
                 )}
+                <Modal
+                    open={modalVisible}
+                    onCancel={() => setModalVisible(false)}
+                    footer={null}
+                    width={900}
+                    destroyOnClose
+                >
+                    <NewsDetailModal news={selectedNews} />
+                </Modal>
             </Card>
         </AppLayout>
     );
 }
+
