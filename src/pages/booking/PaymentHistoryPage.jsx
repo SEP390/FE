@@ -15,6 +15,15 @@ const columns = [
         title: 'Ngày tạo',
         dataIndex: 'createDate',
         key: 'createDate',
+        render: (value) => {
+            return Intl.DateTimeFormat('vi-VN', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric'
+            }).format(new Date(value));
+        }
     },
     {
         title: "Trạng thái",
@@ -40,7 +49,7 @@ export function PaymentHistoryPage() {
     }, []);
 
     return <>
-        <AppLayout>
+        <AppLayout activeSidebar={"payment"}>
             <Card className={"h-full"} title="Lịch sử thanh toán">
                 <Table bordered columns={columns} dataSource={data ? data.content : null} />
             </Card>

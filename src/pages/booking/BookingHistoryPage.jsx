@@ -1,4 +1,4 @@
-import {Card, Divider, Pagination, Skeleton, Table, Tag} from "antd";
+import {Card, Divider, Empty, Pagination, Skeleton, Table, Tag} from "antd";
 import {useEffect, useState} from "react";
 import {useApi} from "../../hooks/useApi.js";
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
@@ -8,6 +8,9 @@ const columns = [
         title: 'Kỳ',
         dataIndex: 'semesterName',
         key: 'semesterId',
+        render: (value, record) => {
+            return <Tag>{value}</Tag>
+        }
     },
     {
         title: 'Dorm',
@@ -39,11 +42,25 @@ const columns = [
         },
         filters: [
             { text: 'Thành công', value: 'SUCCESS' },
-            { text: 'Hủy', value: 'CANCEL' },
+            { text: 'Hủy thanh toán', value: 'CANCEL' },
             { text: 'Chờ thanh toán', value: 'PENDING' },
         ],
         filterMultiple: false,
-    }
+    },
+    {
+        title: 'Ngày tạo',
+        dataIndex: 'createDate',
+        key: 'createDate',
+        render: (value) => {
+            return Intl.DateTimeFormat('vi-VN', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric'
+            }).format(new Date(value));
+        }
+    },
 ];
 
 export function BookingHistoryPage() {
@@ -70,18 +87,18 @@ export function BookingHistoryPage() {
         <AppLayout activeSidebar={"booking-history"}>
             <Card className={"h-full"} title="Lịch sử đặt phòng của bạn">
                 <div>
-                    {isLoading && <Skeleton active/>}
-                    {data && <>
-                        <Table
-                            bordered
-                            columns={columns} dataSource={data.content}
-                            pagination={{
-                                total: data.totalPages
-                            }}
-                            onChange={onTableChange}
-                            className={"mb-4"}
-                        ></Table>
-                    </>}
+                    <Table
+                        bordered
+                        columns={columns} dataSource={data ? data.content.sort((a, b) => b.createDate.localeCompare(a.createDate)) : []}
+                        pagination={{
+                            total: data?.totalPages
+                        }}
+                        onChange={onTableChange}
+                        className={"mb-4"}
+                        locale={{
+                            emptyText: isLoading ? <Skeleton active={true} /> : <Empty />
+                        }}
+                    ></Table>
                 </div>
             </Card>
         </AppLayout>

@@ -9,6 +9,8 @@ export function useApi() {
     const isLoading = state === "loading";
     const isSuccess = state === "success";
     const isError = state === "error";
+    const isAbort = state === "abort";
+    const isComplete = state === "success" || state === "error" || state === "abort";
 
     const controllerRef = useMemo(() => ({ current: null }), []);
 
@@ -35,8 +37,13 @@ export function useApi() {
             setData(res.data);
             console.log(res.data)
         }).catch(err => {
-            setState("error");
-            setError(err?.response?.data?.message || err.message);
+            console.log(err)
+            if (err.name === "CanceledError") {
+                setState("abort");
+            } else {
+                setState("error");
+                setError(err?.response?.data?.message || err.message);
+            }
         })
     }, [controllerRef])
 
@@ -45,5 +52,5 @@ export function useApi() {
     const put = useCallback((url, payload) => request("PUT", url, payload), [request]);
     const del = useCallback((url) => request("DELETE", url, null), [request]);
 
-    return { get, post, put, del, isLoading, isError, isSuccess, error, data }
+    return { get, post, put, del, isLoading, isError, isSuccess, error, data, isComplete, isAbort }
 }

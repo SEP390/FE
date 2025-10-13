@@ -1,4 +1,3 @@
-import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import {RoomCard} from "../../components/booking/RoomCard.jsx";
 import {RoomConfirmModal} from "../../components/booking/RoomConfirmModal.jsx";
 import {useEffect, useState} from "react";
@@ -24,12 +23,19 @@ export function BookingY1() {
         }
     }, [isError]);
 
+    const skeleton = <div className={"flex gap-2"}>
+        <Skeleton.Node className={"!w-100 !h-50"} active />
+        <Skeleton.Node className={"!w-100 !h-50"} active />
+    </div>;
+
     return <>
-        <RoomConfirmModal isOpen={isOpen} setIsOpen={setIsOpen} room={room} />
-        <div className={"flex gap-3 flex-wrap"}>
-            {!data && <Skeleton active />}
-            {data && data.sort((a, b) => (b.matching - a.matching)).map(r =>
-                <RoomCard key={r.id} setSelected={setRoom} setIsOpen={setIsOpen} data={r} />)}
-        </div>
+        <Card title={"Đặt phòng"} className={"h-full"}>
+            <RoomConfirmModal isOpen={isOpen} setIsOpen={setIsOpen} room={room} />
+            <div className={"flex gap-3 flex-wrap"}>
+                {!data && skeleton}
+                {data && data.sort((a, b) => (b.matching - a.matching)).map(r =>
+                    <RoomCard key={r.id} setSelected={setRoom} setIsOpen={setIsOpen} data={r} />)}
+            </div>
+        </Card>
     </>
 }
