@@ -15,6 +15,7 @@ export function useApi() {
     const controllerRef = useMemo(() => ({ current: null }), []);
 
     const request = useCallback((method, url, data) => {
+        setData(null);
         if (controllerRef.current) {
             controllerRef.current.abort();
         } else {
@@ -40,10 +41,14 @@ export function useApi() {
                 setState("error");
                 setError(err?.response?.data?.message || err.message);
             }
+        }).finally(() => {
+            controllerRef.current = null;
         })
     }, [controllerRef])
 
-    const get = useCallback((url, payload = null) => request("GET", url, payload), [request]);
+    const get = useCallback((url, payload = null) => {
+        request("GET", url + (payload ? "?" + new URLSearchParams(payload) : ""), null)
+    }, [request]);
     const post = useCallback((url, payload) => request("POST", url, payload), [request]);
     const put = useCallback((url, payload) => request("PUT", url, payload), [request]);
     const del = useCallback((url) => request("DELETE", url, null), [request]);
