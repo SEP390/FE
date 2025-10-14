@@ -1,5 +1,5 @@
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
-import {Button, Card, Table, Tag} from "antd";
+import {Card, Table, Tag} from "antd";
 import {formatPrice} from "../../util/formatPrice.js";
 import {useApi} from "../../hooks/useApi.js";
 import {useEffect} from "react";

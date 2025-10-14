@@ -1,33 +1,31 @@
 import {AppLayout} from "../../../components/layout/AppLayout.jsx";
-import {Alert, Button, Card, Form, InputNumber, Tabs} from "antd";
+import {Alert, Button, Card, Form, InputNumber, Tabs, Skeleton, notification} from "antd";
 import {useApi} from "../../../hooks/useApi.js";
-import React, {useEffect, useState} from "react";
-import SkeletonButton from "antd/es/skeleton/Button.js";
+import {useEffect, useState} from "react";
 
 const {TabPane} = Tabs;
 
 const mockDorm = "de451d96-cef9-415b-be2f-c9520694b480";
 
-function RoomDisplay({data, setSelect}) {
+function RoomButton({data, setSelect}) {
     const onClick = () => {
         console.log(data);
         setSelect(data)
     }
-
     return <>
         <Button disabled={data.roomNumber !== "C105"} onClick={onClick}>{data.roomNumber}</Button>
     </>
 }
 
-function FloorDisplay({ floor, data, setSelect }) {
+function FloorCard({ floor, data, setSelect }) {
     return <Card title={"Tầng " + floor}>
         <div className={"flex flex-wrap gap-2"}>
-            {data.map(room => <RoomDisplay key={room.id} data={room} setSelect={setSelect}/>)}
+            {data.map(room => <RoomButton key={room.id} data={room} setSelect={setSelect}/>)}
         </div>
     </Card>
 }
 
-function RoomList({data, select, setSelect}) {
+function RoomList({data, select, setSelect, setIsOpen}) {
     useEffect(() => {
         if (select) {
             setIsOpen(true);
@@ -37,7 +35,7 @@ function RoomList({data, select, setSelect}) {
     const floors = Object.groupBy(data, ({floor}) => floor);
     return <>
         <div className={"flex flex-col gap-2"}>
-            {Object.entries(floors).map((floor, index) => <FloorDisplay setSelect={setSelect} key={index} floor={floor[0]} data={floor[1]} />)}
+            {Object.entries(floors).map((floor, index) => <FloorCard setSelect={setSelect} key={index} floor={floor[0]} data={floor[1]} />)}
         </div>
     </>
 }
@@ -47,29 +45,29 @@ function RoomSkeleton() {
         <div className={"flex flex-col gap-2"}>
             <Card title={"    "}>
                 <div className={"flex flex-wrap gap-2"}>
-                    <SkeletonButton active />
-                    <SkeletonButton active />
-                    <SkeletonButton active />
-                    <SkeletonButton active />
-                    <SkeletonButton active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
                 </div>
             </Card>
             <Card title={"    "}>
                 <div className={"flex flex-wrap gap-2"}>
-                    <SkeletonButton active />
-                    <SkeletonButton active />
-                    <SkeletonButton active />
-                    <SkeletonButton active />
-                    <SkeletonButton active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
                 </div>
             </Card>
             <Card title={"    "}>
                 <div className={"flex flex-wrap gap-2"}>
-                    <SkeletonButton active />
-                    <SkeletonButton active />
-                    <SkeletonButton active />
-                    <SkeletonButton active />
-                    <SkeletonButton active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
+                    <Skeleton.Button active />
                 </div>
             </Card>
         </div>
@@ -154,16 +152,23 @@ function CreateBillForm({ data, setSelect }) {
 }
 
 export function GuardElectricWaterPage() {
-    const {get, data, error, isError, isComplete} = useApi();
+    const {get, data, error, isError} = useApi();
 
     const [select, setSelect] = useState(null);
+
+    const [notif, notifEl] = notification.useNotification();
 
     useEffect(() => {
         get(`/dorms/${mockDorm}/rooms`);
     }, [get]);
 
+    useEffect(() => {
+        if (isError) {
+            notif.error({ message: error });
+        }
+    }, [isError]);
+
     const content = !select ? <>
-        {isError && <Alert showIcon className={"!mb-3 !w-75"} type={"error"} message={error} />}
         {data && <RoomList select={select} setSelect={setSelect} data={data} />}
         {!data && <RoomSkeleton />}
     </> : <>
@@ -172,6 +177,7 @@ export function GuardElectricWaterPage() {
 
     return <>
         <AppLayout>
+            {notifEl}
             <Card className={"h-full overflow-auto"} title={"Hóa đơn điện nước Dorm C"}>
                 {content}
             </Card>
