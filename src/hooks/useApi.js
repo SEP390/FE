@@ -13,11 +13,7 @@ export function useApi() {
     const isComplete = state === "success" || state === "error" || state === "abort";
 
     const controllerRef = useMemo(() => ({ current: null }), []);
-
-    useEffect(() => {
-        data && console.log(data)
-    }, [data]);
-
+    
     const request = useCallback((method, url, data) => {
         if (controllerRef.current) {
             controllerRef.current.abort();
