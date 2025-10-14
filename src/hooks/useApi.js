@@ -13,7 +13,7 @@ export function useApi() {
     const isComplete = state === "success" || state === "error" || state === "abort";
 
     const controllerRef = useMemo(() => ({ current: null }), []);
-    
+
     const request = useCallback((method, url, data) => {
         if (controllerRef.current) {
             controllerRef.current.abort();
@@ -33,10 +33,10 @@ export function useApi() {
             setData(res.data);
             console.log(res.data)
         }).catch(err => {
-            console.log(err)
             if (err.name === "CanceledError") {
                 setState("abort");
             } else {
+                console.log(err)
                 setState("error");
                 setError(err?.response?.data?.message || err.message);
             }
