@@ -34,14 +34,18 @@ export function NewsList() {
     const [modalVisible, setModalVisible] = useState(false);
 
     useEffect(() => {
-        fetch("/news.json")
-            .then(res => res.json())
-            .then(data => {
+        fetch("http://localhost:8080/api/users/news")
+            .then((res) => res.json())
+            .then((data) => {
                 setNews(data);
                 setLoading(false);
             })
-            .catch(() => setLoading(false));
+            .catch((err) => {
+                console.error("Lỗi khi fetch news:", err);
+                setLoading(false);
+            });
     }, []);
+
 
     const filteredNews = news.filter(item =>
         removeVietnameseTones(normalizeSpaces(item.title)).includes(
@@ -111,7 +115,6 @@ export function NewsList() {
                     onCancel={() => setModalVisible(false)}
                     footer={null}
                     width={900}
-                    destroyOnClose
                 >
                     <NewsDetailModal news={selectedNews} />
                 </Modal>
