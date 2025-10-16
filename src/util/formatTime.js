@@ -8,6 +8,7 @@ export function formatTime(time) {
         month: 'numeric',
         day: 'numeric',
         hour: 'numeric',
-        minute: 'numeric'
+        minute: 'numeric',
+        second: 'numeric',
     }).format(new Date(time));
 }

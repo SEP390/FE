@@ -2,14 +2,15 @@ import {Card, Divider, Empty, Pagination, Skeleton, Table, Tag} from "antd";
 import {useEffect, useState} from "react";
 import {useApi} from "../../hooks/useApi.js";
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
+import {formatTime} from "../../util/formatTime.js";
 
 const columns = [
     {
         title: 'Kỳ',
         dataIndex: 'semesterName',
         key: 'semesterId',
-        render: (value, record) => {
-            return <Tag>{value}</Tag>
+        render: (semesterName) => {
+            return <Tag>{semesterName}</Tag>
         }
     },
     {
@@ -41,25 +42,16 @@ const columns = [
             return <Tag color="red">HỦY THANH TOÁN</Tag>
         },
         filters: [
-            { text: 'Thành công', value: 'SUCCESS' },
+            { text: 'Đã thanh toán', value: 'SUCCESS' },
             { text: 'Hủy thanh toán', value: 'CANCEL' },
             { text: 'Chờ thanh toán', value: 'PENDING' },
         ],
-        filterMultiple: false,
     },
     {
         title: 'Ngày tạo',
         dataIndex: 'createDate',
         key: 'createDate',
-        render: (value) => {
-            return Intl.DateTimeFormat('vi-VN', {
-                year: 'numeric',
-                month: 'numeric',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric'
-            }).format(new Date(value));
-        }
+        render: (createDate) => formatTime(createDate)
     },
 ];
 
