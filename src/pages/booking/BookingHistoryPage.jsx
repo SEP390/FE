@@ -67,9 +67,10 @@ export function BookingHistoryPage() {
         fetchData({});
     }, []);
 
-    const onTableChange = (pagination, filters, sorter, extra) => {
+    const onTableChange = ({ current }, filters, sorter, extra) => {
+        setPage(current - 1);
         if (filters.status) {
-            fetchData({ status: filters.status[0] })
+            fetchData({ status: filters.status })
         } else {
             fetchData({})
         }
@@ -92,7 +93,9 @@ export function BookingHistoryPage() {
                         bordered
                         columns={columns} dataSource={dataSource}
                         pagination={{
-                            total: data?.totalPages
+                            current: page + 1,
+                            total: data ? data.page.totalElements : 0,
+                            pageSize: 5
                         }}
                         onChange={onTableChange}
                         className={"mb-4"}
