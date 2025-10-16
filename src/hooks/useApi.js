@@ -28,7 +28,7 @@ export function useApi() {
         setError(null);
         setState("loading");
         axiosClient({
-            method, url, data, signal: signal,
+            method, url, data, signal: signal, params: method === "GET" ? data : null
         }).then(res => {
             setState("success");
             setData(res.data);
@@ -46,9 +46,7 @@ export function useApi() {
         })
     }, [controllerRef])
 
-    const get = useCallback((url, payload = null) => {
-        request("GET", url + (payload ? "?" + new URLSearchParams(payload) : ""), null)
-    }, [request]);
+    const get = useCallback((url, payload = null) => request("GET", url, payload), [request]);
     const post = useCallback((url, payload) => request("POST", url, payload), [request]);
     const put = useCallback((url, payload) => request("PUT", url, payload), [request]);
     const del = useCallback((url) => request("DELETE", url, null), [request]);
