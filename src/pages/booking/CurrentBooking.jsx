@@ -26,47 +26,49 @@ export function CurrentBooking({ data }) {
     const {get, data: roommates} = useApi();
 
     useEffect(() => {
-        if (data && data.status === "SUCCESS") {
-            get(`/rooms/${data.roomId}/roommates`)
+        if (data) {
+            get(`/rooms/${data.room.id}/roommates`)
         }
     }, [data]);
 
     return <>
-        <Descriptions bordered className={"!mb-5"}>
-            <Descriptions.Item label="Phòng">
-                {data.roomNumber}
-            </Descriptions.Item>
-            <Descriptions.Item label="Tòa">
-                {data.dormName}
-            </Descriptions.Item>
-            <Descriptions.Item label="Tầng">
-                {data.floor}
-            </Descriptions.Item>
-            <Descriptions.Item label="Kỳ">
-                <Tag>{data.semesterName}</Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Giá">
-                <div>{formatPrice(data.price)}</div>
-            </Descriptions.Item>
-        </Descriptions>
-        <div>
-            {data && data.status === "PENDING" && <>
-                <Button type={"primary"}>Thanh toán</Button>
-            </>}
-        </div>
-        <div>
-            {roommates && <>
-                <Card title={"Bạn cùng phòng"}>
-                    {roommates.length === 0 && <Empty />}
-                    <List>
-                        {roommates.map((rm) => <List.Item key={rm.id}>
-                            <div className={"flex gap-2"}>
-                                <span>{rm.email}</span><Tag>Match {rm.matching}%</Tag>
-                            </div>
-                        </List.Item>)}
-                    </List>
-                </Card>
-            </>}
-        </div>
+        <Card title={"Thông tin phòng hiện tại"} className={"h-full"}>
+            <Descriptions bordered className={"!mb-5"}>
+                <Descriptions.Item label="Slot">
+                    {data?.slotName}
+                </Descriptions.Item>
+                <Descriptions.Item label="Phòng">
+                    {data?.room?.roomNumber}
+                </Descriptions.Item>
+                <Descriptions.Item label="Tòa">
+                    {data?.room?.dorm?.dormName}
+                </Descriptions.Item>
+                <Descriptions.Item label="Tầng">
+                    {data?.room?.floor}
+                </Descriptions.Item>
+                <Descriptions.Item label="Giá">
+                    <div>{formatPrice(data.price)}</div>
+                </Descriptions.Item>
+            </Descriptions>
+            <div>
+                {data && data.status === "PENDING" && <>
+                    <Button type={"primary"}>Thanh toán</Button>
+                </>}
+            </div>
+            <div>
+                {roommates && <>
+                    <Card title={"Bạn cùng phòng"}>
+                        {roommates.length === 0 && <Empty />}
+                        <List>
+                            {roommates.map((rm) => <List.Item key={rm.id}>
+                                <div className={"flex gap-2"}>
+                                    <span>{rm.email}</span><Tag>Match {rm.matching}%</Tag>
+                                </div>
+                            </List.Item>)}
+                        </List>
+                    </Card>
+                </>}
+            </div>
+        </Card>
     </>
 }

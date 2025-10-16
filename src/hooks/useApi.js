@@ -9,14 +9,13 @@ export function useApi() {
     const isLoading = state === "loading";
     const isSuccess = state === "success";
     const isError = state === "error";
+    const isAbort = state === "abort";
+    const isComplete = state === "success" || state === "error" || state === "abort";
 
     const controllerRef = useMemo(() => ({ current: null }), []);
 
-    useEffect(() => {
-        data && console.log(data)
-    }, [data]);
-
     const request = useCallback((method, url, data) => {
+        setData(null);
         if (controllerRef.current) {
             controllerRef.current.abort();
         } else {
@@ -29,14 +28,21 @@ export function useApi() {
         setError(null);
         setState("loading");
         axiosClient({
-            method, url, data, signal: signal,
+            method, url, data, signal: signal, params: method === "GET" ? data : null
         }).then(res => {
             setState("success");
             setData(res.data);
             console.log(res.data)
         }).catch(err => {
-            setState("error");
-            setError(err?.message || err?.response?.data);
+            if (err.name === "CanceledError") {
+                setState("abort");
+            } else {
+                console.log(err)
+                setState("error");
+                setError(err?.response?.data?.message || err.message);
+            }
+        }).finally(() => {
+            controllerRef.current = null;
         })
     }, [controllerRef])
 
@@ -45,5 +51,5 @@ export function useApi() {
     const put = useCallback((url, payload) => request("PUT", url, payload), [request]);
     const del = useCallback((url) => request("DELETE", url, null), [request]);
 
-    return { get, post, put, del, isLoading, isError, isSuccess, error, data }
+    return { get, post, put, del, isLoading, isError, isSuccess, error, data, isComplete, isAbort }
 }

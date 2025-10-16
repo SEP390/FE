@@ -1,13 +1,17 @@
-import {Card, Divider, Pagination, Skeleton, Table, Tag} from "antd";
+import {Card, Divider, Empty, Pagination, Skeleton, Table, Tag} from "antd";
 import {useEffect, useState} from "react";
 import {useApi} from "../../hooks/useApi.js";
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
+import {formatTime} from "../../util/formatTime.js";
 
 const columns = [
     {
         title: 'Kỳ',
         dataIndex: 'semesterName',
         key: 'semesterId',
+        render: (semesterName) => {
+            return <Tag>{semesterName}</Tag>
+        }
     },
     {
         title: 'Dorm',
@@ -38,12 +42,17 @@ const columns = [
             return <Tag color="red">HỦY THANH TOÁN</Tag>
         },
         filters: [
-            { text: 'Thành công', value: 'SUCCESS' },
-            { text: 'Hủy', value: 'CANCEL' },
+            { text: 'Đã thanh toán', value: 'SUCCESS' },
+            { text: 'Hủy thanh toán', value: 'CANCEL' },
             { text: 'Chờ thanh toán', value: 'PENDING' },
         ],
-        filterMultiple: false,
-    }
+    },
+    {
+        title: 'Ngày tạo',
+        dataIndex: 'createDate',
+        key: 'createDate',
+        render: (createDate) => formatTime(createDate)
+    },
 ];
 
 export function BookingHistoryPage() {
@@ -58,30 +67,42 @@ export function BookingHistoryPage() {
         fetchData({});
     }, []);
 
-    const onTableChange = (pagination, filters, sorter, extra) => {
+    const onTableChange = ({ current }, filters, sorter, extra) => {
+        setPage(current - 1);
         if (filters.status) {
-            fetchData({ status: filters.status[0] })
+            fetchData({ status: filters.status })
         } else {
             fetchData({})
         }
     }
 
+    const dataSource = data ? data.content.map(row => {
+        row.roomNumber = row.slotHistory.slot.room.roomNumber;
+        row.slotName = row.slotHistory.slot.slotName;
+        row.floor = row.slotHistory.slot.room.floor;
+        row.dormName = row.slotHistory.slot.room.dorm.dormName;
+        row.semesterName = row.slotHistory.semester.name;
+        return row;
+    }) : [];
+
     return <>
         <AppLayout activeSidebar={"booking-history"}>
             <Card className={"h-full"} title="Lịch sử đặt phòng của bạn">
                 <div>
-                    {isLoading && <Skeleton active/>}
-                    {data && <>
-                        <Table
-                            bordered
-                            columns={columns} dataSource={data.content}
-                            pagination={{
-                                total: data.totalPages
-                            }}
-                            onChange={onTableChange}
-                            className={"mb-4"}
-                        ></Table>
-                    </>}
+                    <Table
+                        bordered
+                        columns={columns} dataSource={dataSource}
+                        pagination={{
+                            current: page + 1,
+                            total: data ? data.page.totalElements : 0,
+                            pageSize: 5
+                        }}
+                        onChange={onTableChange}
+                        className={"mb-4"}
+                        locale={{
+                            emptyText: isLoading ? <Skeleton active={true} /> : <Empty />
+                        }}
+                    ></Table>
                 </div>
             </Card>
         </AppLayout>

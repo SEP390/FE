@@ -44,7 +44,7 @@ const items = [
         key: "payment",
     },
     {
-        label: <Link to={"/"}>Hóa đơn điện nước</Link>,
+        label: <Link to={"/electric-water"}>Hóa đơn điện nước</Link>,
         icon: <ThunderboltOutlined/>,
         key: "electric-water",
     }
