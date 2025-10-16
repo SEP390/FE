@@ -7,11 +7,15 @@ import {
     SolutionOutlined,
     ThunderboltOutlined,
 } from "@ant-design/icons";
-import Sider from "antd/es/layout/Sider.js";
-import {Menu} from "antd";
+import {Menu, Layout} from "antd";
 import {Link} from "react-router-dom";
 import {Bed} from "lucide-react";
 
+const {Sider} = Layout;
+
+/**
+ * @type {Required<import("antd").MenuProps>["items"]["number"]}
+ */
 const items = [
     {
         label: <Link to={"/"}>Home</Link>,
