@@ -1,7 +1,5 @@
-import {Card, Tag, Progress, Statistic, Button} from "antd";
-import {Building, Layers, Users, DollarSign, MapPin} from "lucide-react";
-import {useState} from "react";
-import {RoomConfirmModal} from "./RoomConfirmModal.jsx";
+import {Button, Card, Tag} from "antd";
+import {MapPin} from "lucide-react";
 
 const formatPrice = (price) => Intl.NumberFormat("vi-VN", {style: "currency", currency: "VND"}).format(price);
 
