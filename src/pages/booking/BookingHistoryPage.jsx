@@ -75,13 +75,22 @@ export function BookingHistoryPage() {
         }
     }
 
+    const dataSource = data ? data.content.map(row => {
+        row.roomNumber = row.slotHistory.slot.room.roomNumber;
+        row.slotName = row.slotHistory.slot.slotName;
+        row.floor = row.slotHistory.slot.room.floor;
+        row.dormName = row.slotHistory.slot.room.dorm.dormName;
+        row.semesterName = row.slotHistory.semester.name;
+        return row;
+    }) : [];
+
     return <>
         <AppLayout activeSidebar={"booking-history"}>
             <Card className={"h-full"} title="Lịch sử đặt phòng của bạn">
                 <div>
                     <Table
                         bordered
-                        columns={columns} dataSource={data ? data.content.sort((a, b) => b.createDate.localeCompare(a.createDate)) : []}
+                        columns={columns} dataSource={dataSource}
                         pagination={{
                             total: data?.totalPages
                         }}

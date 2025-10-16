@@ -10,15 +10,17 @@ export function BookingY1() {
 
     const {get, data, isError, error} = useApi();
 
+    const [{error: errorNotification}, context] = notification.useNotification();
+
     useEffect(() => {
         get("/rooms-matching")
     }, [get]);
 
     useEffect(() => {
         if (isError) {
-            notification["error"]({
-                message: error.message,
-                description: "<UNK>"
+            errorNotification({
+                message: "Error",
+                description: error
             })
         }
     }, [isError]);
@@ -29,6 +31,7 @@ export function BookingY1() {
     </div>;
 
     return <>
+        {context}
         <Card title={"Đặt phòng"} className={"h-full"}>
             <RoomConfirmModal isOpen={isOpen} setIsOpen={setIsOpen} room={room} />
             <div className={"flex gap-3 flex-wrap"}>

@@ -46,9 +46,6 @@ export function CurrentBooking({ data }) {
                 <Descriptions.Item label="Tầng">
                     {data?.room?.floor}
                 </Descriptions.Item>
-                <Descriptions.Item label="Kỳ">
-                    <Tag>{data?.semester?.semesterName}</Tag>
-                </Descriptions.Item>
                 <Descriptions.Item label="Giá">
                     <div>{formatPrice(data.price)}</div>
                 </Descriptions.Item>
