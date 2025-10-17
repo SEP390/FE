@@ -3,15 +3,18 @@ import useScript from '../../hooks/useScript';
 import {useApi} from "../../hooks/useApi.js";
 import {useToken} from "../../hooks/useToken.js";
 import {useNavigate} from "react-router-dom";
+import {notification, Spin} from "antd";
 
 export function GoogleLogin() {
-    const {post, data, isSuccess} = useApi();
+    const {post, data, isSuccess, isError, error, isLoading} = useApi();
     const {setToken} = useToken();
     const navigate = useNavigate();
 
     const onGoogleSignIn = ({ credential }) => {
         post("/google", { credential });
     }
+
+    const [notificationApi, notificationContext] = notification.useNotification();
     
     useEffect(() => {
         if (isSuccess) {
@@ -19,6 +22,15 @@ export function GoogleLogin() {
             navigate('/');
         }
     }, [data, isSuccess, navigate, setToken])
+
+    useEffect(() => {
+        if(isError) {
+            notificationApi.error({
+                message: "Có lỗi xảy ra",
+                description: error
+            })
+        }
+    }, [isError, error, notificationApi]);
 
     const googleSignInButton = useRef(null);
 
@@ -39,5 +51,10 @@ export function GoogleLogin() {
         );
     });
 
-    return <div ref={googleSignInButton}></div>;
+    return <>
+        {notificationContext}
+        <Spin spinning={isLoading}>
+            <div ref={googleSignInButton}></div>
+        </Spin>
+    </>;
 }
