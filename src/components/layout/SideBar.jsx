@@ -6,6 +6,7 @@ import {
     ReadOutlined,
     SolutionOutlined,
     ThunderboltOutlined,
+    UserOutlined,
 } from "@ant-design/icons";
 import Sider from "antd/es/layout/Sider.js";
 import {Menu} from "antd";
@@ -47,7 +48,13 @@ const items = [
         label: <Link to={"/electric-water"}>Hóa đơn điện nước</Link>,
         icon: <ThunderboltOutlined/>,
         key: "electric-water",
-    }
+    },
+
+    {
+        label: <Link to={"/student-info"}>Thông tin sinh viên</Link>,
+        icon: <UserOutlined />,
+        key: "student-info",
+    },
 ]
 
 export function SideBar({ collapsed, active }) {

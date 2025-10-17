@@ -83,7 +83,7 @@ export function DashboardPage() {
                         </List>
                     </Card>
                 </div>
-            
+
         </AppLayout>
     );
 }
