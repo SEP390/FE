@@ -8,6 +8,7 @@ import {PaymentHistoryPage} from "../pages/booking/PaymentHistoryPage.jsx";
 import {NewsList} from "../pages/News/NewsList.jsx";
 import {ElectricWaterBillPage} from "../pages/electric-water/ElectricWaterBillPage.jsx";
 import {GuardElectricWaterPage} from "../pages/guard/electric-water/GuardElectricWaterPage.jsx";
+import {DashboardManager} from "../pages/manager/DashboardManager.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -20,6 +21,7 @@ const routes = [
     { path: "/payment", element: PaymentHistoryPage },
     { path: "/electric-water", element: ElectricWaterBillPage },
     { path: "/guard/electric-water", element: GuardElectricWaterPage },
+    { path: "/manager/home", element: DashboardManager },
 ];
 
 export default routes;
