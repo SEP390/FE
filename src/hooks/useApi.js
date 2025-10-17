@@ -1,5 +1,5 @@
 import axiosClient from "../api/axiosClient/axiosClient.js";
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 
 export function useApi() {
     const [state, setState] = useState("init");

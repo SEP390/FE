@@ -1,38 +1,37 @@
-import {Button, Modal} from "antd";
+import {Button, Modal, notification, message} from "antd";
 import React, {useEffect, useState} from "react";
 import {useApi} from "../../hooks/useApi.js";
-import useMessage from "antd/es/message/useMessage.js";
 import {RoomConfirm} from "./RoomConfirm.jsx";
-import useNotification from "antd/es/notification/useNotification.js";
-
-"?"
 
 export function RoomConfirmModal({ isOpen, setIsOpen, room }) {
+    /**
+     * @type {{data: {paymentUrl: string}, error: string}}
+     */
     const { post, data, isError, error, isLoading } = useApi();
-    const [message, messageContext] = useMessage();
+    const [messageApi, messageContext] = message.useMessage();
     const [slot, setSlot] = useState(null);
 
-    const [notification, notificationContext] = useNotification();
+    const [notificationApi, notificationContext] = notification.useNotification();
 
     const onPayment = () => {
         if (isLoading) return;
         if (!slot) {
-            message.error("Bạn chưa chọn slot!");
+            messageApi.error("Bạn chưa chọn slot!").then();
             return;
         }
         post("/booking/create", {
             slotId: slot.id
-        }, {});
+        });
     }
 
     useEffect(() => {
         if (isError) {
-            notification.error({
-                message: "Có lỗi xảy ra",
+            notificationApi.error({
+                message: "Error",
                 description: error
             })
         }
-    }, [isError, error]);
+    }, [isError, error, notificationApi]);
 
     useEffect(() => {
         if (!data) return;
