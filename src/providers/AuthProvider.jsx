@@ -5,10 +5,10 @@ export function AuthProvider({ children }) {
     const [token, setToken] = useState(localStorage.getItem("token"));
     useEffect(() => {
         // tmp fix for "null" token
-        if (token || token === "null") {
-            localStorage.setItem("token", token);
-        } else {
+        if (!token || token === "null") {
             localStorage.removeItem("token");
+        } else {
+            localStorage.setItem("token", token);
         }
     }, [token]);
     return <AuthContext.Provider value={{token, setToken}}>{children}</AuthContext.Provider>;
