@@ -1,11 +1,24 @@
 import {useApi} from "../../hooks/useApi.js";
 import {Card, Skeleton} from "antd";
-import React, {useEffect} from "react";
+import {useEffect} from "react";
 import {SlotCard} from "./SlotCard.jsx";
 import {formatPrice} from "../../util/formatPrice.js";
 
+/**
+ * @typedef {{}} SlotRepsonse
+ * @typedef {{
+ * roomNumber: string,
+ * dormName: string,
+ * slots: SlotRepsonse[],
+ * pricing: number
+ * }} RoomResponse
+ */
+
 export function RoomConfirm({room, slot, setSlot}) {
-    const {get, data, error, isSuccess} = useApi();
+    /**
+     * @type {{data: RoomResponse[]}}
+     */
+    const {get, data, isSuccess} = useApi();
 
     useEffect(() => {
         get("/rooms/" + room.id)

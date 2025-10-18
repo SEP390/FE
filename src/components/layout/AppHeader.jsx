@@ -1,9 +1,10 @@
 import {LogoutOutlined, MenuOutlined} from "@ant-design/icons";
-import {Button, Popconfirm} from "antd";
+import {Button, Popconfirm, Layout} from "antd";
 import React from "react";
-import {Header} from "antd/es/layout/layout.js";
 import {useNavigate} from "react-router-dom";
 import {useToken} from "../../hooks/useToken.js";
+
+const {Header} = Layout;
 
 export function AppHeader({ toggleSideBar }) {
     const navigate = useNavigate();
