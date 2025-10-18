@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Card, List, Skeleton, Typography, Input, Modal, Tag } from "antd";
+import { Card, List, Skeleton, Typography, Input, Modal } from "antd";
 import { AppLayout } from "../../components/layout/AppLayout.jsx";
 import { NewsDetailModal } from "../../components/news/NewsDetailModal.jsx";
 
@@ -52,6 +52,7 @@ export function NewsList() {
                 : [];
             setAllNews(visibleItems);
             setNews(visibleItems);
+            // eslint-disable-next-line no-unused-vars
         } catch (e) {
             setAllNews([]);
             setNews([]);
@@ -162,7 +163,6 @@ export function NewsList() {
                     onCancel={() => setModalVisible(false)}
                     footer={null}
                     width={900}
-                    destroyOnClose
                 >
                     <NewsDetailModal news={selectedNews} />
                 </Modal>
