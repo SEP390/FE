@@ -9,6 +9,10 @@ import {NewsList} from "../pages/News/NewsList.jsx";
 import {ElectricWaterBillPage} from "../pages/electric-water/ElectricWaterBillPage.jsx";
 import {GuardElectricWaterPage} from "../pages/guard/electric-water/GuardElectricWaterPage.jsx";
 import {DashboardManager} from "../pages/manager/DashboardManager.jsx";
+import {RoomInfoManager} from "../pages/manager/RoomInfoManager.jsx";
+// THÊM IMPORT TRANG CHI TIẾT
+import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
+
 
 const routes = [
     { path: "/", element: HomePage },
@@ -21,7 +25,11 @@ const routes = [
     { path: "/payment", element: PaymentHistoryPage },
     { path: "/electric-water", element: ElectricWaterBillPage },
     { path: "/guard/electric-water", element: GuardElectricWaterPage },
+
+    // --- ROUTES DÀNH CHO MANAGER ---
     { path: "/manager/home", element: DashboardManager },
+    { path: "/manager/rooms", element: RoomInfoManager },
+    { path: "/manager/rooms/:roomNumber", element: RoomInforDetail },
 ];
 
 export default routes;
