@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Card, List, Skeleton, Typography, Input, Modal } from "antd";
+import { useEffect, useState, useRef } from "react";
+import { Card, List, Skeleton, Typography, Input, Modal, Tag } from "antd";
 import { AppLayout } from "../../components/layout/AppLayout.jsx";
 import { NewsDetailModal } from "../../components/news/NewsDetailModal.jsx";
 
@@ -7,13 +7,11 @@ const { Title, Text } = Typography;
 const { Search } = Input;
 
 function truncateWords(text, wordLimit) {
-    const words = text.split(" ");
-    return words.length > wordLimit
-        ? words.slice(0, wordLimit).join(" ") + "..."
-        : text;
+    const words = (text || "").split(" ");
+    return words.length > wordLimit ? words.slice(0, wordLimit).join(" ") + "..." : text;
 }
 
-function removeVietnameseTones(str) {
+function removeVietnameseTones(str = "") {
     return str
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -22,35 +20,72 @@ function removeVietnameseTones(str) {
         .toLowerCase();
 }
 
-function normalizeSpaces(str) {
+function normalizeSpaces(str = "") {
     return str.replace(/\s+/g, " ").trim();
 }
 
 export function NewsList() {
-    const [news, setNews] = useState([]);
+    const [allNews, setAllNews] = useState([]); // full visible list
+    const [news, setNews] = useState([]); // filtered view
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [selectedNews, setSelectedNews] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
+    const debounceRef = useRef(null);
+
+    const token = localStorage.getItem("token");
+
+    const fetchNews = async () => {
+        setLoading(true);
+        try {
+            const base = "http://localhost:8080/api/users";
+            const res = await fetch(`${base}/news`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+            const resp = await res.json();
+            const items = resp && resp.data ? resp.data : [];
+            const visibleItems = Array.isArray(items)
+                ? items.filter((i) => i && i.status === "VISIBLE")
+                : [];
+            setAllNews(visibleItems);
+            setNews(visibleItems);
+        } catch (e) {
+            setAllNews([]);
+            setNews([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        fetch("/news.json")
-            .then(res => res.json())
-            .then(data => {
-                setNews(data);
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
+        fetchNews();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const filteredNews = news.filter(item =>
-        removeVietnameseTones(normalizeSpaces(item.title)).includes(
-            removeVietnameseTones(normalizeSpaces(search))
-        ) ||
-        removeVietnameseTones(normalizeSpaces(item.content)).includes(
-            removeVietnameseTones(normalizeSpaces(search))
-        )
-    );
+    const handleSearchChange = (value) => {
+        const cleaned = normalizeSpaces(value);
+        setSearch(cleaned);
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            if (!cleaned) {
+                setNews(allNews);
+                return;
+            }
+            const q = removeVietnameseTones(cleaned);
+            const filtered = allNews.filter((item) => {
+                const title = removeVietnameseTones(item.title || "");
+                const content = removeVietnameseTones(item.content || "");
+                const user = removeVietnameseTones(item.userNames || "");
+                return title.includes(q) || content.includes(q) || user.includes(q);
+            });
+            setNews(filtered);
+        }, 300);
+    };
+
     const handleItemClick = (item) => {
         setSelectedNews(item);
         setModalVisible(true);
@@ -62,48 +97,64 @@ export function NewsList() {
                 <Search
                     placeholder="Search news"
                     allowClear
-                    onChange={e => setSearch(normalizeSpaces(e.target.value))}
-                    style={{ marginBottom: 20, maxWidth: 400 }}
+                    enterButton
+                    onSearch={(val) => handleSearchChange(val)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    value={search}
+                    style={{ marginBottom: 20, maxWidth: 600 }}
                 />
                 {loading ? (
                     <Skeleton active />
                 ) : (
                     <List
                         itemLayout="vertical"
-                        dataSource={filteredNews}
-                        pagination={{
-                            pageSize: 5,
+                        dataSource={news}
+                        pagination={{ pageSize: 5 }}
+                        renderItem={(item) => {
+                            const dateTime = item?.date
+                                ? new Date(item.time ? `${item.date}T${item.time}` : item.date)
+                                : null;
+                            return (
+                                <List.Item
+                                    style={{
+                                        border: "1px solid #ffa940",
+                                        borderRadius: 8,
+                                        marginBottom: 16,
+                                        marginLeft: 5,
+                                        boxShadow: "0 2px 8px rgba(255, 165, 64, 0.08)",
+                                        cursor: "pointer",
+                                        padding: 12,
+                                    }}
+                                    onClick={() => handleItemClick(item)}
+                                >
+                                    <List.Item.Meta
+                                        style={{ marginLeft: 6 }}
+                                        title={
+                                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                                <Title level={4} style={{ color: "#fa8c16", margin: 0 }}>
+                                                    {item.title}
+                                                </Title>
+                                            </div>
+                                        }
+                                        description={
+                                            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                                                <Text type="secondary" style={{ fontSize: 11 }}>
+                                                    {item.userNames}
+                                                </Text>
+                                                {dateTime && (
+                                                    <Text type="secondary" style={{ fontSize: 11 }}>
+                                                        {dateTime.toLocaleString()}
+                                                    </Text>
+                                                )}
+                                            </div>
+                                        }
+                                    />
+                                    <div style={{ marginLeft: 10, borderTop: "1px solid #f0f0f0", paddingTop: 10 }}>
+                                        {truncateWords(item.content, 30)}
+                                    </div>
+                                </List.Item>
+                            );
                         }}
-                        renderItem={item => (
-                            <List.Item
-                                style={{
-                                    border: "1px solid #ffa940",
-                                    borderRadius: 8,
-                                    marginBottom: 16,
-                                    marginLeft: 5,
-                                    boxShadow: "0 2px 8px rgba(255, 165, 64, 0.1)",
-                                    cursor: "pointer"
-                                }}
-                                onClick={() => handleItemClick(item)}
-                            >
-                                <List.Item.Meta
-                                    style={{ marginLeft: 10 }}
-                                    title={
-                                        <Title level={4} style={{ color: "#fa8c16", margin: 0 }}>
-                                            {item.title}
-                                        </Title>
-                                    }
-                                    description={
-                                        <Text type="secondary" style={{ fontSize: 12 }}>
-                                            {new Date(item.date).toLocaleString()}
-                                        </Text>
-                                    }
-                                />
-                                <div style={{ marginLeft: 10 }}>
-                                    {truncateWords(item.content, 30)}
-                                </div>
-                            </List.Item>
-                        )}
                     />
                 )}
                 <Modal
@@ -119,4 +170,3 @@ export function NewsList() {
         </AppLayout>
     );
 }
-
