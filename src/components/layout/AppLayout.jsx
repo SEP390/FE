@@ -1,8 +1,9 @@
-import {Content} from "antd/es/layout/layout.js";
 import {Layout} from "antd";
-import React, {useState} from "react";
+import {useState} from "react";
 import {SideBar} from "./SideBar.jsx";
 import {AppHeader} from "./AppHeader.jsx";
+
+const {Content} = Layout;
 
 export function AppLayout({children, activeSidebar}) {
     const [collapsed, setCollapsed] = useState(false);

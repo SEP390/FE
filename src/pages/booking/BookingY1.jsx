@@ -4,10 +4,17 @@ import {useEffect, useState} from "react";
 import {useApi} from "../../hooks/useApi.js";
 import {Card, notification, Skeleton} from "antd";
 
+/**
+ * @typedef {{matching: number, availableSlot: number, totalSlot: number}} RoomMatching
+ */
+
 export function BookingY1() {
     const [isOpen, setIsOpen] = useState(false);
     const [room, setRoom] = useState(null);
 
+    /**
+     * @type {{data: RoomMatching}}
+     */
     const {get, data, isError, error} = useApi();
 
     const [{error: errorNotification}, context] = notification.useNotification();
@@ -23,7 +30,7 @@ export function BookingY1() {
                 description: error
             })
         }
-    }, [isError]);
+    }, [error, errorNotification, isError]);
 
     const skeleton = <div className={"flex gap-2"}>
         <Skeleton.Node className={"!w-100 !h-50"} active />

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Checkbox, Alert, message } from 'antd';
+import {Card, Form, Input, Button, Checkbox, Alert, message, Divider} from 'antd';
 import { EyeInvisibleOutlined, EyeTwoTone, UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../api/authApi/authApi';
 import {useToken} from "../../hooks/useToken.js";
+import {GoogleLogin} from "../../components/login/GoogleLogin.jsx";
 
 const Login = () => {
   const [form] = Form.useForm();
@@ -145,6 +146,10 @@ const Login = () => {
                 Đăng ký ngay
               </a>
             </div>
+          </div>
+          <Divider />
+          <div className={"flex justify-center"}>
+            <GoogleLogin />
           </div>
         </Card>
       </div>

@@ -6,31 +6,33 @@ import {
     ReadOutlined,
     SolutionOutlined,
     ThunderboltOutlined,
+    UserOutlined,
+    FileTextOutlined,
 } from "@ant-design/icons";
 import Sider from "antd/es/layout/Sider.js";
-import {Menu} from "antd";
-import {Link} from "react-router-dom";
-import {Bed} from "lucide-react";
+import { Menu } from "antd";
+import { Link } from "react-router-dom";
+import { Bed } from "lucide-react";
 
 const items = [
     {
         label: <Link to={"/"}>Home</Link>,
-        icon: <HomeOutlined/>,
+        icon: <HomeOutlined />,
         key: "home",
     },
     {
         label: <Link to={"/news"}>Tin tức</Link>,
-        icon: <ReadOutlined/>,
+        icon: <ReadOutlined />,
         key: "news",
     },
     {
         label: <Link to={"/booking"}>Đặt phòng</Link>,
-        icon: <CalendarOutlined/>,
+        icon: <CalendarOutlined />,
         key: "booking",
     },
     {
         label: <Link to={"/booking-history"}>Lịch sử đặt phòng</Link>,
-        icon: <HistoryOutlined/>,
+        icon: <HistoryOutlined />,
         key: "booking-history",
     },
     {
@@ -40,33 +42,47 @@ const items = [
     },
     {
         label: <Link to={"/payment"}>Lịch sử thanh toán</Link>,
-        icon: <DollarOutlined/>,
+        icon: <DollarOutlined />,
         key: "payment",
     },
     {
         label: <Link to={"/electric-water"}>Hóa đơn điện nước</Link>,
-        icon: <ThunderboltOutlined/>,
+        icon: <ThunderboltOutlined />,
         key: "electric-water",
-    }
-]
+    },
+    {
+        label: <Link to={"/student-info"}>Thông tin sinh viên</Link>,
+        icon: <UserOutlined />,
+        key: "student-info",
+    },
+    {
+        label: <Link to={"/my-requests"}>Yêu cầu của tôi</Link>,
+        icon: <FileTextOutlined />,
+        key: "my-requests",
+    },
+];
 
 export function SideBar({ collapsed, active }) {
-    return <>
-        <Sider
-            trigger={null}
-            collapsible
-            collapsed={collapsed}
-            theme="light"
-            className={"bg-white border-r border-gray-200"}
-        >
-            <div className="flex items-center justify-center py-4">
-                <Bed />
-            </div>
+    return (
+        <>
+            <Sider
+                trigger={null}
+                collapsible
+                collapsed={collapsed}
+                theme="light"
+                className={"bg-white border-r border-gray-200"}
+            >
+                <div className="flex items-center justify-center py-4">
+                    <Bed />
+                </div>
 
-            <Menu mode="inline"
-                  defaultSelectedKeys={[active]}
-                  className={"!border-0"}
-                  items={items} />
-        </Sider>
-    </>
+                <Menu
+                    mode="inline"
+                    defaultSelectedKeys={[active]}
+                    className={"!border-0"}
+                    items={items}
+                />
+            </Sider>
+        </>
+    );
 }
