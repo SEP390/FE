@@ -12,6 +12,9 @@ import {DashboardManager} from "../pages/manager/DashboardManager.jsx";
 import {NewsManagePage} from "../pages/manager//News/NewsManagePage.jsx";
 import {CreateNewsPage} from "../pages/manager/News/CreateNewspage.jsx";
 import {RoomInfoManager} from "../pages/manager/RoomInfoManager.jsx";
+import { StudentInformationPage } from "../pages/resident/information/StudentInformationPage.jsx";
+import { MyRequest } from "../pages/resident/request/MyRequest.jsx";
+import { CreateRequest } from "../pages/resident/request/CreateRequest.jsx";
 // THÊM IMPORT TRANG CHI TIẾT
 import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
 
@@ -27,6 +30,11 @@ const routes = [
     { path: "/payment", element: PaymentHistoryPage },
     { path: "/electric-water", element: ElectricWaterBillPage },
     { path: "/guard/electric-water", element: GuardElectricWaterPage },
+
+    // --- ROUTES DÀNH CHO CƯ DÂN (RESIDENT) ---
+    { path: "/student-info", element: StudentInformationPage },
+    { path: "/my-requests", element: MyRequest },
+    { path: "/create-request", element: CreateRequest },
 
     // --- ROUTES DÀNH CHO MANAGER ---
     { path: "/manager/home", element: DashboardManager },
