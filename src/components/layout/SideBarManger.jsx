@@ -18,7 +18,7 @@ import {Bed} from "lucide-react"; // Giữ lại nếu bạn muốn dùng icon l
 // Định nghĩa các mục menu cho Quản lý (Manager)
 const managerItems = [
     {
-        label: <Link to={"/manager"}>Home</Link>,
+        label: <Link to={"/manager/home"}>Home</Link>,
         icon: <HomeOutlined/>,
         key: "manager-home",
     },
