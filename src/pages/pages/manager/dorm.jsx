@@ -2,7 +2,7 @@ import {AppLayout} from "../../../components/layout/AppLayout.jsx";
 import {Button, Card, Table} from "antd";
 import {useApi} from "../../../hooks/useApi.js";
 import {useEffect} from "react";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import {Plus, PlusIcon} from "lucide-react";
 
 /**
@@ -14,6 +14,8 @@ import {Plus, PlusIcon} from "lucide-react";
 
 export default function Dorm() {
     const { get, data, error } = useApi();
+
+    const navigate = useNavigate()
 
     /**
      * @type import("antd").TableColumnsType
@@ -35,7 +37,7 @@ export default function Dorm() {
         {
             title: "Hành động",
             render: (val, record) => {
-                return <Link to={"/pages/manager/dorm-detail?id=" + record.id}>Chi tiết</Link>
+                return <Link to={"/pages/manager/dorm/detail?id=" + record.id}>Chi tiết</Link>
             }
         }
     ]
@@ -53,7 +55,7 @@ export default function Dorm() {
         <Card title={"Quản lý Dorm"} className={"h-full overflow-y-auto"}>
             <div className={"flex mb-3"}>
                 <div className={"ml-auto"}>
-                    <Button><Plus size={14} />Tạo mới</Button>
+                    <Button onClick={() => navigate("/pages/manager/dorm/create")}><Plus size={14} />Tạo mới</Button>
                 </div>
             </div>
             <Table

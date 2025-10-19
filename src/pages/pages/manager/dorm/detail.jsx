@@ -1,9 +1,9 @@
-import {AppLayout} from "../../../components/layout/AppLayout.jsx";
+import {AppLayout} from "../../../../components/layout/AppLayout.jsx";
 import {Button, Card, Form, Input, InputNumber, Modal} from "antd";
 import {ChevronLeft, Plus} from "lucide-react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import React, {useEffect, useState} from "react";
-import {useApi} from "../../../hooks/useApi.js";
+import {useApi} from "../../../../hooks/useApi.js";
 
 function RoomButton({data, setSelect}) {
     const onClick = () => {
@@ -31,17 +31,17 @@ function FloorCard({floor, data, setSelect}) {
     </Card>
 }
 
-function AddRoomModal({isOpen, setIsOpen}) {
+function AddRoomModal({open, setOpen}) {
     const onCreate = () => {
-        setIsOpen(false)
+        setOpen(false)
     }
     const [form] = Form.useForm();
 
     return <>
-        <Modal open={isOpen}
+        <Modal open={open}
                title={"Thêm phòng"}
-               onCancel={() => setIsOpen(false)}
-               onOk={() => setIsOpen(false)}
+               onCancel={() => setOpen(false)}
+               onOk={() => setOpen(false)}
                footer={null}>
             <Form layout={"vertical"}
                   form={form}>
@@ -82,7 +82,7 @@ export default function DormDetail() {
     const floors = data ? Object.groupBy(data.rooms, ({floor}) => floor) : [];
 
     return <AppLayout>
-        <AddRoomModal isOpen={open} setIsOpen={setOpen}/>
+        <AddRoomModal open={open} setOpen={setOpen}/>
         <Card title={<span className={"flex items-center gap-3"}><Button onClick={back}
                                                                          type={"text"}><ChevronLeft/></Button> Chi tiết {data?.dormName}</span>}
               className={"h-full overflow-auto"}>
