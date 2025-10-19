@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { AppLayout } from "../components/layout/AppLayout.jsx";
+import React, { useState, useEffect } from "react"; // Thêm useEffect
+import { AppLayout } from "../../../components/layout/AppLayout.jsx";
 import { Card, Typography, Form, Input, Select, Upload, Button, message } from "antd";
 import { InboxOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { useApi } from "../../../hooks/useApi.js"; // Import useApi
 
-const { Title } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 const { Dragger } = Upload;
@@ -14,11 +14,38 @@ export function CreateRequest() {
     const [form] = Form.useForm();
     const [fileList, setFileList] = useState([]);
 
+    // Sử dụng hook useApi để gọi API
+    const { post, isLoading, isSuccess, isError, error } = useApi();
+
+    // Xử lý khi gửi form
     const handleSubmit = (values) => {
-        console.log("Dữ liệu yêu cầu:", values);
-        message.success("Yêu cầu đã được gửi thành công!");
-        navigate("/my-requests");
+        // Chuẩn bị payload cho API
+        // Ánh xạ tên trường từ form (type, description) sang DTO (requestType, content)
+        const payload = {
+            title: values.title, // Giả sử DTO cần cả title
+            requestType: values.type,
+            content: values.description,
+            // semesterId: "UUID_CUA_HOC_KY" // Lưu ý: API có thể cần cả semesterId
+        };
+
+        // TODO: Xử lý logic upload file 'fileList' và đính kèm vào payload nếu cần
+        console.log("Đang gửi payload:", payload);
+
+        // Gọi API, endpoint lấy từ RequestController.java
+        post("/request/create", payload);
     };
+
+    // Theo dõi trạng thái gọi API
+    useEffect(() => {
+        if (isSuccess) {
+            message.success("Yêu cầu đã được gửi thành công!");
+            navigate("/my-requests");
+        }
+        if (isError) {
+            message.error(error || "Gửi yêu cầu thất bại.");
+        }
+    }, [isSuccess, isError, error, navigate]);
+
 
     const uploadProps = {
         beforeUpload: (file) => {
@@ -29,6 +56,7 @@ export function CreateRequest() {
             setFileList(fileList.filter((f) => f.uid !== file.uid));
         },
         fileList,
+        // Lưu ý: Logic upload file thực tế chưa được implement
     };
 
     return (
@@ -68,21 +96,22 @@ export function CreateRequest() {
                         {/* Loại yêu cầu */}
                         <Form.Item
                             label="Loại yêu cầu"
-                            name="type"
+                            name="type" // Sẽ được map sang 'requestType'
                             rules={[{ required: true, message: "Vui lòng chọn loại yêu cầu" }]}
                         >
                             <Select placeholder="Chọn loại yêu cầu">
-                                <Option value="Sửa chữa">Sửa chữa</Option>
-                                <Option value="Chuyển phòng">Chuyển phòng</Option>
-                                <Option value="Hỗ trợ">Hỗ trợ</Option>
-                                <Option value="Khác">Khác</Option>
+                                <Option value="SuaChua">Sửa chữa</Option>
+                                <Option value="ChuyenPhong">Chuyển phòng</Option>
+                                <Option value="HoTro">Hỗ trợ</Option>
+                                <Option value="Khac">Khác</Option>
+                                {/* Lưu ý: value nên khớp với enum 'RequestTypeEnum' của backend */}
                             </Select>
                         </Form.Item>
 
                         {/* Nội dung chi tiết */}
                         <Form.Item
                             label="Mô tả chi tiết"
-                            name="description"
+                            name="description" // Sẽ được map sang 'content'
                             rules={[{ required: true, message: "Vui lòng nhập nội dung yêu cầu" }]}
                         >
                             <TextArea rows={5} placeholder="Nhập mô tả chi tiết yêu cầu của bạn..." />
@@ -107,6 +136,7 @@ export function CreateRequest() {
                                 <Button
                                     type="primary"
                                     htmlType="submit"
+                                    loading={isLoading} // Thêm trạng thái loading
                                     style={{ backgroundColor: "#004aad" }}
                                 >
                                     Gửi yêu cầu

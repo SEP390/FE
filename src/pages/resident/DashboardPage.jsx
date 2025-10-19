@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { AppLayout } from '../components/layout/AppLayout.jsx';
+import { AppLayout } from '../../components/layout/AppLayout.jsx';
 import { Card, Typography, List, Divider } from 'antd';
 import { useNavigate } from 'react-router-dom';  // 👈 Thêm dòng này
 
