@@ -10,6 +10,7 @@ import {ElectricWaterBillPage} from "../pages/electric-water/ElectricWaterBillPa
 import {GuardElectricWaterPage} from "../pages/guard/electric-water/GuardElectricWaterPage.jsx";
 import {DashboardManager} from "../pages/manager/DashboardManager.jsx";
 import {NewsManagePage} from "../pages/manager//News/NewsManagePage.jsx";
+import {CreateNewsPage} from "../pages/manager/News/CreateNewspage.jsx";
 const routes = [
     { path: "/", element: HomePage },
     { path: "/login", element: Login },
@@ -23,6 +24,7 @@ const routes = [
     { path: "/guard/electric-water", element: GuardElectricWaterPage },
     { path: "/manager/home", element: DashboardManager },
     { path: "/manager/news", element: NewsManagePage },
+    { path: "/manager/news/create", element: CreateNewsPage  },
 ];
 
 export default routes;

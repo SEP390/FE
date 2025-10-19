@@ -1,21 +1,46 @@
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { useEffect, useState } from "react";
-import {Layout, Typography, Table, Button, Tag, Dropdown, message, Modal} from "antd";
-import { EllipsisOutlined } from "@ant-design/icons";
-import { NewsDetailModal} from "../../../components/news/NewsDetailModal.jsx";
+import {Layout, Typography, Table, Button, Tag, Dropdown, message, Modal, Space, Input,} from "antd";
+import {EllipsisOutlined, PlusOutlined, SearchOutlined,} from "@ant-design/icons";
+import { NewsDetailModal } from "../../../components/news/NewsDetailModal.jsx";
+import { useNavigate } from "react-router-dom";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
+const { Search } = Input;
+
+// Hàm xử lý chuỗi
+function truncateWords(text, wordLimit) {
+    const words = (text || "").split(" ");
+    return words.length > wordLimit
+        ? words.slice(0, wordLimit).join(" ") + "..."
+        : text;
+}
+
+function removeVietnameseTones(str = "") {
+    return str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
+        .toLowerCase();
+}
+
+function normalizeSpaces(str = "") {
+    return str.replace(/\s+/g, " ").trim();
+}
 
 export function NewsManagePage() {
     const [collapsed] = useState(false);
     const [news, setNews] = useState([]);
+    const [filteredNews, setFilteredNews] = useState([]);
     const [loading, setLoading] = useState(true);
     const token = localStorage.getItem("token");
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedNews, setSelectedNews] = useState(null);
+    const navigate = useNavigate();
 
-
+    // Fetch tin tức từ API có token auth
     const fetchNews = async () => {
         setLoading(true);
         try {
@@ -29,9 +54,11 @@ export function NewsManagePage() {
             const resp = await res.json();
             const items = resp && resp.data ? resp.data : [];
             setNews(Array.isArray(items) ? items : []);
+            setFilteredNews(Array.isArray(items) ? items : []);
         } catch (e) {
             message.error("Không thể tải danh sách tin tức");
             setNews([]);
+            setFilteredNews([]);
         } finally {
             setLoading(false);
         }
@@ -41,6 +68,19 @@ export function NewsManagePage() {
         fetchNews();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Tìm kiếm tin tức
+    const handleSearch = (value) => {
+        const query = normalizeSpaces(removeVietnameseTones(value));
+        if (!query) {
+            setFilteredNews(news);
+            return;
+        }
+        const filtered = news.filter((n) =>
+            removeVietnameseTones(`${n.title} ${n.content}`).includes(query)
+        );
+        setFilteredNews(filtered);
+    };
 
     const handleView = (record) => {
         setSelectedNews(record);
@@ -53,8 +93,13 @@ export function NewsManagePage() {
 
     const handleToggleStatus = (record) => {
         const newStatus = record.status === "VISIBLE" ? "HIDDEN" : "VISIBLE";
-        setNews(prev =>
-            prev.map(n =>
+        setNews((prev) =>
+            prev.map((n) =>
+                n.newsid === record.newsid ? { ...n, status: newStatus } : n
+            )
+        );
+        setFilteredNews((prev) =>
+            prev.map((n) =>
                 n.newsid === record.newsid ? { ...n, status: newStatus } : n
             )
         );
@@ -74,14 +119,19 @@ export function NewsManagePage() {
         },
         {
             key: "toggle",
-            label: record.status === "VISIBLE" ? "Ẩn" : "Hiện",
+            label: record.status === "VISIBLE" ? "Ẩn tin" : "Hiện tin",
             onClick: () => handleToggleStatus(record),
         },
     ];
 
     const columns = [
         { title: "Tiêu đề", dataIndex: "title", key: "title" },
-        { title: "Nội dung", dataIndex: "content", key: "content" },
+        {
+            title: "Nội dung",
+            dataIndex: "content",
+            key: "content",
+            render: (text) => truncateWords(text, 12),
+        },
         { title: "Ngày đăng", dataIndex: "date", key: "date" },
         { title: "Giờ đăng", dataIndex: "time", key: "time" },
         { title: "Người đăng", dataIndex: "userNames", key: "userNames" },
@@ -96,13 +146,14 @@ export function NewsManagePage() {
         {
             title: "Hành động",
             key: "action",
+            align: "center",
             render: (_, record) => (
                 <Dropdown
                     menu={{ items: getMenuItems(record) }}
                     trigger={["click"]}
                     placement="bottomRight"
                 >
-                    <Button  icon={<EllipsisOutlined />} />
+                    <Button type="text" icon={<EllipsisOutlined />} />
                 </Dropdown>
             ),
         },
@@ -112,20 +163,52 @@ export function NewsManagePage() {
         <Layout style={{ minHeight: "100vh" }}>
             <SideBarManager collapsed={collapsed} active="manager-news" />
             <Layout>
-                <Header style={{ background: "#fff", padding: "0 24px", borderBottom: "1px solid #f0f0f0", height: 80 }}>
+                <Header
+                    style={{
+                        background: "#fff",
+                        padding: "0 24px",
+                        borderBottom: "1px solid #f0f0f0",
+                        height: 80,
+                    }}
+                >
                     <Title level={2} style={{ margin: 0, lineHeight: "80px" }}>
                         Quản lý tin tức
                     </Title>
                 </Header>
 
                 <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+                    <Space
+                        style={{
+                            marginBottom: 16,
+                            width: "100%",
+                            justifyContent: "space-between",
+                        }}
+                    >
+                        <Search
+                            placeholder="Tìm kiếm tin tức..."
+                            allowClear
+                            enterButton={<SearchOutlined />}
+                            onSearch={handleSearch}
+                            style={{ maxWidth: 400 }}
+                        />
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => navigate("/manager/news/create")}
+                        >
+                            Tạo tin mới
+                        </Button>
+                    </Space>
+
                     <Table
                         rowKey="newsid"
                         columns={columns}
-                        dataSource={news}
+                        dataSource={filteredNews}
                         loading={loading}
                         bordered
+                        pagination={{ pageSize: 6 }}
                     />
+
                     <Modal
                         open={modalVisible}
                         onCancel={() => setModalVisible(false)}
@@ -139,4 +222,5 @@ export function NewsManagePage() {
         </Layout>
     );
 }
+
 
