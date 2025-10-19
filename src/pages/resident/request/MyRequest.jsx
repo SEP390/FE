@@ -1,5 +1,5 @@
-import React from "react";
-import { AppLayout } from "../components/layout/AppLayout.jsx";
+import React, { useState, useEffect } from "react";
+import { AppLayout } from "../../../components/layout/AppLayout.jsx";
 import { Card, Typography, Table, Button, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
 import { PlusOutlined } from "@ant-design/icons";
@@ -8,32 +8,38 @@ const { Text } = Typography;
 
 export function MyRequest() {
     const navigate = useNavigate();
+    const [userInfo, setUserInfo] = useState(null);
+    const [dataSource, setDataSource] = useState([]);
 
-    // 🧩 Dữ liệu mẫu
-    const dataSource = [
-        {
-            key: "1",
-            requestType: "Đăng kí check out",
-            content: "Em đã dọn sạch giường số 2 phòng H306R để check out rồi ạ",
-            reply: "Hoàn thành. Em kiểm tra và hoàn thành hóa đơn phụ trội (nếu có).",
-            semester: "Spring - 2025",
-            createdDate: "29/04/2025 21:58",
-            status: "Checkout thành công",
-            timeRange: "29/04/2025 21:55 → 30/04/2025 10:10",
-            managerComment: "Cảm ơn em đã dọn phòng sạch sẽ, quá trình check out suôn sẻ.",
-        },
-        {
-            key: "2",
-            requestType: "Yêu cầu sửa điện",
-            content: "Bóng đèn phòng H205 bị cháy, cần thay mới.",
-            reply: "Đã giao cho bộ phận kỹ thuật xử lý trong hôm nay.",
-            semester: "Spring - 2025",
-            createdDate: "02/05/2025 09:40",
-            status: "Đang xử lý",
-            timeRange: "02/05/2025 09:38 → 02/05/2025 10:00",
-            managerComment: "Kỹ thuật viên đang tiến hành kiểm tra hệ thống điện khu H2.",
-        },
-    ];
+    useEffect(() => {
+        fetch('/user/profile')
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to fetch user info');
+                }
+                return res.json();
+            })
+            .then(json => {
+                setUserInfo(json.data);
+            })
+            .catch(err => console.error('Error fetching user info:', err));
+    }, []);
+
+    useEffect(() => {
+        if (userInfo) {
+            fetch(`/requests?studentId=${userInfo.StudentId}`) // Giả định endpoint để lấy requests dựa trên StudentId
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Failed to fetch requests');
+                    }
+                    return res.json();
+                })
+                .then(json => {
+                    setDataSource(json.data || []);
+                })
+                .catch(err => console.error('Error fetching requests:', err));
+        }
+    }, [userInfo]);
 
     // 🎨 Màu cho trạng thái
     const statusColor = (status) => {
@@ -99,7 +105,9 @@ export function MyRequest() {
             <div className="p-4">
                 {/* Tiêu đề và nút tạo mới */}
                 <div className="flex justify-between items-center mb-4">
-                    <h1 className="text-2xl font-bold text-[#004aad]">My Requests</h1>
+                    <h1 className="text-2xl font-bold text-[#004aad]">
+                        {userInfo ? `${userInfo.username}'s Requests` : "My Requests"}
+                    </h1>
                     <Button
                         type="primary"
                         icon={<PlusOutlined />}
