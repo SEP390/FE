@@ -166,8 +166,8 @@ export function NewsManagePage() {
             key: "content",
             render: (text) => truncateWords(text, 12),
         },
-        { title: "Ngày đăng", dataIndex: "date", key: "date" },
-        { title: "Giờ đăng", dataIndex: "time", key: "time" },
+        { title: "Ngày", dataIndex: "date", key: "date" },
+        { title: "Giờ", dataIndex: "time", key: "time" },
         { title: "Người đăng", dataIndex: "userNames", key: "userNames" },
         {
             title: "Trạng thái",
