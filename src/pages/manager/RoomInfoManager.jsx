@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { Layout, Typography, Row, Col, Table, Input, Select, Button, Tag, Space } from 'antd';
 import { SearchOutlined, EditOutlined } from "@ant-design/icons";
 // THÊM IMPORT LINK TỪ REACT-ROUTER-DOM
@@ -6,19 +6,11 @@ import { Link } from 'react-router-dom';
 
 // Import SideBarManager từ file bạn đã có
 import { SideBarManager } from '../../components/layout/SideBarManger';
+import {useApiTest} from "../../hooks/useApiTest.js";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
-
-// --- DỮ LIỆU MOCK (Giả lập) ---
-const mockRoomData = [
-    { key: '1', building: 'A1', floor: 1, roomNumber: '101', maxCapacity: 4, currentOccupants: 3, status: 'Còn chỗ' },
-    { key: '2', building: 'A1', floor: 2, roomNumber: '205', maxCapacity: 4, currentOccupants: 4, status: 'Đã đầy' },
-    { key: '3', building: 'B2', floor: 3, roomNumber: '310', maxCapacity: 2, currentOccupants: 1, status: 'Còn chỗ' },
-    { key: '4', building: 'B2', floor: 3, roomNumber: '311', maxCapacity: 2, currentOccupants: 2, status: 'Đã đầy' },
-    { key: '5', building: 'C3', floor: 5, roomNumber: '501', maxCapacity: 6, currentOccupants: 6, status: 'Đã đầy' },
-];
 
 // Định nghĩa các cột cho bảng (Cột Số phòng đã được cập nhật)
 const columns = [
@@ -102,15 +94,35 @@ export function RoomInfoManager() {
     const [filterStatus, setFilterStatus] = useState(undefined);
     const [searchText, setSearchText] = useState('');
 
-    const filteredData = mockRoomData.filter(room => {
-        const matchesBuilding = filterBuilding ? room.building === filterBuilding : true;
-        const matchesFloor = filterFloor ? room.floor === parseInt(filterFloor) : true;
-        const matchesStatus = filterStatus ? room.status === filterStatus : true;
-
-        const matchesSearch = room.roomNumber.toLowerCase().includes(searchText.toLowerCase());
-
-        return matchesBuilding && matchesFloor && matchesStatus && matchesSearch;
+    // mock data if payload is X then {data, error} is Y
+    const { get, data, error } = useApiTest((payload) => {
+        return {
+            data: [
+                { key: '1', building: 'A1', floor: 1, roomNumber: '101', maxCapacity: 4, currentOccupants: 3, status: 'Còn chỗ' },
+                { key: '2', building: 'A1', floor: 2, roomNumber: '205', maxCapacity: 4, currentOccupants: 4, status: 'Đã đầy' },
+                { key: '3', building: 'B2', floor: 3, roomNumber: '310', maxCapacity: 2, currentOccupants: 1, status: 'Còn chỗ' },
+                { key: '4', building: 'B2', floor: 3, roomNumber: '311', maxCapacity: 2, currentOccupants: 2, status: 'Đã đầy' },
+                { key: '5', building: 'C3', floor: 5, roomNumber: '501', maxCapacity: 6, currentOccupants: 6, status: 'Đã đầy' },
+            ].filter(room => {
+                const matchesBuilding = payload.dorm ? room.building === payload.dorm : true;
+                const matchesFloor = payload.floor ? room.floor === parseInt(payload.floor) : true;
+                const matchesStatus = payload.status ? room.status === payload.status : true;
+                const matchesSearch = payload.roomNumber ? room.roomNumber.toLowerCase().includes(searchText.toLowerCase()) : true;
+                return matchesBuilding && matchesFloor && matchesStatus && matchesSearch;
+            }),
+            error: null
+        };
     });
+
+    // call when first render
+    useEffect(() => {
+        get("/rooms", {
+            dorm: filterBuilding,
+            floor: filterFloor,
+            status: filterStatus,
+            roomNumber: searchText
+        });
+    }, [get, filterBuilding, filterFloor, filterStatus, searchText]);
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
@@ -188,8 +200,9 @@ export function RoomInfoManager() {
 
                     {/* BẢNG DANH SÁCH PHÒNG */}
                     <Table
+                        loading={!data}
                         columns={columns}
-                        dataSource={filteredData}
+                        dataSource={data}
                         pagination={{ pageSize: 10 }}
                         bordered
                     />
