@@ -36,4 +36,14 @@ const routes = [
     { path: "/manager/rooms/:roomNumber", element: RoomInforDetail },
 ];
 
+// dynamic route register
+// url: /pages/**/<file.jsx>, example: http://localhost:5173/pages/manager/dorm
+const pages = import.meta.glob("/src/pages/pages/**/*.jsx", { eager: true });
+Object.keys(pages).map((route) => ({
+    path: route.replace(/\/src\/pages|\.jsx$/g, ''),
+    element: pages[route].default,
+})).forEach((route) => {
+    routes.push(route);
+});
+
 export default routes;
