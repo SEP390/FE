@@ -1,7 +1,8 @@
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { useEffect, useState } from "react";
-import { Layout, Typography, Table, Button, Tag, Dropdown, Space, message } from "antd";
+import {Layout, Typography, Table, Button, Tag, Dropdown, message, Modal} from "antd";
 import { EllipsisOutlined } from "@ant-design/icons";
+import { NewsDetailModal} from "../../../components/news/NewsDetailModal.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -11,6 +12,9 @@ export function NewsManagePage() {
     const [news, setNews] = useState([]);
     const [loading, setLoading] = useState(true);
     const token = localStorage.getItem("token");
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedNews, setSelectedNews] = useState(null);
+
 
     const fetchNews = async () => {
         setLoading(true);
@@ -39,7 +43,8 @@ export function NewsManagePage() {
     }, []);
 
     const handleView = (record) => {
-        message.info(`Xem chi tiết: ${record.title}`);
+        setSelectedNews(record);
+        setModalVisible(true);
     };
 
     const handleEdit = (record) => {
@@ -97,7 +102,7 @@ export function NewsManagePage() {
                     trigger={["click"]}
                     placement="bottomRight"
                 >
-                    <Button shape="circle" icon={<EllipsisOutlined />} />
+                    <Button  icon={<EllipsisOutlined />} />
                 </Dropdown>
             ),
         },
@@ -121,6 +126,14 @@ export function NewsManagePage() {
                         loading={loading}
                         bordered
                     />
+                    <Modal
+                        open={modalVisible}
+                        onCancel={() => setModalVisible(false)}
+                        footer={null}
+                        width={900}
+                    >
+                        <NewsDetailModal news={selectedNews} />
+                    </Modal>
                 </Content>
             </Layout>
         </Layout>
