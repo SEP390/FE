@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import { Layout, Menu, Typography, Card, Row, Col, List, Tag } from 'antd';
 import { HomeOutlined } from "@ant-design/icons";
+// Thêm Link từ react-router-dom
+import { Link } from 'react-router-dom';
 import { SideBarManager } from '../../components/layout/SideBarManger';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
 // --- DỮ LIỆU MOCK (Giả lập) ---
+// Thêm thuộc tính linkTo để xác định đường dẫn
 const mockStats = [
-    { label: "Tổng số sinh viên", value: 200 },
-    { label: "Đơn chờ duyệt", value: 200 },
-    { label: "Phòng Trống", value: 200 },
-    { label: "Tỉ lệ lấp đầy", value: "200%" }, // Giả định là %
+    { label: "Tổng số sinh viên", value: 200, linkTo: "/manager/students" },
+    { label: "Đơn chờ duyệt", value: 200, linkTo: "/manager/requests" },
+    { label: "Phòng Trống", value: 200, linkTo: "/manager/rooms" }, // Sửa: Link tới trang Thông tin phòng
+    { label: "Tỉ lệ lấp đầy", value: "200%", linkTo: "/manager/rooms" }, // Sửa: Link tới trang Thông tin phòng
 ];
 
 const mockRecentRequests = [
@@ -29,7 +32,6 @@ const mockStaffFeedback = [
 // --- COMPONENT CHÍNH ---
 export function DashboardManager() {
     const [collapsed, setCollapsed] = useState(false);
-    // Sử dụng 'manager-home' làm key active mặc định
     const activeKey = 'manager-home';
 
     return (
@@ -58,19 +60,30 @@ export function DashboardManager() {
                     <Row gutter={16} style={{ marginBottom: 40 }}>
                         {mockStats.map((stat, index) => (
                             <Col span={6} key={index}>
-                                <Card bordered={true} style={{ textAlign: 'center' }}>
-                                    <Text type="secondary">{stat.label}</Text>
-                                    <Title level={2} style={{ margin: '8px 0 0 0' }}>{stat.value}</Title>
-                                </Card>
+                                {/* GẮN LINK CHO CARD THỐNG KÊ */}
+                                <Link to={stat.linkTo}>
+                                    <Card
+                                        bordered={true}
+                                        hoverable // Thêm hiệu ứng hover
+                                        style={{ textAlign: 'center', cursor: 'pointer' }}
+                                    >
+                                        <Text type="secondary">{stat.label}</Text>
+                                        <Title level={2} style={{ margin: '8px 0 0 0' }}>{stat.value}</Title>
+                                    </Card>
+                                </Link>
                             </Col>
                         ))}
                     </Row>
 
                     {/* RECENT ACTIVITY & FEEDBACK */}
                     <Row gutter={24}>
-                        {/* ĐƠN GẦN ĐÂY */}
+                        {/* ĐƠN GẦN ĐÂY - GẮN LINK VÀO TIÊU ĐỀ */}
                         <Col span={12}>
-                            <Title level={3} style={{ marginBottom: 20 }}>Đơn gần đây</Title>
+                            <Link to="/manager/requests">
+                                <Title level={3} style={{ marginBottom: 20, cursor: 'pointer', color: '#1890ff' }}>
+                                    Đơn gần đây
+                                </Title>
+                            </Link>
                             <Card bordered={true} style={{ minHeight: 300 }}>
                                 <List
                                     itemLayout="horizontal"
@@ -101,9 +114,13 @@ export function DashboardManager() {
                             </Card>
                         </Col>
 
-                        {/* PHẢN HỒI TỪ NHÂN VIÊN */}
+                        {/* PHẢN HỒI TỪ NHÂN VIÊN - GẮN LINK VÀO TIÊU ĐỀ */}
                         <Col span={12}>
-                            <Title level={3} style={{ marginBottom: 20 }}>Phản hồi từ nhân viên</Title>
+                            <Link to="/manager/violations">
+                                <Title level={3} style={{ marginBottom: 20, cursor: 'pointer', color: '#1890ff' }}>
+                                    Phản hồi từ nhân viên
+                                </Title>
+                            </Link>
                             <Card bordered={true} style={{ minHeight: 300 }}>
                                 <List
                                     itemLayout="horizontal"
