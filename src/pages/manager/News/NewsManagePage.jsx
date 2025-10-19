@@ -4,6 +4,8 @@ import {Layout, Typography, Table, Button, Tag, Dropdown, message, Modal, Space,
 import {EllipsisOutlined, PlusOutlined, SearchOutlined,} from "@ant-design/icons";
 import { NewsDetailModal } from "../../../components/news/NewsDetailModal.jsx";
 import { useNavigate } from "react-router-dom";
+import { UpdateNewsModal } from "../../../components/news/UpdateNewsModal.jsx";
+
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -39,6 +41,8 @@ export function NewsManagePage() {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedNews, setSelectedNews] = useState(null);
     const navigate = useNavigate();
+    const [editModalVisible, setEditModalVisible] = useState(false);
+
 
     // Fetch tin tức từ API có token auth
     const fetchNews = async () => {
@@ -82,29 +86,59 @@ export function NewsManagePage() {
         setFilteredNews(filtered);
     };
 
+
     const handleView = (record) => {
         setSelectedNews(record);
         setModalVisible(true);
     };
 
     const handleEdit = (record) => {
-        message.info(`Chỉnh sửa: ${record.title}`);
+        setSelectedNews(record);
+        setEditModalVisible(true);
     };
 
-    const handleToggleStatus = (record) => {
+
+    const handleToggleStatus = async (record) => {
         const newStatus = record.status === "VISIBLE" ? "HIDDEN" : "VISIBLE";
-        setNews((prev) =>
-            prev.map((n) =>
-                n.newsid === record.newsid ? { ...n, status: newStatus } : n
-            )
-        );
-        setFilteredNews((prev) =>
-            prev.map((n) =>
-                n.newsid === record.newsid ? { ...n, status: newStatus } : n
-            )
-        );
-        message.success(newStatus === "VISIBLE" ? "Tin đã hiển thị" : "Tin đã ẩn");
+
+        try {
+            const res = await fetch(`http://localhost:8080/api/users/updatenews/${record.newsid}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({
+                    title: record.title,
+                    content: record.content,
+                    status: newStatus,
+                    date: record.date,
+                    time: record.time
+                }),
+            });
+
+            if (!res.ok) throw new Error("Update failed");
+            const data = await res.json();
+
+            // Cập nhật trong state
+            setNews((prev) =>
+                prev.map((n) =>
+                    n.newsid === record.newsid ? data.data : n
+                )
+            );
+            setFilteredNews((prev) =>
+                prev.map((n) =>
+                    n.newsid === record.newsid ? data.data : n
+                )
+            );
+
+            message.success(newStatus === "VISIBLE" ? "Tin đã hiển thị" : "Tin đã ẩn");
+        } catch (err) {
+            message.error("Không thể cập nhật trạng thái tin");
+            console.error(err);
+        }
     };
+
 
     const getMenuItems = (record) => [
         {
@@ -184,11 +218,11 @@ export function NewsManagePage() {
                             justifyContent: "space-between",
                         }}
                     >
-                        <Search
+                        <Input
                             placeholder="Tìm kiếm tin tức..."
                             allowClear
-                            enterButton={<SearchOutlined />}
-                            onSearch={handleSearch}
+                            prefix={<SearchOutlined />}
+                            onChange={(e) => handleSearch(e.target.value)}
                             style={{ maxWidth: 400 }}
                         />
                         <Button
@@ -217,6 +251,15 @@ export function NewsManagePage() {
                     >
                         <NewsDetailModal news={selectedNews} />
                     </Modal>
+                    <UpdateNewsModal
+                        open={editModalVisible}
+                        onCancel={() => setEditModalVisible(false)}
+                        news={selectedNews}
+                        onUpdated={(updated) => {
+                            setNews(prev => prev.map(n => n.newsid === updated.newsid ? updated : n));
+                            setFilteredNews(prev => prev.map(n => n.newsid === updated.newsid ? updated : n));
+                        }}
+                    />
                 </Content>
             </Layout>
         </Layout>
