@@ -38,7 +38,7 @@ const routes = [
     { path: "/create-request", element: CreateRequest },
 
     // --- ROUTES DÀNH CHO MANAGER ---
-    { path: "/manager/home", element: DashboardManager },
+    { path: "/manager", element: DashboardManager },
     { path: "/manager/news", element: NewsManagePage },
     { path: "/manager/news/create", element: CreateNewsPage  },
     { path: "/manager/rooms", element: RoomInfoManager },

@@ -14,7 +14,9 @@ import {
 import { SideBarManager } from '../../components/layout/SideBarManger';
 
 const { Header, Content } = Layout;
-const { Title } = Typography;
+
+// ĐÃ SỬA: Thêm 'Text' vào phần destructure từ Typography để giải quyết lỗi Uncaught TypeError
+const { Title, Text } = Typography;
 const { Option } = Select;
 
 // --- DỮ LIỆU MOCK (Giả lập) ---
@@ -59,6 +61,7 @@ const columns = [
         dataIndex: 'name',
         key: 'name',
         sorter: (a, b) => a.name.localeCompare(b.name),
+        // Thành phần <Text> đã hoạt động đúng nhờ việc destructure từ Typography
         render: (text, record) => (
             <Space direction="vertical" size={0}>
                 <Text strong>{text}</Text>

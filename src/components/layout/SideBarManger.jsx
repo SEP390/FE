@@ -18,10 +18,10 @@ import { Bed } from "lucide-react";
 // Lấy Sider từ Layout đã import
 const { Sider } = Layout;
 
-// Định nghĩa các mục menu cho Quản lý (Manager) - KHÔNG CẦN SỬA ĐỔI
+
 const managerItems = [
     {
-        label: <Link to={"/manager/home"}>Home</Link>,
+        label: <Link to={"/manager"}>Home</Link>,
         icon: <HomeOutlined/>,
         key: "manager-home",
     },
@@ -80,7 +80,6 @@ export function SideBarManager({ collapsed, active }) {
             collapsed={collapsed}
             theme="light"
             className={"bg-white border-r border-gray-200"}
-            // Có thể thêm breakpoint và width cố định cho Sider nếu cần
         >
             {/* Logo/Brand Area */}
             <div className="flex items-center justify-center py-4">
@@ -89,12 +88,9 @@ export function SideBarManager({ collapsed, active }) {
 
             <Menu
                 mode="inline"
-                // THAY ĐỔI: Sử dụng selectedKeys thay vì defaultSelectedKeys
                 selectedKeys={[active]}
                 className={"!border-0"}
                 items={managerItems}
-                // Thêm tính năng tắt menu khi click vào item (chỉ cần nếu Menu đang ở chế độ Overlay)
-                // onClick={({ key }) => { /* ... navigate or close menu logic */ }}
             />
         </Sider>
     );
