@@ -12,6 +12,7 @@ import {DashboardManager} from "../pages/manager/DashboardManager.jsx";
 import {RoomInfoManager} from "../pages/manager/RoomInfoManager.jsx";
 // THÊM IMPORT TRANG CHI TIẾT
 import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
+import {StaffManager} from "../pages/manager/StaffManager.jsx";
 
 
 const routes = [
@@ -30,6 +31,7 @@ const routes = [
     { path: "/manager/home", element: DashboardManager },
     { path: "/manager/rooms", element: RoomInfoManager },
     { path: "/manager/rooms/:roomNumber", element: RoomInforDetail },
+    { path: "/manager/staff", element: StaffManager },
 ];
 
 export default routes;
