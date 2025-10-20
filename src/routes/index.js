@@ -18,7 +18,7 @@ import { CreateRequest } from "../pages/resident/request/CreateRequest.jsx";
 // THÊM IMPORT TRANG CHI TIẾT
 import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
 import {StaffManager} from "../pages/manager/StaffManager.jsx";
-
+import {SurveyManagementPage} from "../pages/manager/Survey/SurveyManagementPage.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -44,6 +44,7 @@ const routes = [
     { path: "/manager/rooms", element: RoomInfoManager },
     { path: "/manager/rooms/:roomNumber", element: RoomInforDetail },
     { path: "/manager/staff", element: StaffManager },
+    { path: "/manager/surveys", element: SurveyManagementPage },
 ];
 
 // dynamic route register
