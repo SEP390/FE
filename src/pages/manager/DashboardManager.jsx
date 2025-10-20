@@ -9,25 +9,23 @@ const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
 // --- DỮ LIỆU MOCK (Giả lập) ---
-// Thêm thuộc tính linkTo để xác định đường dẫn
+// Định nghĩa các thống kê quan trọng
 const mockStats = [
     { label: "Tổng số sinh viên", value: 200, linkTo: "/manager/students" },
     { label: "Đơn chờ duyệt", value: 200, linkTo: "/manager/requests" },
     { label: "Phòng Trống", value: 200, linkTo: "/manager/rooms" },
     { label: "Tỉ lệ lấp đầy", value: "200%", linkTo: "/manager/rooms" },
-    // THÊM MỤC MỚI CHO QUẢN LÝ NHÂN VIÊN
     { label: "Tổng số nhân viên", value: 50, linkTo: "/manager/staff" },
+    { label: "Lịch làm việc cần phân bổ", value: 3, linkTo: "/manager/schedule" }, // Dữ liệu mới
 ];
 
 const mockRecentRequests = [
-// ... (giữ nguyên)
     { name: "Nguyễn văn A", type: "đơn xin chuyển phòng", status: "Chờ duyệt" },
     { name: "Nguyễn văn A", type: "đơn xin Check out", status: "Đã duyệt" },
     { name: "Nguyễn văn A", type: "đơn xin chuyển phòng", status: "Từ chối" },
 ];
 
 const mockStaffFeedback = [
-// ... (giữ nguyên)
     { content: "Báo cáo sai phạm của sinh viên A" },
     { content: "Báo cáo lịch xong tắc tuần mới" },
     { content: "Báo cáo sai phạm của sinh viên A" },
@@ -38,23 +36,14 @@ export function DashboardManager() {
     const [collapsed, setCollapsed] = useState(false);
     const activeKey = 'manager-home';
 
-    // Cần tính toán lại số cột cho Row Stats nếu bạn có 5 mục.
-    // Nếu bạn muốn giữ lại layout 4 cột, bạn có thể chỉ hiển thị 4 mục đầu tiên hoặc điều chỉnh span.
-    // Tạm thời, tôi sẽ hiển thị tất cả 5 mục và sử dụng 5 cột (span=4.8) hoặc sử dụng 2 Row.
-    // Phương án đơn giản nhất: Chỉ hiển thị 4 mục quan trọng nhất trên Dashboard.
-
-    // Tuy nhiên, để đáp ứng yêu cầu, tôi sẽ chỉ sửa mảng mockStats mà không thay đổi cấu trúc Row/Col
-    // Nếu bạn muốn hiển thị mục này, bạn nên thay thế một mục ít quan trọng hơn
-    // Hoặc sửa <Row> thành hai <Row> hoặc thay đổi span.
-
-    // **Để giữ layout 4 cột, tôi sẽ thay thế 'Tỉ lệ lấp đầy' bằng 'Tổng số nhân viên'.**
+    // CẬP NHẬT: Chọn 4 mục thống kê quan trọng nhất cho Dashboard
     const statsToDisplay = [
         { label: "Tổng số sinh viên", value: 200, linkTo: "/manager/students" },
         { label: "Đơn chờ duyệt", value: 200, linkTo: "/manager/requests" },
         { label: "Phòng Trống", value: 200, linkTo: "/manager/rooms" },
-        { label: "Tổng số nhân viên", value: 50, linkTo: "/manager/staff" }, // MỤC MỚI
+        // Thay thế "Tổng số nhân viên" bằng "Lịch làm việc cần phân bổ"
+        { label: "Lịch làm việc cần phân bổ", value: 3, linkTo: "/manager/schedule" },
     ];
-    // Hoặc dùng mockStats.slice(0, 4) nếu bạn sửa mảng mockStats gốc
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
@@ -80,7 +69,7 @@ export function DashboardManager() {
                     </Title>
 
                     <Row gutter={16} style={{ marginBottom: 40 }}>
-                        {statsToDisplay.map((stat, index) => ( // SỬ DỤNG statsToDisplay ĐÃ CHỈNH SỬA
+                        {statsToDisplay.map((stat, index) => ( // Dùng statsToDisplay đã cập nhật
                             <Col span={6} key={index}>
                                 <Link to={stat.linkTo}>
                                     <Card
@@ -97,7 +86,6 @@ export function DashboardManager() {
                     </Row>
 
                     {/* RECENT ACTIVITY & FEEDBACK */}
-                    {/* ... (Phần Đơn gần đây và Phản hồi giữ nguyên) */}
                     <Row gutter={24}>
                         {/* ĐƠN GẦN ĐÂY - GẮN LINK VÀO TIÊU ĐỀ */}
                         <Col span={12}>

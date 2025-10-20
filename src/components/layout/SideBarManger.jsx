@@ -5,7 +5,7 @@ import {
     ContainerOutlined,
     InfoCircleOutlined,
     ReadOutlined,
-    ScheduleOutlined,
+    ScheduleOutlined, // ICON cho Quản lí lịch làm việc
     TeamOutlined,
     WarningOutlined,
     FileSearchOutlined,
@@ -51,7 +51,7 @@ const managerItems = [
         key: "manager-news",
     },
     {
-        label: <Link to={"/manager/schedule"}>Quản lí lịch làm việc</Link>,
+        label: <Link to={"/manager/schedule"}>Quản lí lịch làm việc</Link>, // MỤC ĐÃ HOÀN CHỈNH
         icon: <ScheduleOutlined/>,
         key: "manager-schedule",
     },
