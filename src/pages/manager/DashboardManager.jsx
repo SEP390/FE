@@ -13,17 +13,21 @@ const { Title, Text } = Typography;
 const mockStats = [
     { label: "Tổng số sinh viên", value: 200, linkTo: "/manager/students" },
     { label: "Đơn chờ duyệt", value: 200, linkTo: "/manager/requests" },
-    { label: "Phòng Trống", value: 200, linkTo: "/manager/rooms" }, // Sửa: Link tới trang Thông tin phòng
-    { label: "Tỉ lệ lấp đầy", value: "200%", linkTo: "/manager/rooms" }, // Sửa: Link tới trang Thông tin phòng
+    { label: "Phòng Trống", value: 200, linkTo: "/manager/rooms" },
+    { label: "Tỉ lệ lấp đầy", value: "200%", linkTo: "/manager/rooms" },
+    // THÊM MỤC MỚI CHO QUẢN LÝ NHÂN VIÊN
+    { label: "Tổng số nhân viên", value: 50, linkTo: "/manager/staff" },
 ];
 
 const mockRecentRequests = [
+// ... (giữ nguyên)
     { name: "Nguyễn văn A", type: "đơn xin chuyển phòng", status: "Chờ duyệt" },
     { name: "Nguyễn văn A", type: "đơn xin Check out", status: "Đã duyệt" },
     { name: "Nguyễn văn A", type: "đơn xin chuyển phòng", status: "Từ chối" },
 ];
 
 const mockStaffFeedback = [
+// ... (giữ nguyên)
     { content: "Báo cáo sai phạm của sinh viên A" },
     { content: "Báo cáo lịch xong tắc tuần mới" },
     { content: "Báo cáo sai phạm của sinh viên A" },
@@ -33,6 +37,24 @@ const mockStaffFeedback = [
 export function DashboardManager() {
     const [collapsed, setCollapsed] = useState(false);
     const activeKey = 'manager-home';
+
+    // Cần tính toán lại số cột cho Row Stats nếu bạn có 5 mục.
+    // Nếu bạn muốn giữ lại layout 4 cột, bạn có thể chỉ hiển thị 4 mục đầu tiên hoặc điều chỉnh span.
+    // Tạm thời, tôi sẽ hiển thị tất cả 5 mục và sử dụng 5 cột (span=4.8) hoặc sử dụng 2 Row.
+    // Phương án đơn giản nhất: Chỉ hiển thị 4 mục quan trọng nhất trên Dashboard.
+
+    // Tuy nhiên, để đáp ứng yêu cầu, tôi sẽ chỉ sửa mảng mockStats mà không thay đổi cấu trúc Row/Col
+    // Nếu bạn muốn hiển thị mục này, bạn nên thay thế một mục ít quan trọng hơn
+    // Hoặc sửa <Row> thành hai <Row> hoặc thay đổi span.
+
+    // **Để giữ layout 4 cột, tôi sẽ thay thế 'Tỉ lệ lấp đầy' bằng 'Tổng số nhân viên'.**
+    const statsToDisplay = [
+        { label: "Tổng số sinh viên", value: 200, linkTo: "/manager/students" },
+        { label: "Đơn chờ duyệt", value: 200, linkTo: "/manager/requests" },
+        { label: "Phòng Trống", value: 200, linkTo: "/manager/rooms" },
+        { label: "Tổng số nhân viên", value: 50, linkTo: "/manager/staff" }, // MỤC MỚI
+    ];
+    // Hoặc dùng mockStats.slice(0, 4) nếu bạn sửa mảng mockStats gốc
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
@@ -58,13 +80,12 @@ export function DashboardManager() {
                     </Title>
 
                     <Row gutter={16} style={{ marginBottom: 40 }}>
-                        {mockStats.map((stat, index) => (
+                        {statsToDisplay.map((stat, index) => ( // SỬ DỤNG statsToDisplay ĐÃ CHỈNH SỬA
                             <Col span={6} key={index}>
-                                {/* GẮN LINK CHO CARD THỐNG KÊ */}
                                 <Link to={stat.linkTo}>
                                     <Card
                                         bordered={true}
-                                        hoverable // Thêm hiệu ứng hover
+                                        hoverable
                                         style={{ textAlign: 'center', cursor: 'pointer' }}
                                     >
                                         <Text type="secondary">{stat.label}</Text>
@@ -76,6 +97,7 @@ export function DashboardManager() {
                     </Row>
 
                     {/* RECENT ACTIVITY & FEEDBACK */}
+                    {/* ... (Phần Đơn gần đây và Phản hồi giữ nguyên) */}
                     <Row gutter={24}>
                         {/* ĐƠN GẦN ĐÂY - GẮN LINK VÀO TIÊU ĐỀ */}
                         <Col span={12}>
@@ -136,7 +158,6 @@ export function DashboardManager() {
                             </Card>
                         </Col>
                     </Row>
-
                 </Content>
             </Layout>
         </Layout>
