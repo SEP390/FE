@@ -5,7 +5,7 @@ import {useEffect, useState} from "react";
 
 const {TabPane} = Tabs;
 
-const mockDorm = "de451d96-cef9-415b-be2f-c9520694b480";
+const mockDorm = "4e8a9e06-548f-43cb-ac81-e253ccc1c96a";
 
 function RoomButton({data, setSelect}) {
     const onClick = () => {
@@ -13,7 +13,7 @@ function RoomButton({data, setSelect}) {
         setSelect(data)
     }
     return <>
-        <Button disabled={data.roomNumber !== "C105"} onClick={onClick}>{data.roomNumber}</Button>
+        <Button onClick={onClick}>{data.roomNumber}</Button>
     </>
 }
 
@@ -77,6 +77,27 @@ function RoomSkeleton() {
 function CreateBillForm({ data, setSelect }) {
     const [form] = Form.useForm();
 
+    const {post, data: response, error} = useApi();
+
+    const onFinish = ({price, kw, m3}) => {
+        post("/electric-water-room", {
+            roomId: data.id,
+            price, kw, m3
+        })
+    }
+
+    useEffect(() => {
+        if (response) {
+            setTimeout(() => {
+                setSelect(null)
+            }, 2000);
+        }
+    }, [response, setSelect]);
+
+    const errorMsg = {
+        NO_USER_IN_ROOM: "Phòng không có người"
+    }
+
     return <>
         <Card title={`Phòng ${data.roomNumber}`}>
             <Tabs type={"card"} defaultActiveKey={"FA25"}>
@@ -84,6 +105,7 @@ function CreateBillForm({ data, setSelect }) {
                 <TabPane tab={"FA25"} key={"FA25"}>
                     <Form
                         form={form}
+                        onFinish={onFinish}
                         name="unit-price-form"
                         initialValues={{
                             kw_value: 0,
@@ -140,11 +162,13 @@ function CreateBillForm({ data, setSelect }) {
                         </Form.Item>
                         <Form.Item>
                             <div className={"flex gap-2"}>
-                                <Button type={"primary"} onClick={() => setSelect(null)}>Cập nhật</Button>
+                                <Button type={"primary"} htmlType={"submit"}>Cập nhật</Button>
                                 <Button onClick={() => setSelect(null)}>Hủy</Button>
                             </div>
                         </Form.Item>
                     </Form>
+                    {error && <Alert type={"error"} message={"Lỗi"} description={errorMsg[error] ? errorMsg[error] : error} />}
+                    {response && <Alert type={"success"} message={"Tạo thành công"} />}
                 </TabPane>
             </Tabs>
         </Card>
@@ -178,7 +202,7 @@ export function GuardElectricWaterPage() {
     return <>
         <AppLayout>
             {notifEl}
-            <Card className={"h-full overflow-auto"} title={"Hóa đơn điện nước Dorm C"}>
+            <Card className={"h-full overflow-auto"} title={"Hóa đơn điện nước"}>
                 {content}
             </Card>
         </AppLayout>

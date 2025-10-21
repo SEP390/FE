@@ -47,6 +47,14 @@ export function ElectricWaterBillPage() {
             }
         },
         {
+            title: 'Kỳ',
+            dataIndex: 'semesterName',
+            key: 'semesterName',
+            render: (value) => {
+                return <Tag>{value}</Tag>
+            }
+        },
+        {
             title: 'Số điện',
             dataIndex: 'kw',
             key: 'kw',
@@ -90,6 +98,7 @@ export function ElectricWaterBillPage() {
     const dataSource = data ? data.map(item => {
         item.key = item.id;
         Object.assign(item, item.roomBill);
+        item.semesterName = item.semester.semesterName;
         return item;
     }) : []
 
