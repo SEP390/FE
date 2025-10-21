@@ -24,7 +24,7 @@ export function StudentInformationPage() {
                 gender: formattedGender,
                 mail: userData.email || 'N/A',
                 bed: userData.slotName || 'N/A',
-                StudentId: userData.StudentId || 'N/A',
+                StudentId: userData.studentId || 'N/A',
             });
         }
     }, [isSuccess, data]);
