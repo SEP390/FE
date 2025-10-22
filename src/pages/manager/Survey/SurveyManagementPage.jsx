@@ -1,7 +1,8 @@
-import { Layout, Typography, Table, Dropdown, Button, message, Space } from "antd";
-import { EllipsisOutlined } from "@ant-design/icons";
+import {Layout, Typography, Table, Dropdown, Button, message, Space, Input} from "antd";
+import {EllipsisOutlined, PlusOutlined, SearchOutlined} from "@ant-design/icons";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { useEffect, useState } from "react";
+import {useNavigate} from "react-router-dom";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -9,7 +10,38 @@ const { Title } = Typography;
 export function SurveyManagementPage() {
     const [collapsed] = useState(false);
     const [questions, setQuestions] = useState([]);
+    const [filteredQuestion, setFilteredQuestion] = useState([]);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
+
+
+    function removeVietnameseTones(str = "") {
+        return str
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/đ/g, "d")
+            .replace(/Đ/g, "D")
+            .toLowerCase();
+    }
+
+    function normalizeSpaces(str = "") {
+        return str.replace(/\s+/g, " ").trim();
+    }
+
+    const handleSearch = (value) => {
+        const normalizedValue = normalizeSpaces(removeVietnameseTones(value));
+
+        if (!normalizedValue) {
+            setFilteredQuestion(questions);
+            return;
+        }
+
+        const filtered = questions.filter((q) =>
+            removeVietnameseTones(q.questionContent).includes(normalizedValue)
+        );
+        setFilteredQuestion(filtered);
+    };
+
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -21,7 +53,8 @@ export function SurveyManagementPage() {
             .then((res) => res.json())
             .then((data) => {
                 if (data.status === 200) {
-                    setQuestions(data.data);
+                    setQuestions(data.data)
+                    setFilteredQuestion(data.data);
                 } else {
                     message.error("Không thể tải dữ liệu khảo sát");
                 }
@@ -107,9 +140,33 @@ export function SurveyManagementPage() {
                 </Header>
 
                 <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+
+                    <Space
+                        style={{
+                            marginBottom: 16,
+                            width: "100%",
+                            justifyContent: "space-between",
+                        }}
+                    >
+                        <Input
+                            placeholder="Tìm kiếm tin tức..."
+                            allowClear
+                            prefix={<SearchOutlined />}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            style={{ maxWidth: 400 }}
+                        />
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => navigate("/manager/surveyquestions/create")}
+                        >
+                            Tạo câu hỏi mới
+                        </Button>
+                    </Space>
+
                     <Table
                         columns={columns}
-                        dataSource={questions}
+                        dataSource={filteredQuestion}
                         rowKey="id"
                         loading={loading}
                         pagination={false}
