@@ -1,12 +1,16 @@
 import React, { useEffect } from 'react';
 import { AppLayout } from '../../components/layout/AppLayout.jsx';
-import { Card, Typography, List, Divider } from 'antd';
-import { useNavigate } from 'react-router-dom';  // 👈 Thêm dòng này
+import { Card, Typography, List, Divider, Spin, Alert } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import { useSemester } from '../../hooks/useSemester.js';
 
 const { Title, Text, Link } = Typography;
 
 export function DashboardPage() {
-    const navigate = useNavigate(); // 👈 hook điều hướng
+    const navigate = useNavigate();
+
+    // 🔥 Sử dụng hook useSemester để lấy thông tin học kỳ hiện tại
+    const { currentSemester, loading: semesterLoading, error: semesterError } = useSemester();
 
     const newsData = [
         {
@@ -40,7 +44,11 @@ export function DashboardPage() {
         <AppLayout>
             <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Phần News */}
-                <Card title={<span style={{ color: 'white' }}>News</span>} headStyle={{ background: '#004aad' }} className="lg:col-span-2">
+                <Card
+                    title={<span style={{ color: 'white' }}>News</span>}
+                    headStyle={{ background: '#004aad' }}
+                    className="lg:col-span-2"
+                >
                     <List
                         dataSource={newsData}
                         renderItem={(item) => (
@@ -58,13 +66,60 @@ export function DashboardPage() {
                         )}
                     />
                     <div style={{ textAlign: 'center', marginTop: 8 }}>
-                        {/* 👇 Khi nhấn See more sẽ chuyển tới /news */}
                         <Link onClick={() => navigate('/news')}>See more</Link>
                     </div>
                 </Card>
 
-                    {/* Liên hệ */}
-                    <Card title="📞 Thông tin liên hệ">
+                {/* Cột bên phải - Sidebar */}
+                <div className="space-y-4">
+                    {/* 🔥 Card hiển thị thông tin học kỳ hiện tại */}
+                    <Card
+                        title={<span style={{ color: 'white' }}>📚 Học kỳ hiện tại</span>}
+                        headStyle={{ background: '#004aad' }}
+                    >
+                        {semesterLoading ? (
+                            <div className="flex justify-center py-4">
+                                <Spin tip="Đang tải..." />
+                            </div>
+                        ) : semesterError ? (
+                            <Alert
+                                message="Lỗi"
+                                description={semesterError}
+                                type="error"
+                                showIcon
+                            />
+                        ) : currentSemester ? (
+                            <div>
+                                <div className="mb-3">
+                                    <Text strong style={{ fontSize: '18px', color: '#004aad' }}>
+                                        {currentSemester.name}
+                                    </Text>
+                                </div>
+                                <List size="small">
+                                    <List.Item>
+                                        <Text type="secondary">Ngày bắt đầu:</Text>
+                                        <Text strong className="ml-2">
+                                            {new Date(currentSemester.startDate).toLocaleDateString('vi-VN')}
+                                        </Text>
+                                    </List.Item>
+                                    <List.Item>
+                                        <Text type="secondary">Ngày kết thúc:</Text>
+                                        <Text strong className="ml-2">
+                                            {new Date(currentSemester.endDate).toLocaleDateString('vi-VN')}
+                                        </Text>
+                                    </List.Item>
+                                </List>
+                            </div>
+                        ) : (
+                            <Text type="secondary">Không có thông tin học kỳ</Text>
+                        )}
+                    </Card>
+
+                    {/* Card liên hệ */}
+                    <Card
+                        title={<span style={{ color: 'white' }}>📞 Thông tin liên hệ</span>}
+                        headStyle={{ background: '#004aad' }}
+                    >
                         <List size="small">
                             <List.Item>
                                 <Text strong>Security room:</Text> (024) 6680 5 913
@@ -83,7 +138,7 @@ export function DashboardPage() {
                         </List>
                     </Card>
                 </div>
-
+            </div>
         </AppLayout>
     );
 }
