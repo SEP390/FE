@@ -13,6 +13,7 @@ export function StudentInformationPage() {
         get("/users/profile");
     }, [get]);
 
+
     useEffect(() => {
         if (isSuccess && data) {
             const userData = data; // Assuming BaseResponse structure with 'data' field
