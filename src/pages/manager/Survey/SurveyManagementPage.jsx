@@ -3,7 +3,7 @@ import {EllipsisOutlined, PlusOutlined, SearchOutlined} from "@ant-design/icons"
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { useEffect, useState } from "react";
 import {useNavigate} from "react-router-dom";
-import {CreateQuestionModal} from "../../../components/Survery/CreateQuestionModal.jsx";
+import {QuestionModal} from "../../../components/Survery/QuestionModal.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -13,8 +13,8 @@ export function SurveyManagementPage() {
     const [questions, setQuestions] = useState([]);
     const [filteredQuestion, setFilteredQuestion] = useState([]);
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
     const [modalVisible, setModalVisible] = useState(false);
+    const [editID, setEditID] = useState(null);
 
 
     function removeVietnameseTones(str = "") {
@@ -69,14 +69,19 @@ export function SurveyManagementPage() {
     }, []);
 
     const handleEdit = (record) => {
-        message.info(`Chỉnh sửa câu hỏi: ${record.questionContent}`);
-        // TODO: thêm modal edit
+        setEditID(record.id);
+        setModalVisible(true);
     };
 
     const handleDelete = (record) => {
         message.warning(`Xóa câu hỏi có id: ${record.id}`);
         // TODO: gọi API DELETE
     };
+
+    const handleCreate = () => {
+        setEditID(null);
+        setModalVisible(true);
+    }
 
     const getMenuItems = (record) => [
         {
@@ -160,7 +165,7 @@ export function SurveyManagementPage() {
                         <Button
                             type="primary"
                             icon={<PlusOutlined />}
-                            onClick={() => setModalVisible(true)}
+                            onClick={() => handleCreate()}
                         >
                             Tạo câu hỏi mới
                         </Button>
@@ -174,10 +179,11 @@ export function SurveyManagementPage() {
                         pagination={false}
                     />
                 </Content>
-                <CreateQuestionModal
+                <QuestionModal
                     open={modalVisible}
+                    questionId={editID}
                     onCancel={() => setModalVisible(false)}
-                    onSuccess={() => window.location.reload()}
+                    // onSuccess={() => window.location.reload()}
                 />
             </Layout>
         </Layout>
