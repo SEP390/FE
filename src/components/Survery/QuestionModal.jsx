@@ -1,72 +1,67 @@
 import { useEffect, useState } from "react";
 import { Modal, Input, Table, Button, message, Space } from "antd";
 
-export function QuestionModal({ open, onCancel, questionId }) {
+export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
     const [question, setQuestion] = useState("");
     const [answers, setAnswers] = useState([{ id: Date.now(), content: "", isNew: true }]);
     const [loading, setLoading] = useState(false);
 
     const token = localStorage.getItem("token");
 
-    // Nếu có questionId => fetch dữ liệu để update
+    // Reset mỗi khi mở modal hoặc questionId thay đổi
     useEffect(() => {
-        if (questionId) {
-            setLoading(true);
-            fetch(`http://localhost:8080/api/surveys/${questionId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 200 && data.data) {
-                        const q = data.data;
-                        setQuestion(q.questionContent);
-                        setAnswers(
-                            q.options?.length
-                                ? q.options.map(o => ({
-                                    id: o.id,
-                                    content: o.optionContent || "",
-                                    isExisting: true,
-                                }))
-                                : [{ id: Date.now(), content: "", isNew: true }]
-                        );
-                    } else {
-                        message.error("Không tải được dữ liệu câu hỏi");
-                    }
+        if (open) {
+            if (questionId) {
+                setLoading(true);
+                fetch(`http://localhost:8080/api/surveys/${questionId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
                 })
-                .catch(() => message.error("Lỗi server"))
-                .finally(() => setLoading(false));
-        } else {
-            // reset khi tạo mới
-            setQuestion("");
-            setAnswers([{ id: Date.now(), content: "", isNew: true }]);
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 200 && data.data) {
+                            const q = data.data;
+                            setQuestion(q.questionContent || "");
+                            setAnswers(
+                                q.options?.length
+                                    ? q.options.map(o => ({
+                                        id: o.id,
+                                        content: o.optionContent || "",
+                                        isExisting: true,
+                                    }))
+                                    : [{ id: Date.now(), content: "", isNew: true }]
+                            );
+                        } else {
+                            message.error("Không tải được dữ liệu câu hỏi");
+                        }
+                    })
+                    .catch(() => message.error("Lỗi server"))
+                    .finally(() => setLoading(false));
+            } else {
+                // tạo mới
+                setQuestion("");
+                setAnswers([{ id: Date.now(), content: "", isNew: true }]);
+            }
         }
-    }, [questionId]);
+    }, [open, questionId]);
 
-    // Thêm hàng mới
     const handleAddRow = () => {
         setAnswers([...answers, { id: Date.now(), content: "", isNew: true }]);
     };
 
-    // Cập nhật nội dung câu trả lời
     const handleAnswerChange = (id, value) => {
-        setAnswers(prev =>
-            prev.map(a => (a.id === id ? { ...a, content: value } : a))
-        );
+        setAnswers(prev => prev.map(a => (a.id === id ? { ...a, content: value } : a)));
     };
 
-    // Xoá hàng khỏi bảng
     const handleDeleteRow = (id) => {
         setAnswers(prev => prev.filter(a => a.id !== id));
     };
 
-    // Đóng modal
     const handleClose = () => {
         setQuestion("");
         setAnswers([{ id: Date.now(), content: "", isNew: true }]);
         onCancel();
     };
 
-    // Lưu dữ liệu
     const handleSave = async () => {
         if (!question.trim()) {
             message.warning("Vui lòng nhập nội dung câu hỏi");
@@ -77,7 +72,7 @@ export function QuestionModal({ open, onCancel, questionId }) {
 
         try {
             if (!questionId) {
-                // POST: thêm mới câu hỏi + câu trả lời
+                // POST: thêm mới
                 const res = await fetch("http://localhost:8080/api/surveys", {
                     method: "POST",
                     headers: {
@@ -94,9 +89,10 @@ export function QuestionModal({ open, onCancel, questionId }) {
                 if (res.ok) {
                     message.success("Thêm câu hỏi thành công");
                     handleClose();
+                    onSuccess && onSuccess(); // 🔄 reload danh sách
                 } else message.error("Không thể thêm câu hỏi");
             } else {
-                // PUT: cập nhật câu hỏi
+                // PUT: cập nhật
                 const resQ = await fetch(`http://localhost:8080/api/surveys/${questionId}`, {
                     method: "PUT",
                     headers: {
@@ -107,7 +103,6 @@ export function QuestionModal({ open, onCancel, questionId }) {
                 });
                 if (!resQ.ok) throw new Error("Cập nhật câu hỏi thất bại");
 
-                // PUT hoặc POST câu trả lời
                 for (const a of answers) {
                     if (!a.content.trim()) continue;
 
@@ -137,6 +132,7 @@ export function QuestionModal({ open, onCancel, questionId }) {
 
                 message.success("Cập nhật câu hỏi thành công");
                 handleClose();
+                onSuccess && onSuccess(); // 🔄 reload danh sách
             }
         } catch (err) {
             console.error(err);
@@ -201,3 +197,4 @@ export function QuestionModal({ open, onCancel, questionId }) {
         </Modal>
     );
 }
+

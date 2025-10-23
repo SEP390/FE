@@ -183,7 +183,7 @@ export function SurveyManagementPage() {
                     open={modalVisible}
                     questionId={editID}
                     onCancel={() => setModalVisible(false)}
-                    // onSuccess={() => window.location.reload()}
+                    onSuccess={() => window.location.reload()}
                 />
             </Layout>
         </Layout>
