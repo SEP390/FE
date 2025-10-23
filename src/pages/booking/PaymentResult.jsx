@@ -19,6 +19,13 @@ export function PaymentResult() {
         console.log(data);
     }, [data]);
 
+    const subTitle = (data) => {
+        if (data && data.slotHistory) {
+            return <span>{data.slotHistory.slot.slotName}, {data.slotHistory.slot.room.roomNumber}, {data.slotHistory.slot.room.dorm.dormName}</span>
+        }
+        return "";
+    }
+
     return <>
         <AppLayout>
             <div className={"h-full bg-white rounded-lg flex items-center justify-center"}>
@@ -34,6 +41,7 @@ export function PaymentResult() {
                         <Result
                             status="success"
                             title="Thanh toán thành công"
+                            subTitle={subTitle(data)}
                         />
                     </>}
                 </div>

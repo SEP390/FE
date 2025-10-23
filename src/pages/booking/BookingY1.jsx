@@ -2,7 +2,7 @@ import {RoomCard} from "../../components/booking/RoomCard.jsx";
 import {RoomConfirmModal} from "../../components/booking/RoomConfirmModal.jsx";
 import {useEffect, useState} from "react";
 import {useApi} from "../../hooks/useApi.js";
-import {Card, notification, Skeleton} from "antd";
+import {Alert, Card, notification, Skeleton} from "antd";
 
 /**
  * @typedef {{matching: number, availableSlot: number, totalSlot: number}} RoomMatching
@@ -15,7 +15,7 @@ export function BookingY1() {
     /**
      * @type {{data: RoomMatching}}
      */
-    const {get, data, isError, error} = useApi();
+    const {get, data, isError, error, isSuccess} = useApi();
 
     const [{error: errorNotification}, context] = notification.useNotification();
 
@@ -42,6 +42,9 @@ export function BookingY1() {
         <Card title={"Đặt phòng"} className={"h-full"}>
             <RoomConfirmModal isOpen={isOpen} setIsOpen={setIsOpen} room={room} />
             <div className={"flex gap-3 flex-wrap"}>
+                {isSuccess && data.length === 0 && <>
+                    <Alert message={"Không còn phòng phù hợp với bạn"} />
+                </>}
                 {!data && skeleton}
                 {data && data.sort((a, b) => (b.matching - a.matching)).map(r =>
                     <RoomCard key={r.id} setSelected={setRoom} setIsOpen={setIsOpen} data={r} />)}

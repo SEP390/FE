@@ -23,7 +23,7 @@ export function RoomCard({ data, setSelected, setIsOpen }) {
                         </div>
                     </div>
                     <div className={"text-gray-600 border-l-2 pl-3 border-gray-300"}>
-                        Còn lại {data.availableSlot}/{data.totalSlot} slot
+                        Phòng {data.totalSlot} giường
                     </div>
                 </div>
                 <div className={"ml-auto"}>
@@ -32,7 +32,7 @@ export function RoomCard({ data, setSelected, setIsOpen }) {
                             <Tag color={matchColor} className="text-sm font-semibold">{data.matching}% Match</Tag>
                         </div>
                         <div className={"flex flex-col items-end"}>
-                            <div className={"text-2xl font-medium"}>{formatPrice(data.price)}</div>
+                            <div className={"text-2xl font-medium"}>{formatPrice(data.pricing.price)}</div>
                             <div className={"text-gray-500"}>/ 1 tháng</div>
                         </div>
                         <div className={"mt-auto"}>

@@ -8,7 +8,7 @@ function BillAction({data}) {
     const {get, data: paymentUrl} = useApi();
 
     const onClick = () => {
-        get("/electric-water/" + data);
+        get(`/electric-water-bill/${data.id}/payment-url`);
     }
 
     if (paymentUrl) {
@@ -47,29 +47,36 @@ export function ElectricWaterBillPage() {
             }
         },
         {
+            title: 'Kỳ',
+            dataIndex: 'semesterName',
+            key: 'semesterName',
+            render: (value) => {
+                return <Tag>{value}</Tag>
+            }
+        },
+        {
             title: 'Số điện',
-            dataIndex: 'kw',
-            key: 'kw',
+            dataIndex: 'electricIndex',
+            key: 'electricIndex',
             render: (value) => {
                 return Intl.NumberFormat('vi-VN', {}).format(value) + " kw"
             }
         },
         {
             title: 'Số nước',
-            dataIndex: 'm3',
-            key: 'm3',
+            dataIndex: 'waterIndex',
+            key: 'waterIndex',
             render: (value) => {
                 return <span>{Intl.NumberFormat('vi-VN', {}).format(value)} m<sup>3</sup></span>
             }
         },
         {
-            title: "Trạng thái",
-            dataIndex: "status",
-            key: 'status',
-            render: (status) => {
-                if (status === 'PENDING') return <Tag color="default">CHỜ THANH TOÁN</Tag>
-                if (status === 'SUCCESS') return <Tag color="green">ĐÃ THANH TOÁN</Tag>
-                return <Tag color="red">HỦY THANH TOÁN</Tag>
+            title: "Thanh toán",
+            dataIndex: "paid",
+            key: 'paid',
+            render: (paid) => {
+                if (!paid) return <Tag color="default">CHỜ THANH TOÁN</Tag>
+                return <Tag color="green">ĐÃ THANH TOÁN</Tag>
             }
         },
         {
@@ -77,19 +84,23 @@ export function ElectricWaterBillPage() {
             dataIndex: 'id',
             key: 'id',
             render: (value, row) => {
-                if (row.status === "PENDING") return <BillAction data={value}/>
+                if (!row.paid) return <BillAction data={row}/>
                 return <></>
             }
         },
     ];
 
     useEffect(() => {
-        get("/electric-water")
+        get("/electric-water-bill/user")
     }, []);
 
-    const dataSource = data ? data.map(item => {
+    const dataSource = data ? data.content.map(item => {
         item.key = item.id;
-        Object.assign(item, item.roomBill);
+        Object.assign(item, item.bill);
+        item.waterIndex = item.index.waterIndex;
+        item.electricIndex = item.index.electricIndex;
+        item.semesterName = item.index.semester.name;
+        item.semesterId = item.index.semester.id;
         return item;
     }) : []
 
