@@ -3,9 +3,8 @@ import { Modal, Input, Table, Button, message, Space } from "antd";
 
 export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
     const [question, setQuestion] = useState("");
-    const [answers, setAnswers] = useState([{ id: Date.now(), content: "", isNew: true }]);
+    const [answers, setAnswers] = useState([{ id: Date.now(), optionName: "", isNew: true }]);
     const [loading, setLoading] = useState(false);
-
     const token = localStorage.getItem("token");
 
     // Reset mỗi khi mở modal hoặc questionId thay đổi
@@ -25,10 +24,10 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
                                 q.options?.length
                                     ? q.options.map(o => ({
                                         id: o.id,
-                                        content: o.optionContent || "",
+                                        optionName: o.optionContent || "",
                                         isExisting: true,
                                     }))
-                                    : [{ id: Date.now(), content: "", isNew: true }]
+                                    : [{ id: Date.now(), optionName: "", isNew: true }]
                             );
                         } else {
                             message.error("Không tải được dữ liệu câu hỏi");
@@ -39,17 +38,17 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
             } else {
                 // tạo mới
                 setQuestion("");
-                setAnswers([{ id: Date.now(), content: "", isNew: true }]);
+                setAnswers([{ id: Date.now(), optionName: "", isNew: true }]);
             }
         }
     }, [open, questionId]);
 
     const handleAddRow = () => {
-        setAnswers([...answers, { id: Date.now(), content: "", isNew: true }]);
+        setAnswers([...answers, { id: Date.now(), optionName: "", isNew: true }]);
     };
 
     const handleAnswerChange = (id, value) => {
-        setAnswers(prev => prev.map(a => (a.id === id ? { ...a, content: value } : a)));
+        setAnswers(prev => prev.map(a => (a.id === id ? { ...a, optionName: value } : a)));
     };
 
     const handleDeleteRow = (id) => {
@@ -58,7 +57,7 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
 
     const handleClose = () => {
         setQuestion("");
-        setAnswers([{ id: Date.now(), content: "", isNew: true }]);
+        setAnswers([{ id: Date.now(), optionName: "", isNew: true }]);
         onCancel();
     };
 
@@ -69,10 +68,9 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
         }
 
         setLoading(true);
-
         try {
             if (!questionId) {
-                // POST: thêm mới
+                // POST: thêm mới câu hỏi và các đáp án
                 const res = await fetch("http://localhost:8080/api/surveys", {
                     method: "POST",
                     headers: {
@@ -82,17 +80,17 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
                     body: JSON.stringify({
                         questionContent: question,
                         surveyOptions: answers
-                            .filter(a => a.content.trim() !== "")
-                            .map(a => ({ content: a.content })),
+                            .filter(a => a.optionName.trim() !== "")
+                            .map(a => ({ optionName: a.optionName })),
                     }),
                 });
                 if (res.ok) {
                     message.success("Thêm câu hỏi thành công");
                     handleClose();
-                    onSuccess && onSuccess(); // 🔄 reload danh sách
+                    onSuccess && onSuccess();
                 } else message.error("Không thể thêm câu hỏi");
             } else {
-                // PUT: cập nhật
+                // PUT: cập nhật câu hỏi và các đáp án
                 const resQ = await fetch(`http://localhost:8080/api/surveys/${questionId}`, {
                     method: "PUT",
                     headers: {
@@ -104,7 +102,7 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
                 if (!resQ.ok) throw new Error("Cập nhật câu hỏi thất bại");
 
                 for (const a of answers) {
-                    if (!a.content.trim()) continue;
+                    if (!a.optionName.trim()) continue;
 
                     if (a.isExisting) {
                         await fetch(`http://localhost:8080/api/survey-options/${a.id}`, {
@@ -113,7 +111,7 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
                                 "Content-Type": "application/json",
                                 Authorization: `Bearer ${token}`,
                             },
-                            body: JSON.stringify({ content: a.content }),
+                            body: JSON.stringify({ optionName: a.optionName }),
                         });
                     } else if (a.isNew) {
                         await fetch("http://localhost:8080/api/survey-select", {
@@ -124,7 +122,7 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
                             },
                             body: JSON.stringify({
                                 surveyId: questionId,
-                                content: a.content,
+                                optionName: a.optionName,
                             }),
                         });
                     }
@@ -132,7 +130,7 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
 
                 message.success("Cập nhật câu hỏi thành công");
                 handleClose();
-                onSuccess && onSuccess(); // 🔄 reload danh sách
+                onSuccess && onSuccess();
             }
         } catch (err) {
             console.error(err);
@@ -145,10 +143,10 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
     const columns = [
         {
             title: "Nội dung câu trả lời",
-            dataIndex: "content",
+            dataIndex: "optionName",
             render: (_, record) => (
                 <Input
-                    value={record.content}
+                    value={record.optionName}
                     onChange={(e) => handleAnswerChange(record.id, e.target.value)}
                     placeholder="Nhập nội dung câu trả lời"
                 />
