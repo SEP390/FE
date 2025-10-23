@@ -3,6 +3,7 @@ import {EllipsisOutlined, PlusOutlined, SearchOutlined} from "@ant-design/icons"
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { useEffect, useState } from "react";
 import {useNavigate} from "react-router-dom";
+import {CreateQuestionModal} from "../../../components/Survery/CreateQuestionModal.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -13,6 +14,7 @@ export function SurveyManagementPage() {
     const [filteredQuestion, setFilteredQuestion] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const [modalVisible, setModalVisible] = useState(false);
 
 
     function removeVietnameseTones(str = "") {
@@ -158,7 +160,7 @@ export function SurveyManagementPage() {
                         <Button
                             type="primary"
                             icon={<PlusOutlined />}
-                            onClick={() => navigate("/manager/surveyquestions/create")}
+                            onClick={() => setModalVisible(true)}
                         >
                             Tạo câu hỏi mới
                         </Button>
@@ -172,6 +174,11 @@ export function SurveyManagementPage() {
                         pagination={false}
                     />
                 </Content>
+                <CreateQuestionModal
+                    open={modalVisible}
+                    onCancel={() => setModalVisible(false)}
+                    onSuccess={() => window.location.reload()}
+                />
             </Layout>
         </Layout>
     );
