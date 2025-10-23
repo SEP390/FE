@@ -12,9 +12,15 @@ import {DashboardManager} from "../pages/manager/DashboardManager.jsx";
 import {NewsManagePage} from "../pages/manager//News/NewsManagePage.jsx";
 import {CreateNewsPage} from "../pages/manager/News/CreateNewspage.jsx";
 import {RoomInfoManager} from "../pages/manager/RoomInfoManager.jsx";
+import { StudentInformationPage } from "../pages/resident/information/StudentInformationPage.jsx";
+import { MyRequest } from "../pages/resident/request/MyRequest.jsx";
+import { CreateRequest } from "../pages/resident/request/CreateRequest.jsx";
 // THÊM IMPORT TRANG CHI TIẾT
 import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
-
+import {StaffManager} from "../pages/manager/StaffManager.jsx";
+import {SurveyManagementPage} from "../pages/manager/Survey/SurveyManagementPage.jsx";
+import { ScheduleManager } from "../pages/manager/ScheduleManager.jsx";
+import { ShiftConfigurationPage } from "../pages/manager/ShiftConfigurationPage.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -28,12 +34,21 @@ const routes = [
     { path: "/electric-water", element: ElectricWaterBillPage },
     { path: "/guard/electric-water", element: GuardElectricWaterPage },
 
+    // --- ROUTES DÀNH CHO CƯ DÂN (RESIDENT) ---
+    { path: "/student-info", element: StudentInformationPage },
+    { path: "/my-requests", element: MyRequest },
+    { path: "/create-request", element: CreateRequest },
+
     // --- ROUTES DÀNH CHO MANAGER ---
-    { path: "/manager/home", element: DashboardManager },
+    { path: "/manager", element: DashboardManager },
     { path: "/manager/news", element: NewsManagePage },
     { path: "/manager/news/create", element: CreateNewsPage  },
     { path: "/manager/rooms", element: RoomInfoManager },
     { path: "/manager/rooms/:roomNumber", element: RoomInforDetail },
+    { path: "/manager/staff", element: StaffManager },
+    { path: "/manager/schedule", element: ScheduleManager },
+    { path: "/manager/shifts", element: ShiftConfigurationPage },
+    { path: "/manager/surveys", element: SurveyManagementPage },
 ];
 
 // dynamic route register

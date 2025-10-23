@@ -9,12 +9,14 @@ const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
 // --- DỮ LIỆU MOCK (Giả lập) ---
-// Thêm thuộc tính linkTo để xác định đường dẫn
+// Định nghĩa các thống kê quan trọng
 const mockStats = [
     { label: "Tổng số sinh viên", value: 200, linkTo: "/manager/students" },
     { label: "Đơn chờ duyệt", value: 200, linkTo: "/manager/requests" },
-    { label: "Phòng Trống", value: 200, linkTo: "/manager/rooms" }, // Sửa: Link tới trang Thông tin phòng
-    { label: "Tỉ lệ lấp đầy", value: "200%", linkTo: "/manager/rooms" }, // Sửa: Link tới trang Thông tin phòng
+    { label: "Phòng Trống", value: 200, linkTo: "/manager/rooms" },
+    { label: "Tỉ lệ lấp đầy", value: "200%", linkTo: "/manager/rooms" },
+    { label: "Tổng số nhân viên", value: 50, linkTo: "/manager/staff" },
+    { label: "Lịch làm việc cần phân bổ", value: 3, linkTo: "/manager/schedule" }, // Dữ liệu mới
 ];
 
 const mockRecentRequests = [
@@ -33,6 +35,15 @@ const mockStaffFeedback = [
 export function DashboardManager() {
     const [collapsed, setCollapsed] = useState(false);
     const activeKey = 'manager-home';
+
+    // CẬP NHẬT: Chọn 4 mục thống kê quan trọng nhất cho Dashboard
+    const statsToDisplay = [
+        { label: "Tổng số sinh viên", value: 200, linkTo: "/manager/students" },
+        { label: "Đơn chờ duyệt", value: 200, linkTo: "/manager/requests" },
+        { label: "Phòng Trống", value: 200, linkTo: "/manager/rooms" },
+        // Thay thế "Tổng số nhân viên" bằng "Lịch làm việc cần phân bổ"
+        { label: "Lịch làm việc cần phân bổ", value: 3, linkTo: "/manager/schedule" },
+    ];
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
@@ -58,13 +69,12 @@ export function DashboardManager() {
                     </Title>
 
                     <Row gutter={16} style={{ marginBottom: 40 }}>
-                        {mockStats.map((stat, index) => (
+                        {statsToDisplay.map((stat, index) => ( // Dùng statsToDisplay đã cập nhật
                             <Col span={6} key={index}>
-                                {/* GẮN LINK CHO CARD THỐNG KÊ */}
                                 <Link to={stat.linkTo}>
                                     <Card
                                         bordered={true}
-                                        hoverable // Thêm hiệu ứng hover
+                                        hoverable
                                         style={{ textAlign: 'center', cursor: 'pointer' }}
                                     >
                                         <Text type="secondary">{stat.label}</Text>
@@ -136,7 +146,6 @@ export function DashboardManager() {
                             </Card>
                         </Col>
                     </Row>
-
                 </Content>
             </Layout>
         </Layout>
