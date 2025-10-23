@@ -9,109 +9,178 @@ export function MyRequest() {
     const navigate = useNavigate();
     const [dataSource, setDataSource] = useState([]);
 
-    // API call for user profile
-    const { get: getProfile, data: profileData, isSuccess: isProfileSuccess, isComplete: isProfileComplete } = useApi();
-
     // API call for requests
     const { get: getRequests, data: requestsData, isSuccess: isRequestsSuccess, isComplete: isRequestsComplete } = useApi();
 
-    // Fetch user profile on mount
+    // Fetch requests on mount
     useEffect(() => {
-        getProfile("/users/profile");
-    }, [getProfile]);
-
-    // Fetch requests when profile is loaded
-    useEffect(() => {
-        if (isProfileSuccess && profileData) {
-            const studentId = profileData.studentId;
-            if (studentId) {
-                getRequests(`/requests?studentId=${studentId}`);
-            }
-        }
-    }, [isProfileSuccess, profileData, getRequests]);
+        console.log("Fetching requests...");
+        getRequests("/requests");
+    }, []);
 
     // Update dataSource when requests are loaded
     useEffect(() => {
-        if (isRequestsSuccess && requestsData) {
-            // Add key for Table component
-            const formattedData = (requestsData.data || requestsData || []).map((item, index) => ({
-                ...item,
-                key: item.id || index,
-            }));
-            setDataSource(formattedData);
-        }
-    }, [isRequestsSuccess, requestsData]);
+        console.log("=== EFFECT TRIGGERED ===");
+        console.log("Requests data:", requestsData);
+        console.log("Is success:", isRequestsSuccess);
+        console.log("Is complete:", isRequestsComplete);
+        console.log("Type of requestsData:", typeof requestsData);
+        console.log("requestsData is null?", requestsData === null);
+        console.log("requestsData is undefined?", requestsData === undefined);
 
-    // 🎨 Màu cho trạng thái
+        // Kiểm tra tất cả các trường hợp có thể
+        if (requestsData) {
+            console.log("requestsData exists!");
+            console.log("requestsData.data:", requestsData.data);
+            console.log("requestsData.status:", requestsData.status);
+            console.log("requestsData.message:", requestsData.message);
+
+            // Thử nhiều cách truy xuất data
+            let dataArray = [];
+
+            if (Array.isArray(requestsData)) {
+                console.log("requestsData is array directly");
+                dataArray = requestsData;
+            } else if (requestsData.data && Array.isArray(requestsData.data)) {
+                console.log("requestsData.data is array");
+                dataArray = requestsData.data;
+            } else if (requestsData.data && requestsData.data.data && Array.isArray(requestsData.data.data)) {
+                console.log("requestsData.data.data is array");
+                dataArray = requestsData.data.data;
+            }
+
+            console.log("Data array length:", dataArray.length);
+            console.log("Data array:", dataArray);
+
+            if (dataArray.length > 0) {
+                // Map dữ liệu từ backend response
+                const formattedData = dataArray.map((item) => {
+                    console.log("Mapping item:", item);
+                    return {
+                        key: item.requestId,
+                        requestId: item.requestId,
+                        requestType: item.requestType,
+                        content: "N/A",
+                        reply: "N/A",
+                        semester: item.semesterName,
+                        createdDate: item.createTime,
+                        status: item.responseStatus,
+                        userName: item.userName,
+                    };
+                });
+
+                console.log("Formatted data:", formattedData);
+                console.log("Setting dataSource...");
+                setDataSource(formattedData);
+            } else {
+                console.log("Data array is empty");
+            }
+        } else {
+            console.log("requestsData is null or undefined");
+        }
+    }, [isRequestsSuccess, requestsData, isRequestsComplete]);
+
+    // Màu cho trạng thái
     const statusColor = (status) => {
-        if (status.includes("thành công") || status.toLowerCase().includes("success")) return "green";
-        if (status.includes("Đang xử lý") || status.toLowerCase().includes("processing") || status.toLowerCase().includes("pending")) return "blue";
-        if (status.includes("từ chối") || status.toLowerCase().includes("rejected")) return "red";
+        if (status === "APPROVED" || status === "COMPLETED") return "green";
+        if (status === "PENDING" || status === "PROCESSING") return "blue";
+        if (status === "REJECTED" || status === "CANCELLED") return "red";
         return "default";
     };
 
-    // 🧾 Cấu hình bảng
+    // Format status text
+    const formatStatus = (status) => {
+        const statusMap = {
+            PENDING: "Đang xử lý",
+            PROCESSING: "Đang xử lý",
+            APPROVED: "Đã duyệt",
+            REJECTED: "Từ chối",
+            COMPLETED: "Hoàn thành",
+            CANCELLED: "Đã hủy"
+        };
+        return statusMap[status] || status;
+    };
+
+    // Format request type
+    const formatRequestType = (type) => {
+        const typeMap = {
+            CHECKOUT: "Trả phòng",
+            SECURITY_INCIDENT: "Sự cố an ninh",
+            METER_READING_DISCREPANCY: "Chênh lệch đồng hồ",
+            MAINTENANCE: "Bảo trì",
+            COMPLAINT: "Khiếu nại",
+            OTHER: "Khác"
+        };
+        return typeMap[type] || type;
+    };
+
+    // Cấu hình bảng
     const columns = [
         {
             title: "Request Type",
             dataIndex: "requestType",
             key: "requestType",
-            width: 150,
-        },
-        {
-            title: "Content",
-            dataIndex: "content",
-            key: "content",
-            width: 250,
-            ellipsis: true,
-        },
-        {
-            title: "Reply",
-            dataIndex: "reply",
-            key: "reply",
-            width: 250,
-            ellipsis: true,
-            render: (text) => text || "N/A",
+            width: 180,
+            render: (type) => formatRequestType(type),
         },
         {
             title: "Semester",
             dataIndex: "semester",
             key: "semester",
-            width: 130,
+            width: 150,
         },
         {
             title: "Created Date",
             dataIndex: "createdDate",
             key: "createdDate",
-            width: 160,
-            render: (date) => date ? new Date(date).toLocaleDateString() : "N/A",
+            width: 180,
+            render: (date) => {
+                if (!date) return "N/A";
+                const d = new Date(date);
+                return d.toLocaleString('vi-VN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            },
         },
         {
             title: "Status",
             dataIndex: "status",
             key: "status",
             width: 160,
-            render: (status) => <Tag color={statusColor(status)}>{status || "N/A"}</Tag>,
+            render: (status) => (
+                <Tag color={statusColor(status)}>
+                    {formatStatus(status)}
+                </Tag>
+            ),
         },
         {
             title: "Details",
             key: "details",
             width: 130,
             render: (_, record) => (
-                <Button type="link" onClick={() => navigate(`/request-detail/${record.key}`)}>
+                <Button
+                    type="link"
+                    onClick={() => navigate(`/request-detail/${record.requestId}`)}
+                >
                     View
                 </Button>
             ),
         },
     ];
 
-    const isLoading = !isProfileComplete || (isProfileSuccess && !isRequestsComplete);
-    const username = profileData?.username || "User";
+    const isLoading = !isRequestsComplete;
+
     const processingCount = dataSource.filter((d) =>
-        d.status?.includes("Đang xử lý") ||
-        d.status?.toLowerCase().includes("processing") ||
-        d.status?.toLowerCase().includes("pending")
+        d.status === "PENDING" || d.status === "PROCESSING"
     ).length;
+
+    console.log("Data source:", dataSource);
+    console.log("Is loading:", isLoading);
+    console.log("Processing count:", processingCount);
 
     return (
         <Spin spinning={isLoading}>
@@ -120,7 +189,7 @@ export function MyRequest() {
                     {/* Tiêu đề và nút tạo mới */}
                     <div className="flex justify-between items-center mb-4">
                         <h1 className="text-2xl font-bold text-[#004aad]">
-                            {username}'s Requests
+                            My Requests
                         </h1>
                         <Button
                             type="primary"
@@ -146,32 +215,9 @@ export function MyRequest() {
                             pagination={{ pageSize: 10 }}
                             scroll={{ x: true }}
                             locale={{ emptyText: "No requests found" }}
+                            loading={isLoading}
                         />
                     </Card>
-
-                    {/* Phần chi tiết thời gian & comment */}
-                    {dataSource.length > 0 && (
-                        <div className="mt-6">
-                            <Card
-                                title="🕒 Thời gian & phản hồi của quản lý"
-                                headStyle={{ background: "#004aad", color: "white" }}
-                            >
-                                {dataSource.map((req) => (
-                                    <div key={req.key} className="border-b border-gray-200 py-3 last:border-b-0">
-                                        <strong>{req.requestType}</strong>
-                                        <br />
-                                        <span className="text-gray-600">
-                                            ⏰ Thời gian xử lý: {req.timeRange || "N/A"}
-                                        </span>
-                                        <br />
-                                        <span>
-                                            💬 <strong>Comment của quản lý:</strong> {req.managerComment || "Chưa có phản hồi"}
-                                        </span>
-                                    </div>
-                                ))}
-                            </Card>
-                        </div>
-                    )}
                 </div>
             </AppLayout>
         </Spin>
