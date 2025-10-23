@@ -35,7 +35,7 @@ export function RoomConfirm({room, slot, setSlot}) {
                     <div>
                         <div className={"font-medium"}>Tòa</div>
                         <div className={"flex items-center gap-1 text-sm text-gray-600 mb-2"}>
-                            {room.dormName}
+                            {room.dorm.dormName}
                         </div>
                     </div>
                     <div>
@@ -59,9 +59,9 @@ export function RoomConfirm({room, slot, setSlot}) {
         </Card>
         <Card title={"Giá"}>
             <div>{!isSuccess && <Skeleton active />}</div>
-            {isSuccess && <>
+            {isSuccess && data && <>
                 <div className={"flex gap-1 items-center"}>
-                    <div className={"text-2xl font-medium"}>{formatPrice(data.pricing)}</div>
+                    <div className={"text-2xl font-medium"}>{formatPrice(data.pricing.price)}</div>
                     <div>/ tháng</div>
                 </div>
             </>}
