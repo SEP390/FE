@@ -6,7 +6,7 @@ import {AuthProvider} from "./providers/AuthProvider.jsx";
 function App() {
   return (
       <AuthProvider>
-    <BrowserRouter>
+    <BrowserRouter basename="/FE">
       <Routes>
         {routes.map((route, index) => (
           <Route
