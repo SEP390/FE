@@ -29,6 +29,9 @@ const columns = [
         dataIndex: 'price',
         key: 'price',
         render: (value) => formatPrice(value),
+        sorter: {
+            multiple: false
+        }
     },
     {
         title: 'Ngày tạo',
@@ -38,7 +41,7 @@ const columns = [
             return formatTime(createDate);
         },
         sorter: {
-            multiple: 0
+            multiple: false
         }
     },
     {
@@ -73,7 +76,8 @@ export function PaymentHistoryPage() {
             setPage(0);
         } else {
             setPage(current - 1);
-            setSort([[field, order]]);
+            const direction = order === "ascend" ? "asc": "desc";
+            setSort(field + "," + direction);
         }
         setStatus(status);
     };
