@@ -15,8 +15,9 @@ import {StudentInformationPage} from "../pages/resident/information/StudentInfor
 import {MyRequest} from "../pages/resident/request/MyRequest.jsx";
 import {CreateRequest} from "../pages/resident/request/CreateRequest.jsx";
 // THÊM IMPORT TRANG CHI TIẾT
-import {RoomInforDetail} from "../pages/manager/RoomInforDetail.jsx";
-import {ManagerRequests} from "../pages/manager/ManagerRequests.jsx";
+import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
+import { ManagerRequests } from "../pages/manager/Request/ManagerRequests.jsx";
+import { RequestDetailPage } from "../pages/manager/Request/RequestDetailPage.jsx";
 
 import {StaffManager} from "../pages/manager/StaffManager.jsx";
 import {SurveyManagementPage} from "../pages/manager/Survey/SurveyManagementPage.jsx";
@@ -46,6 +47,7 @@ const routes = [
     { path: "/manager/rooms", element: RoomInfoManager },
     { path: "/manager/rooms/:roomNumber", element: RoomInforDetail },
     { path: "/manager/requests", element: ManagerRequests },
+    { path: "/manager/request-detail/:requestId", element: RequestDetailPage },
     { path: "/manager/staff", element: StaffManager },
     { path: "/manager/schedule", element: ScheduleManager },
     { path: "/manager/shifts", element: ShiftConfigurationPage },
