@@ -1,26 +1,10 @@
-import {AppLayout} from "../../../components/layout/AppLayout.jsx";
 import {Alert, Button, Card, Form, InputNumber, notification, Skeleton, Tabs} from "antd";
 import {useApi} from "../../../hooks/useApi.js";
-import {createContext, useContext, useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {ChevronLeft} from "lucide-react";
-
-const {TabPane} = Tabs;
+import {LayoutGuard} from "../../../components/layout/LayoutGuard.jsx";
 
 const mockDorm = "4e8a9e06-548f-43cb-ac81-e253ccc1c96a";
-
-const NotificationContext = createContext();
-
-function NotificationProvider({ children }) {
-    const [notificationInstance, notificationHolder] = notification.useNotification();
-    return <NotificationContext.Provider value={notificationInstance}>
-        {notificationHolder}
-        {children}
-    </NotificationContext.Provider>;
-}
-
-function useNotification() {
-    return useContext(NotificationContext);
-}
 
 function RoomButton({data, setSelect}) {
     const onClick = () => {
@@ -45,7 +29,7 @@ function RoomList({data, select, setSelect, setIsOpen}) {
         if (select) {
             setIsOpen(true);
         }
-    }, [select])
+    }, [select, setIsOpen])
 
     const floors = Object.groupBy(data, ({floor}) => floor);
     return <>
@@ -143,7 +127,7 @@ function UpdateIndex({initValues, setEdit, fetchData}) {
             setEdit(false);
             fetchData();
         }
-    }, [data]);
+    }, [data, fetchData, setEdit]);
 
     return <>
         <Form
@@ -160,7 +144,7 @@ function UpdateIndex({initValues, setEdit, fetchData}) {
                 </div>
             </Form.Item>
         </Form>
-        {error && <Alert type={"error"} message={"Lỗi"} description={error}/>}
+        {error && <Alert type={"error"} message={"Lỗi"} description={error.toString()}/>}
     </>
 }
 
@@ -183,7 +167,7 @@ function CreateIndex({room, semester, fetchData, setEdit}) {
             setEdit(false);
             fetchData();
         }
-    }, [data]);
+    }, [data, fetchData, setEdit]);
 
     return <>
         <Form
@@ -198,15 +182,13 @@ function CreateIndex({room, semester, fetchData, setEdit}) {
                 </div>
             </Form.Item>
         </Form>
-        {error && <Alert type={"error"} message={"Lỗi"} description={error}/>}
+        {error && <Alert type={"error"} message={"Lỗi"} description={error.toString()}/>}
     </>
 }
 
 function CreateBillButton({index, onSuccess}) {
     const {post, data, error} = useApi();
-
-    const notif = useNotification();
-
+    
     const createBill = () => {
         post("/electric-water-bill", {
             indexId: index.id
@@ -215,10 +197,10 @@ function CreateBillButton({index, onSuccess}) {
 
     useEffect(() => {
         data && onSuccess(data);
-    }, [data]);
+    }, [data, onSuccess]);
 
     useEffect(() => {
-        error && notif.error({ message: "Lỗi", description: error, placement: "topLeft"})
+        error && notification.error({ message: "Lỗi", description: error, placement: "topLeft"})
     }, [error]);
 
     return <>
@@ -231,15 +213,15 @@ function IndexInfo({room, semester}) {
 
     const [edit, setEdit] = useState(false);
 
-    const fetchData = () => {
+    const fetchData = useCallback(() => {
         get("/electric-water-index", {
             roomId: room.id,
             semesterId: semester.id,
         })
-    }
+    }, [get, room.id, semester.id])
 
     useEffect(() => {
-        error && notif.error({ message: "Lôi", description: error})
+        error && notification.error({ message: "Lôi", description: error})
     }, [error]);
 
     const onBillCreated = () => {
@@ -248,7 +230,7 @@ function IndexInfo({room, semester}) {
 
     useEffect(() => {
         fetchData();
-    }, [room, semester]);
+    }, [fetchData, room, semester]);
 
     if (!data) return <CreateIndex initValues={data} setEdit={setEdit} room={room} semester={semester} fetchData={fetchData}/>
     if (data && edit) return <UpdateIndex initValues={data} setEdit={setEdit} room={room} semester={semester} fetchData={fetchData}/>
@@ -271,9 +253,7 @@ function IndexInfo({room, semester}) {
 
 function RoomIndexInfo({room, setSelect}) {
     const {get, data, error} = useApi();
-
-    const notif = useNotification();
-
+    
     const [currentSemester, setCurrentSemester] = useState(null);
 
     useEffect(() => {
@@ -282,10 +262,10 @@ function RoomIndexInfo({room, setSelect}) {
                 ["startDate", "DESC"],
             ]
         })
-    }, []);
+    }, [get]);
 
     useEffect(() => {
-        error && notif.error({ message: "Lôi", description: error})
+        error && notification.error({ message: "Lôi", description: error})
     }, [error]);
 
     useEffect(() => {
@@ -302,32 +282,30 @@ function RoomIndexInfo({room, setSelect}) {
             </div>
         </>}>
             <Tabs onChange={(id) => setCurrentSemester(semesters[id])} type={"card"} activeKey={currentSemester ? currentSemester.id : ""}>
-                {data && data.map(semester => <>
-                    <TabPane tab={semester.name} key={semester.id}>
+                {data != null && data.map(semester => <>
+                    <Tabs.TabPane tab={semester.name} key={semester.id}>
                         <IndexInfo room={room} semester={semester}/>
-                    </TabPane>
+                    </Tabs.TabPane>
                 </>)}
             </Tabs>
         </Card>
     </>
 }
 
-export function GuardElectricWaterPage() {
+export default function GuardElectricWaterPage() {
     const {get, data, error, isError} = useApi();
 
     const [select, setSelect] = useState(null);
-
-    const [notif, notifEl] = notification.useNotification();
-
+    
     useEffect(() => {
         get(`/dorms/${mockDorm}/rooms`);
     }, [get]);
 
     useEffect(() => {
         if (isError) {
-            notif.error({message: error});
+            notification.error({message: error.toString()});
         }
-    }, [isError]);
+    }, [error, isError]);
 
     const content = !select ? <>
         {data && <RoomList select={select} setSelect={setSelect} data={data}/>}
@@ -337,13 +315,10 @@ export function GuardElectricWaterPage() {
     </>
 
     return <>
-        <NotificationProvider>
-            <AppLayout>
-                {notifEl}
-                <Card className={"h-full overflow-auto"} title={"Hóa đơn điện nước"}>
-                    {content}
-                </Card>
-            </AppLayout>
-        </NotificationProvider>
+        <LayoutGuard active={"electric-water"}>
+            <Card className={"h-full overflow-auto"} title={"Hóa đơn điện nước"}>
+                {content}
+            </Card>
+        </LayoutGuard>
     </>
 }
