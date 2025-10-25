@@ -43,7 +43,7 @@ export function CreateRequest() {
         console.log("Execute Time format:", payload.executeTime);
 
         setLoading(true);
-        post("/requests/create-request", payload);
+        post("/requests", payload);
     };
 
     useEffect(() => {
