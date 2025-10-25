@@ -6,6 +6,8 @@ import { Content, Footer, Header } from "antd/es/layout/layout.js";
 import ktx1 from "../assets/images/dormimg1.png";
 import ktx2 from "../assets/images/dormimg2.png";
 import ktx3 from "../assets/images/dormimg3.png";
+import banner1 from "../assets/images/banner1.png";
+import banner2 from "../assets/images/banner2.png";
 
 
 
@@ -85,14 +87,14 @@ export function GuestPage() {
                     <Carousel arrows dots autoplay className="max-w-4xl mx-auto mb-10 rounded-xl overflow-hidden shadow">
                         <div>
                             <img
-                                src="https://lipsum.app/1000x800/888/fff"
+                                src={banner1}
                                 alt="Ký túc xá"
                                 className="w-full h-[400px] object-cover"
                             />
                         </div>
                         <div>
                             <img
-                                src="https://lipsum.app/1000x800/888/fff"
+                                src={banner2}
                                 alt="Sinh viên"
                                 className="w-full h-[400px] object-cover"
                             />
