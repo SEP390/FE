@@ -26,7 +26,7 @@ const managerItems = [
         key: "manager-home",
     },
     {
-        label: <Link to={"/manager/students"}>Quản lí sinh viên</Link>,
+        label: <Link to={"/manager/residents"}>Quản lí sinh viên</Link>,
         icon: <UserOutlined/>,
         key: "manager-students",
     },

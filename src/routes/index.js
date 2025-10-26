@@ -19,7 +19,7 @@ import { CreateRequest } from "../pages/resident/request/CreateRequest.jsx";
 import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
 import { ManagerRequests } from "../pages/manager/Request/ManagerRequests.jsx";
 import { RequestDetailPage } from "../pages/manager/Request/RequestDetailPage.jsx";
-
+import {ResidentManagerPage} from "../pages/pages/manager/resident_manager/ResidentManagerPage.jsx";
 import {StaffManager} from "../pages/manager/StaffManager.jsx";
 import {SurveyManagementPage} from "../pages/manager/Survey/SurveyManagementPage.jsx";
 import { ScheduleManager } from "../pages/manager/ScheduleManager.jsx";
@@ -54,6 +54,7 @@ const routes = [
     { path: "/manager/schedule", element: ScheduleManager },
     { path: "/manager/shifts", element: ShiftConfigurationPage },
     { path: "/manager/surveys", element: SurveyManagementPage },
+    {path: "/manager/residents", element: ResidentManagerPage},
 ];
 
 // dynamic route register
