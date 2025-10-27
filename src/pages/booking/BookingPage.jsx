@@ -5,6 +5,25 @@ import {App, Button, Card, Descriptions, Empty, List, Skeleton, Spin, Tag} from 
 import {useNavigate} from "react-router-dom";
 import {formatPrice} from "../../util/formatPrice.js";
 
+function PendingPayment() {
+    const { get, data, error} = useApi();
+
+    const onPayment = () => {
+        get("/booking/latest-payment-url")
+    }
+
+    useEffect(() => {
+        if (data) window.location.href = data;
+    }, [data]);
+
+    return <div className={"mt-3 flex flex-col gap-2"}>
+        <div className={"text-red-600"}>* Bạn chưa thanh toán</div>
+        <div className={"w-30"}>
+            <Button onClick={onPayment}>Thanh toán</Button>
+        </div>
+    </div>
+}
+
 function RoomMates({ roomId }) {
     const {get, data, error} = useApi();
     const {notification} = App.useApp();
@@ -53,17 +72,13 @@ export function CurrentBooking({ data }) {
                     {data?.room?.floor}
                 </Descriptions.Item>
                 <Descriptions.Item label="Giá">
-                    <div>{formatPrice(data.price)}</div>
+                    <div>{formatPrice(data?.room?.pricing?.price)}</div>
                 </Descriptions.Item>
             </Descriptions>
             <div>
-                {data && data.status === "PENDING" && <>
-                    <Button type={"primary"}>Thanh toán</Button>
-                </>}
-            </div>
-            <div>
                 <RoomMates roomId={data?.room?.id}/>
             </div>
+            {data && data.status === 'LOCK' && <PendingPayment />}
         </Card>
     </>
 }
@@ -80,7 +95,9 @@ export function BookingPage() {
         get("/booking/current")
     }, [get]);
 
-    if (isSuccess && !data) navigate("/pages/booking/y1")
+    useEffect(() => {
+        if (isSuccess && (!data || data.status === 'CANCEL')) navigate("/pages/booking/y1")
+    }, [data, isSuccess, navigate]);
 
     return <Spin spinning={!isSuccess}>
         <AppLayout activeSidebar={"booking"}>
