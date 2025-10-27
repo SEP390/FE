@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
-import { Layout, Typography, Card, Button, Tag, Form, Select, Input, message, Space, Spin } from "antd";
+import { Layout, Typography, Card, Button, Tag, Form, Select, Input, message, Space, Spin, Descriptions } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
@@ -60,8 +60,13 @@ export function RequestDetailPage() {
                 // Set form values
                 form.setFieldsValue({
                     requestStatus: requestData.responseStatus || requestData.requestStatus,
-                    responseMessage: requestData.responseMessage || ""
+                    responseMessage: requestData.responseMessage || requestData.ResponseMessage || ""
                 });
+
+                // Note: We don't fetch student info here because there's no API endpoint
+                // to get another user's profile by userId. The /users/profile endpoint only 
+                // returns the current authenticated user's information.
+                // We'll just show the userId in the display if needed.
             }
         }
     }, [isRequestSuccess, requestResponse]);
@@ -190,43 +195,38 @@ export function RequestDetailPage() {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Request Information */}
                                 <Card title="Thông tin Request" className="h-fit">
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="font-medium text-gray-600">Loại Request:</label>
-                                            <p className="text-lg">{formatRequestType(requestData.requestType)}</p>
-                                        </div>
-
-                                        <div>
-                                            <label className="font-medium text-gray-600">Trạng thái hiện tại:</label>
-                                            <div className="mt-1">
+                                    <Descriptions column={1} bordered size="small">
+                                        <Descriptions.Item label="Request ID">
+                                            {requestData.requestId || 'N/A'}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Loại Request">
+                                            {formatRequestType(requestData.requestType)}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Trạng thái">
                                                 <Tag color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
                                                     {formatStatus(requestData.responseStatus || requestData.requestStatus)}
                                                 </Tag>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="font-medium text-gray-600">Ngày tạo:</label>
-                                            <p>{formatDate(requestData.createTime)}</p>
-                                        </div>
-
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Tên phòng">
+                                            {requestData.roomName || 'N/A'}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Học kỳ">
+                                            {requestData.semesterName || 'N/A'}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Ngày tạo">
+                                            {formatDate(requestData.createTime)}
+                                        </Descriptions.Item>
                                         {requestData.executeTime && (
-                                            <div>
-                                                <label className="font-medium text-gray-600">Ngày thực hiện:</label>
-                                                <p>{formatDate(requestData.executeTime)}</p>
-                                            </div>
+                                            <Descriptions.Item label="Ngày thực hiện">
+                                                {formatDate(requestData.executeTime)}
+                                            </Descriptions.Item>
                                         )}
-
-                                        {requestData.semester && (
-                                            <div>
-                                                <label className="font-medium text-gray-600">Học kỳ:</label>
-                                                <p>
-                                                    {requestData.semester?.semesterName ||
-                                                        (typeof requestData.semester === 'string' ? requestData.semester : 'N/A')}
-                                                </p>
-                                            </div>
+                                        {requestData.userId && (
+                                            <Descriptions.Item label="User ID">
+                                                {requestData.userId}
+                                            </Descriptions.Item>
                                         )}
-                                    </div>
+                                    </Descriptions>
                                 </Card>
 
                                 {/* Update Form */}
@@ -287,13 +287,14 @@ export function RequestDetailPage() {
                             </Card>
 
                             {/* Response Message */}
-                            {requestData.responseMessage && (
+                            {requestData.responseMessage || requestData.ResponseMessage ? (
                                 <Card title="Tin nhắn phản hồi" className="mt-6">
                                     <div className="bg-blue-50 p-4 rounded-lg">
-                                        <p className="whitespace-pre-wrap">{requestData.responseMessage}</p>
+                                        <p className="whitespace-pre-wrap">{requestData.responseMessage || requestData.ResponseMessage}</p>
                                     </div>
                                 </Card>
-                            )}
+                            ) : null}
+
                         </>
                     )}
                 </Content>

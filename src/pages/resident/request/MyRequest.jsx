@@ -1,22 +1,44 @@
 import React, { useState, useEffect } from "react";
 import { AppLayout } from "../../../components/layout/AppLayout.jsx";
-import { Card, Table, Button, Tag, Spin } from "antd";
+import { Card, Table, Button, Tag, Spin, Alert, Empty } from "antd";
 import { useNavigate } from "react-router-dom";
 import { PlusOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
+import axiosClient from "../../../api/axiosClient/axiosClient.js";
 
 export function MyRequest() {
     const navigate = useNavigate();
     const [dataSource, setDataSource] = useState([]);
+    const [isResident, setIsResident] = useState(null); // null = checking, true = resident, false = not resident
+    const [currentSlotData, setCurrentSlotData] = useState(null);
 
     // API call for requests
-    const { get: getRequests, data: requestsData, isSuccess: isRequestsSuccess, isComplete: isRequestsComplete } = useApi();
+    const { get, data: requestsData, isSuccess: isRequestsSuccess, isComplete: isRequestsComplete } = useApi();
+
+    // Check resident status on mount
+    useEffect(() => {
+        console.log("Checking resident status...");
+        axiosClient.get("/booking/current")
+            .then(data => {
+                setCurrentSlotData(data);
+                // If data exists and status is UNAVAILABLE, user is a resident
+                if (data && data.data && data.data.status === "UNAVAILABLE") {
+                    setIsResident(true);
+                } else {
+                    setIsResident(false);
+                }
+            })
+            .catch(err => {
+                console.error("Error checking resident status:", err);
+                setIsResident(false);
+            });
+    }, []);
 
     // Fetch requests on mount
     useEffect(() => {
         console.log("Fetching requests...");
-        getRequests("/requests");
-    }, []);
+        get("/requests");
+    }, [get]);
 
     // Update dataSource when requests are loaded
     useEffect(() => {
@@ -164,7 +186,7 @@ export function MyRequest() {
             render: (_, record) => (
                 <Button
                     type="link"
-                    onClick={() => navigate(`/request-detail/${record.requestId}`)}
+                    onClick={() => navigate(`/resident-request-detail/${record.requestId}`)}
                 >
                     View
                 </Button>
@@ -181,6 +203,48 @@ export function MyRequest() {
     console.log("Data source:", dataSource);
     console.log("Is loading:", isLoading);
     console.log("Processing count:", processingCount);
+    console.log("Is resident:", isResident);
+
+    // Show loading while checking resident status
+    if (isResident === null) {
+        return (
+            <Spin spinning={true}>
+                <AppLayout>
+                    <div className="p-4">
+                        <Card>
+                            <Empty description="Đang kiểm tra trạng thái..." />
+                        </Card>
+                    </div>
+                </AppLayout>
+            </Spin>
+        );
+    }
+
+    // Show message if not a resident
+    if (isResident === false) {
+        return (
+            <AppLayout>
+                <div className="p-4">
+                    <Card>
+                        <Alert
+                            message="Thông báo"
+                            description="Bạn không phải là người ở. Chỉ những người đã đăng ký và ở trong phòng mới có thể tạo yêu cầu."
+                            type="warning"
+                            showIcon
+                            action={
+                                <Button 
+                                    type="primary" 
+                                    onClick={() => navigate("/booking")}
+                                >
+                                    Đăng ký phòng
+                                </Button>
+                            }
+                        />
+                    </Card>
+                </div>
+            </AppLayout>
+        );
+    }
 
     return (
         <Spin spinning={isLoading}>

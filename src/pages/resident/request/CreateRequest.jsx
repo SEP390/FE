@@ -34,13 +34,13 @@ export function CreateRequest() {
 
         // 🔥 FIX: Nếu là checkout request và có ngày checkout
         if (values.type === "CHECKOUT" && values.checkoutDate) {
-            // Chuyển sang LocalDateTime format: YYYY-MM-DDTHH:mm:ss
-            // Set giờ là 12:00:00 (giữa trưa) để rõ ràng
-            payload.executeTime = values.checkoutDate.hour(12).minute(0).second(0).format("YYYY-MM-DDTHH:mm:ss");
+            // Format ngày checkout
+            const checkoutTimeStr = values.checkoutDate.format("DD/MM/YYYY");
+            // Tạo content mới với format: thời gian checkout, dòng trống, content user nhập
+            payload.content = `Ngày muốn check out: ${checkoutTimeStr}\n\n${values.description}`;
         }
 
         console.log("Đang gửi payload:", payload);
-        console.log("Execute Time format:", payload.executeTime);
 
         setLoading(true);
         post("/requests", payload);

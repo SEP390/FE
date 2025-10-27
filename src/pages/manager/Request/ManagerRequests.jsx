@@ -63,6 +63,7 @@ export function ManagerRequests() {
                         requestId: item.requestId,
                         requestType: item.requestType,
                         userName: item.userName,
+                        roomName: item.roomName,
                         semester: item.semesterName,
                         createdDate: item.createTime,
                         status: item.responseStatus,
@@ -153,6 +154,12 @@ export function ManagerRequests() {
             key: "userName",
             width: 200,
             sorter: (a, b) => a.userName.localeCompare(b.userName),
+        },
+        {
+            title: "Room Name",
+            dataIndex: "roomName",
+            key: "roomName",
+            width: 150,
         },
         {
             title: "Request Type",

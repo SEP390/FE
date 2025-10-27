@@ -14,6 +14,7 @@ import {RoomInfoManager} from "../pages/manager/RoomInfoManager.jsx";
 import {StudentInformationPage} from "../pages/resident/information/StudentInformationPage.jsx";
 import {MyRequest} from "../pages/resident/request/MyRequest.jsx";
 import {CreateRequest} from "../pages/resident/request/CreateRequest.jsx";
+import {ResidentRequestDetail} from "../pages/resident/request/residentrequestdetail.jsx";
 // THÊM IMPORT TRANG CHI TIẾT
 import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
 import { ManagerRequests } from "../pages/manager/Request/ManagerRequests.jsx";
@@ -39,6 +40,7 @@ const routes = [
     { path: "/student-info", element: StudentInformationPage },
     { path: "/my-requests", element: MyRequest },
     { path: "/create-request", element: CreateRequest },
+    { path: "/resident-request-detail/:requestId", element: ResidentRequestDetail },
 
     // --- ROUTES DÀNH CHO MANAGER ---
     { path: "/manager", element: DashboardManager },
