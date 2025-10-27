@@ -9,10 +9,11 @@ import {
     UserOutlined,
     FileTextOutlined,
 } from "@ant-design/icons";
-import Sider from "antd/es/layout/Sider.js";
-import { Menu } from "antd";
+import { Menu, Layout } from "antd";
 import { Link } from "react-router-dom";
 import { Bed } from "lucide-react";
+
+const {Sider} = Layout;
 
 const items = [
     {
