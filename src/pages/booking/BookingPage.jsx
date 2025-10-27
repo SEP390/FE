@@ -16,7 +16,7 @@ function PendingPayment() {
         if (data) window.location.href = data;
     }, [data]);
 
-    return <div className={"mt-3 flex flex-col gap-2"}>
+    return <div className={"mb-4 flex flex-col gap-2"}>
         <div className={"text-red-600"}>* Bạn chưa thanh toán</div>
         <div className={"w-30"}>
             <Button onClick={onPayment}>Thanh toán</Button>
@@ -58,6 +58,7 @@ export function CurrentBooking({ data }) {
 
     return <>
         <Card title={"Thông tin phòng hiện tại"} className={"h-full"}>
+            {data && data.status === 'LOCK' && <PendingPayment />}
             <Descriptions bordered className={"!mb-5"}>
                 <Descriptions.Item label="Slot">
                     {data?.slotName}
@@ -78,7 +79,6 @@ export function CurrentBooking({ data }) {
             <div>
                 <RoomMates roomId={data?.room?.id}/>
             </div>
-            {data && data.status === 'LOCK' && <PendingPayment />}
         </Card>
     </>
 }
