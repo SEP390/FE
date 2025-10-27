@@ -47,7 +47,7 @@ const routes = [
     { path: "/manager/news", element: NewsManagePage },
     { path: "/manager/news/create", element: CreateNewsPage  },
     { path: "/manager/rooms", element: RoomInfoManager },
-    { path: "/manager/rooms/:roomNumber", element: RoomInforDetail },
+    { path: "/manager/room-detail/:roomId", element: RoomInforDetail },
     { path: "/manager/requests", element: ManagerRequests },
     { path: "/manager/request-detail/:requestId", element: RequestDetailPage },
     { path: "/manager/staff", element: StaffManager },

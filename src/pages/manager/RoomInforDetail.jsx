@@ -1,36 +1,97 @@
-import React, { useState } from 'react'; // Cần useState cho sidebar
-import { Layout, Typography, List, Card, Space, Tag, Divider, Row, Col, Button } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout, Typography, List, Card, Space, Tag, Divider, Row, Col, Button, Spin, Alert } from 'antd';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeftOutlined, UserOutlined } from "@ant-design/icons";
 import { SideBarManager } from '../../components/layout/SideBarManger';
+import axiosClient from '../../api/axiosClient/axiosClient';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-// DỮ LIỆU MOCK (Giả lập)
-const mockOccupants = {
-    '101': [
-        { id: 1, name: 'Trần Văn B', studentId: 'SV001', major: 'IT', checkInDate: '2023-08-15', isLeader: true },
-        { id: 2, name: 'Lê Thị C', studentId: 'SV002', major: 'Kinh tế', checkInDate: '2023-08-16', isLeader: false },
-        { id: 3, name: 'Phạm Văn D', studentId: 'SV003', major: 'Marketing', checkInDate: '2023-08-15', isLeader: false },
-    ],
-    '205': [
-        { id: 4, name: 'Nguyễn Văn E', studentId: 'SV004', major: 'IT', checkInDate: '2023-08-20', isLeader: true },
-        { id: 5, name: 'Hoàng Thị F', studentId: 'SV005', major: 'Thiết kế', checkInDate: '2023-08-20', isLeader: false },
-    ],
-    // Thêm dữ liệu cho các phòng khác...
-};
-
-// Component chính với tên file mới
+// Component chính
 export function RoomInforDetail() {
-    // Lấy số phòng từ URL
-    const { roomNumber } = useParams();
-    const occupants = mockOccupants[roomNumber] || [];
+    // Lấy roomId từ URL
+    const { roomId } = useParams();
 
-    // Giữ lại sidebar
+    // State cho sidebar
     const activeKey = 'manager-rooms';
     const [collapsed, setCollapsed] = useState(false);
 
+    // State cho dữ liệu và loading/error
+    const [roomDetails, setRoomDetails] = useState(null);
+    const [occupants, setOccupants] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // useEffect để gọi API
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                // Gọi API 1: Lấy chi tiết phòng
+                const roomResponse = await axiosClient.get(`/rooms/${roomId}`);
+
+                // Gọi API 2: Lấy danh sách sinh viên
+                const usersResponse = await axiosClient.get(`/rooms/${roomId}/users`);
+
+                if (roomResponse && roomResponse.data) {
+                    setRoomDetails(roomResponse.data);
+                } else {
+                    throw new Error("Không tìm thấy thông tin phòng.");
+                }
+
+                if (usersResponse && usersResponse.data) {
+                    setOccupants(usersResponse.data);
+                }
+
+            } catch (err) {
+                console.error("Lỗi khi tải dữ liệu chi tiết phòng:", err);
+                setError(err.response?.data?.message || err.message || "Đã có lỗi xảy ra.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [roomId]);
+
+    // HIỂN THỊ LOADING HOẶC LỖI
+    if (loading) {
+        return (
+            <Layout style={{ minHeight: '100vh' }}>
+                <SideBarManager collapsed={collapsed} active={activeKey} />
+                <Layout>
+                    <Header style={{ background: '#fff', padding: '0 24px', height: 80, display: 'flex', alignItems: 'center' }}>
+                        <Link to="/manager/rooms" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)', fontSize: '20px' }}><ArrowLeftOutlined /></Link>
+                        <Title level={2} style={{ margin: 0 }}>Đang tải...</Title>
+                    </Header>
+                    <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', textAlign: 'center' }}>
+                        <Spin size="large" />
+                    </Content>
+                </Layout>
+            </Layout>
+        );
+    }
+
+    if (error) {
+        return (
+            <Layout style={{ minHeight: '100vh' }}>
+                <SideBarManager collapsed={collapsed} active={activeKey} />
+                <Layout>
+                    <Header style={{ background: '#fff', padding: '0 24px', height: 80, display: 'flex', alignItems: 'center' }}>
+                        <Link to="/manager/rooms" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)', fontSize: '20px' }}><ArrowLeftOutlined /></Link>
+                        <Title level={2} style={{ margin: 0 }}>Lỗi</Title>
+                    </Header>
+                    <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
+                        <Alert message="Lỗi tải dữ liệu" description={error} type="error" showIcon />
+                    </Content>
+                </Layout>
+            </Layout>
+        );
+    }
+
+    // Nếu không loading, không lỗi, và có dữ liệu
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
@@ -41,22 +102,22 @@ export function RoomInforDetail() {
                         <Link to="/manager/rooms" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)' }}>
                             <ArrowLeftOutlined />
                         </Link>
-                        Thông tin chi tiết Phòng {roomNumber}
+                        Thông tin chi tiết Phòng {roomDetails?.roomNumber || roomId}
                     </Title>
                 </Header>
 
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
 
-                    {/* Phần Thông tin chung về phòng (Nếu có) */}
+                    {/* Hiển thị thông tin phòng từ API */}
                     <Card title="Thông tin chung" style={{ marginBottom: 20 }}>
                         <Row gutter={24}>
-                            <Col span={8}><Text strong>Tòa nhà:</Text> A1</Col>
-                            <Col span={8}><Text strong>Tầng:</Text> 1</Col>
-                            <Col span={8}><Text strong>Sức chứa (Tối đa):</Text> 4</Col>
+                            <Col span={8}><Text strong>Tòa nhà:</Text> {roomDetails?.dorm?.dormName || 'N/A'}</Col>
+                            <Col span={8}><Text strong>Tầng:</Text> {roomDetails?.floor || 'N/A'}</Col>
+                            <Col span={8}><Text strong>Sức chứa (Tối đa):</Text> {roomDetails?.totalSlot || roomDetails?.pricing?.totalSlot || 'N/A'}</Col>
                         </Row>
                     </Card>
 
-                    {/* Danh sách sinh viên */}
+                    {/* Hiển thị danh sách sinh viên từ API */}
                     <Title level={4} style={{ marginTop: 30 }}>
                         <UserOutlined style={{ marginRight: 8 }} />
                         Danh sách sinh viên đang ở ({occupants.length} người)
@@ -64,24 +125,24 @@ export function RoomInforDetail() {
                     <Divider />
 
                     <Row gutter={[24, 24]}>
+                        {/* !!! Sửa lại các 'student.FIELD_NAME' cho đúng với DTO 'RoomUserResponse' */}
                         {occupants.map(student => (
                             <Col xs={24} sm={12} md={8} lg={6} key={student.id}>
                                 <Card
-                                    title={<Text strong>{student.name}</Text>}
-                                    extra={student.isLeader && <Tag color="gold">Trưởng phòng</Tag>}
+                                    title={<Text strong>{student.fullName || student.username || 'N/A'}</Text>}
+                                    extra={student.isRoomLeader && <Tag color="gold">Trưởng phòng</Tag>}
                                     hoverable
                                 >
-                                    <p>Mã SV: <Text copyable>{student.studentId}</Text></p>
-                                    <p>Ngành học: <Text>{student.major}</Text></p>
-                                    <p>Ngày vào: <Text>{student.checkInDate}</Text></p>
-                                    <Button type="link" size="small">Xem hồ sơ</Button>
+                                    <p>Mã SV: <Text copyable>{student.studentCode || 'N/A'}</Text></p>
+                                    <p>Ngành học: <Text>{student.majorName || 'N/A'}</Text></p>
+                                    <p>Ngày vào: <Text>{student.checkInDate ? new Date(student.checkInDate).toLocaleDateString('vi-VN') : 'N/A'}</Text></p>
                                 </Card>
                             </Col>
                         ))}
                     </Row>
 
                     {occupants.length === 0 && (
-                        <Text type="secondary">Phòng {roomNumber} hiện chưa có sinh viên.</Text>
+                        <Text type="secondary">Phòng {roomDetails?.roomNumber || roomId} hiện chưa có sinh viên.</Text>
                     )}
                 </Content>
             </Layout>
