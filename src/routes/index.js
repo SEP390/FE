@@ -18,7 +18,7 @@ import {CreateRequest} from "../pages/resident/request/CreateRequest.jsx";
 import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
 import { ManagerRequests } from "../pages/manager/Request/ManagerRequests.jsx";
 import { RequestDetailPage } from "../pages/manager/Request/RequestDetailPage.jsx";
-
+import {ResidentManagerPage} from "../pages/pages/manager/resident_manager/ResidentManagerPage.jsx";
 import {StaffManager} from "../pages/manager/StaffManager.jsx";
 import {SurveyManagementPage} from "../pages/manager/Survey/SurveyManagementPage.jsx";
 import {ScheduleManager} from "../pages/manager/ScheduleManager.jsx";
@@ -45,13 +45,14 @@ const routes = [
     { path: "/manager/news", element: NewsManagePage },
     { path: "/manager/news/create", element: CreateNewsPage  },
     { path: "/manager/rooms", element: RoomInfoManager },
-    { path: "/manager/rooms/:roomNumber", element: RoomInforDetail },
+    { path: "/manager/room-detail/:roomId", element: RoomInforDetail },
     { path: "/manager/requests", element: ManagerRequests },
     { path: "/manager/request-detail/:requestId", element: RequestDetailPage },
     { path: "/manager/staff", element: StaffManager },
     { path: "/manager/schedule", element: ScheduleManager },
     { path: "/manager/shifts", element: ShiftConfigurationPage },
     { path: "/manager/surveys", element: SurveyManagementPage },
+    {path: "/manager/residents", element: ResidentManagerPage},
 ];
 
 // dynamic route register
