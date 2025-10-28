@@ -31,6 +31,7 @@ export function CreateRequest() {
             content: values.description,
             semesterId: currentSemester.id,
         };
+        
 
         // 🔥 FIX: Nếu là checkout request và có ngày checkout
         if (values.type === "CHECKOUT" && values.checkoutDate) {

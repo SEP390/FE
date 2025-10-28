@@ -8,6 +8,7 @@ import {PaymentHistoryPage} from "../pages/booking/PaymentHistoryPage.jsx";
 import {NewsList} from "../pages/News/NewsList.jsx";
 import {ElectricWaterBillPage} from "../pages/electric-water/ElectricWaterBillPage.jsx";
 import {GuardElectricWaterPage} from "../pages/guard/electric-water/GuardElectricWaterPage.jsx";
+import {GuardSchedule} from "../pages/guard/Scheduale/GuardSchedule.jsx";
 import {DashboardManager} from "../pages/manager/DashboardManager.jsx";
 import {NewsManagePage} from "../pages/manager//News/NewsManagePage.jsx";
 import {CreateNewsPage} from "../pages/manager/News/CreateNewspage.jsx";
@@ -36,6 +37,7 @@ const routes = [
     { path: "/payment", element: PaymentHistoryPage },
     { path: "/electric-water", element: ElectricWaterBillPage },
     { path: "/guard/electric-water", element: GuardElectricWaterPage },
+    { path: "/guard/schedule", element: GuardSchedule },
 
     // --- ROUTES DÀNH CHO CƯ DÂN (RESIDENT) ---
     { path: "/student-info", element: StudentInformationPage },
