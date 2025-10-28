@@ -13,18 +13,19 @@ import {DashboardManager} from "../pages/manager/DashboardManager.jsx";
 import {NewsManagePage} from "../pages/manager//News/NewsManagePage.jsx";
 import {CreateNewsPage} from "../pages/manager/News/CreateNewspage.jsx";
 import {RoomInfoManager} from "../pages/manager/RoomInfoManager.jsx";
-import { StudentInformationPage } from "../pages/resident/information/StudentInformationPage.jsx";
-import { MyRequest } from "../pages/resident/request/MyRequest.jsx";
-import { CreateRequest } from "../pages/resident/request/CreateRequest.jsx";
+import {StudentInformationPage} from "../pages/resident/information/StudentInformationPage.jsx";
+import {MyRequest} from "../pages/resident/request/MyRequest.jsx";
+import {CreateRequest} from "../pages/resident/request/CreateRequest.jsx";
+import {ResidentRequestDetail} from "../pages/resident/request/residentrequestdetail.jsx";
 // THÊM IMPORT TRANG CHI TIẾT
 import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
 import { ManagerRequests } from "../pages/manager/Request/ManagerRequests.jsx";
 import { RequestDetailPage } from "../pages/manager/Request/RequestDetailPage.jsx";
-
+import {ResidentManagerPage} from "../pages/pages/manager/resident_manager/ResidentManagerPage.jsx";
 import {StaffManager} from "../pages/manager/StaffManager.jsx";
 import {SurveyManagementPage} from "../pages/manager/Survey/SurveyManagementPage.jsx";
-import { ScheduleManager } from "../pages/manager/ScheduleManager.jsx";
-import { ShiftConfigurationPage } from "../pages/manager/ShiftConfigurationPage.jsx";
+import {ScheduleManager} from "../pages/manager/ScheduleManager.jsx";
+import {ShiftConfigurationPage} from "../pages/manager/ShiftConfigurationPage.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -43,19 +44,21 @@ const routes = [
     { path: "/student-info", element: StudentInformationPage },
     { path: "/my-requests", element: MyRequest },
     { path: "/create-request", element: CreateRequest },
+    { path: "/resident-request-detail/:requestId", element: ResidentRequestDetail },
 
     // --- ROUTES DÀNH CHO MANAGER ---
     { path: "/manager", element: DashboardManager },
     { path: "/manager/news", element: NewsManagePage },
     { path: "/manager/news/create", element: CreateNewsPage  },
     { path: "/manager/rooms", element: RoomInfoManager },
-    { path: "/manager/rooms/:roomNumber", element: RoomInforDetail },
+    { path: "/manager/room-detail/:roomId", element: RoomInforDetail },
     { path: "/manager/requests", element: ManagerRequests },
     { path: "/manager/request-detail/:requestId", element: RequestDetailPage },
     { path: "/manager/staff", element: StaffManager },
     { path: "/manager/schedule", element: ScheduleManager },
     { path: "/manager/shifts", element: ShiftConfigurationPage },
     { path: "/manager/surveys", element: SurveyManagementPage },
+    {path: "/manager/residents", element: ResidentManagerPage},
 ];
 
 // dynamic route register

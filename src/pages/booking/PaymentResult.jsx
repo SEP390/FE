@@ -15,10 +15,6 @@ export function PaymentResult() {
         get("/payment/verify?" + new URLSearchParams(params));
     }, []);
 
-    useEffect(() => {
-        console.log(data);
-    }, [data]);
-
     const subTitle = (data) => {
         if (data && data.slotHistory) {
             return <span>{data.slotHistory.slot.slotName}, {data.slotHistory.slot.room.roomNumber}, {data.slotHistory.slot.room.dorm.dormName}</span>
