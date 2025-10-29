@@ -173,11 +173,14 @@ export function MyRequest() {
             dataIndex: "status",
             key: "status",
             width: 160,
-            render: (status) => (
-                <Tag color={statusColor(status)}>
-                    {formatStatus(status)}
-                </Tag>
-            ),
+            render: (status) => {
+                const displayStatus = status === "CHECKED" ? "PENDING" : status;
+                return (
+                    <Tag color={statusColor(displayStatus)}>
+                        {formatStatus(displayStatus)}
+                    </Tag>
+                );
+            },
         },
         {
             title: "Details",

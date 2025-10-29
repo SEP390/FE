@@ -12,6 +12,7 @@ export function ResidentRequestDetail() {
     const { requestId } = useParams();
     const navigate = useNavigate();
     const [requestData, setRequestData] = useState(null);
+    const [residentInfo, setResidentInfo] = useState(null);
 
     // API hooks
     const {
@@ -20,6 +21,15 @@ export function ResidentRequestDetail() {
         isSuccess: isRequestSuccess,
         isComplete: isRequestComplete,
         isLoading: isRequestLoading
+    } = useApi();
+
+    // API hook to get user by id
+    const {
+        get: getUserById,
+        data: userResponse,
+        isSuccess: isUserSuccess,
+        isComplete: isUserComplete,
+        isLoading: isUserLoading
     } = useApi();
 
     // Fetch request details on mount
@@ -48,6 +58,31 @@ export function ResidentRequestDetail() {
         }
     }, [isRequestSuccess, requestResponse]);
 
+    // Fetch resident info by userId once request data is available
+    useEffect(() => {
+        if (requestData?.userId) {
+            getUserById(`/users/residents/${requestData.userId}`);
+        }
+    }, [requestData, getUserById]);
+
+    // Handle user info response
+    useEffect(() => {
+        if (isUserSuccess && userResponse) {
+            let userData = null;
+            if (userResponse.data) {
+                userData = userResponse.data;
+            } else if (userResponse.username) {
+                userData = userResponse;
+            }
+            if (userData) {
+                setResidentInfo({
+                    username: userData.username,
+                    userCode: userData.userCode
+                });
+            }
+        }
+    }, [isUserSuccess, userResponse]);
+
     // Status color mapping
     const statusColor = (status) => {
         if (status === "ACCEPTED" || status === "APPROVED") return "green";
@@ -63,6 +98,7 @@ export function ResidentRequestDetail() {
             PROCESSING: "Đang xử lý",
             ACCEPTED: "Đã chấp nhận",
             APPROVED: "Đã duyệt",
+            CHECKED: "Đã kiểm tra",
             REJECTED: "Từ chối",
             CANCELLED: "Đã hủy",
             COMPLETED: "Hoàn thành"
@@ -166,15 +202,27 @@ export function ResidentRequestDetail() {
                                     </Tag>
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Trạng thái">
-                                    <Tag color={statusColor(requestData.responseStatus || requestData.requestStatus)} className="text-sm">
-                                        {formatStatus(requestData.responseStatus || requestData.requestStatus)}
-                                    </Tag>
+                                    {(() => {
+                                        const rawStatus = requestData.responseStatus || requestData.requestStatus;
+                                        const displayStatus = rawStatus === "CHECKED" ? "PENDING" : rawStatus;
+                                        return (
+                                            <Tag color={statusColor(displayStatus)} className="text-sm">
+                                                {formatStatus(displayStatus)}
+                                            </Tag>
+                                        );
+                                    })()}
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Tên phòng">
                                     {requestData.roomName || 'N/A'}
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Học kỳ">
                                     {requestData.semesterName || 'N/A'}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="Username người ở">
+                                    {residentInfo?.username || (isUserLoading ? 'Đang tải...' : 'N/A')}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="Mã người ở">
+                                    {residentInfo?.userCode || (isUserLoading ? 'Đang tải...' : 'N/A')}
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Ngày tạo">
                                     {formatDate(requestData.createTime)}
@@ -201,8 +249,8 @@ export function ResidentRequestDetail() {
                             </div>
                         </Card>
 
-                        {/* Response Message Card */}
-                        {(requestData.responseMessage || requestData.ResponseMessage) && (
+                        {/* Response Message Card - only show when ACCEPTED or REJECTED */}
+                        {(requestData.responseMessage || requestData.ResponseMessage) && ["ACCEPTED", "REJECTED"].includes((requestData.responseStatus || requestData.requestStatus)) && (
                             <Card title="Phản hồi từ quản lý" className="shadow-sm">
                                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                                     <p className="whitespace-pre-wrap text-blue-800 leading-relaxed">
