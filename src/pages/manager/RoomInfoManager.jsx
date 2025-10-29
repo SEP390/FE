@@ -67,7 +67,6 @@ const roomColumns = [
     {
         title: 'Hành động',
         key: 'action',
-        // Render sẽ được ghi đè bên dưới để gọi đúng handler
         render: (text, record) => (
             <Space size="middle">
                 <Button icon={<EditOutlined />} title="Chỉnh sửa" disabled={!record?.id} />
@@ -82,7 +81,7 @@ export function RoomInfoManager() {
     // (States chung, data, pagination)
     const [collapsed, setCollapsed] = useState(false);
     const activeKey = 'manager-rooms';
-    const [buildings, setBuildings] = useState([]); // Chứa { id, dormName, totalFloor }
+    const [buildings, setBuildings] = useState([]);
     const [roomData, setRoomData] = useState([]);
     const [pricings, setPricings] = useState([]);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
@@ -97,7 +96,7 @@ export function RoomInfoManager() {
     const [isGettingRooms, setIsGettingRooms] = useState(false);
     const [isCreatingBuilding, setIsCreatingBuilding] = useState(false);
     const [isPricingLoading, setIsPricingLoading] = useState(false);
-    const [isCreatingPrice, setIsCreatingPrice] = useState(false); // Dùng chung cho Thêm/Sửa giá
+    const [isCreatingPrice, setIsCreatingPrice] = useState(false);
     const [isUpdatingRoom, setIsUpdatingRoom] = useState(false);
     const [isAddingSingleRoom, setIsAddingSingleRoom] = useState(false);
 
@@ -198,23 +197,35 @@ export function RoomInfoManager() {
         { title: 'Hành động', key: 'action', render: (_, record) => (<Space><Button icon={<EditOutlined />} onClick={() => handleEditPrice(record)} title="Sửa"/></Space>) },
     ];
 
-    // (Handlers Modal SỬA PHÒNG)
+    // --- Handlers Modal SỬA PHÒNG ---
+    // === CHỈ GIỮ LẠI MỘT ĐỊNH NGHĨA ===
     const handleShowEditRoomModal = (roomRecord) => {
         setEditingRoom(roomRecord);
-        formEditRoom.setFieldsValue({ totalSlot: roomRecord.totalSlot || roomRecord.pricing?.totalSlot });
+        const currentTotalSlot = roomRecord?.totalSlot ?? roomRecord?.pricing?.totalSlot;
+        formEditRoom.setFieldsValue({ totalSlot: currentTotalSlot });
         setIsEditRoomModalVisible(true);
     };
+    // === KẾT THÚC SỬA ===
     const handleCancelEditRoom = () => { setIsEditRoomModalVisible(false); setEditingRoom(null); formEditRoom.resetFields(); };
     const handleOkEditRoom = async () => {
         if (!editingRoom) return;
         try {
             const values = await formEditRoom.validateFields(); const roomId = editingRoom.id;
-            const payload = { totalSlot: values.totalSlot }; setIsUpdatingRoom(true);
+            const payload = {
+                floor: editingRoom.floor, // Gửi floor cũ
+                roomNumber: editingRoom.roomNumber, // Gửi roomNumber cũ
+                totalSlot: values.totalSlot // Gửi totalSlot mới
+            };
+            setIsUpdatingRoom(true);
             await axiosClient.post(`/rooms/${roomId}`, payload);
             message.success(`Đã cập nhật phòng ${editingRoom.roomNumber}!`);
             handleCancelEditRoom(); fetchRooms(pagination);
-        } catch (error) { message.error("Cập nhật phòng thất bại! " + (error.response?.data?.message || "Lỗi")); }
-        finally { setIsUpdatingRoom(false); }
+        } catch (error) {
+            console.error("Lỗi khi cập nhật phòng:", error.response || error);
+            message.error("Cập nhật phòng thất bại! " + (error.response?.data?.message || "Lỗi không xác định"));
+        } finally {
+            setIsUpdatingRoom(false);
+        }
     };
 
     // (Handlers Modal THÊM PHÒNG LẺ)
@@ -233,6 +244,7 @@ export function RoomInfoManager() {
         } catch (error) { message.error("Thêm phòng thất bại! " + (error.response?.data?.message || "Lỗi")); }
         finally { setIsAddingSingleRoom(false); }
     };
+
 
     // (Cột động Bảng Phòng)
     const dynamicRoomColumns = roomColumns.map(col => {
@@ -283,14 +295,19 @@ export function RoomInfoManager() {
                     <Table loading={isGettingRooms} columns={finalRoomColumns} dataSource={roomData} onChange={handleTableChange} pagination={{...pagination, showSizeChanger: true, pageSizeOptions: ['10', '20', '50']}} bordered />
                 </Content>
             </Layout>
-            {/* === Modal 1: Thêm Tòa Nhà (ĐÃ KHÔI PHỤC RULES VALIDATION ĐÚNG) === */}
+            {/* Modal 1: Thêm Tòa Nhà */}
             <Modal title="Thêm tòa nhà mới" open={isAddBuildingModalVisible} onOk={handleOkBuilding} onCancel={handleCancelBuilding} confirmLoading={isCreatingBuilding} destroyOnClose width={600}>
                 <Form form={formBuilding} layout="vertical" name="form_add_building" autoComplete="off">
-                    {/* Khôi phục lại rules message như ban đầu */}
                     <Form.Item
                         name="dormName"
                         label="Tên tòa nhà"
-                        rules={[{ required: true, message: 'Vui lòng nhập tên tòa nhà!' }]}
+                        rules={[
+                            {
+                                required: true,
+                                whitespace: true,
+                                message: 'Vui lòng nhập tên tòa nhà!'
+                            }
+                        ]}
                     >
                         <Input placeholder="Ví dụ: A5..." />
                     </Form.Item>
@@ -303,7 +320,7 @@ export function RoomInfoManager() {
                     </Form.Item>
                 </Form>
             </Modal>
-            {/* === Modal 2: Quản lý giá phòng (ĐẦY ĐỦ LOGIC) === */}
+            {/* Modal 2: Quản lý giá phòng */}
             <Modal title={editingPrice ? "Cập nhật giá phòng" : "Quản lý giá phòng"} open={isPricingModalVisible} onCancel={handleCancelPricing} footer={null} width={600} destroyOnClose>
                 <Form form={formPrice} layout="inline" onFinish={onFinishPrice} style={{ marginBottom: 20 }}>
                     <Form.Item name="totalSlot" label="Số giường" rules={[{ required: true, message: 'Nhập số giường!' }]}><InputNumber min={1} placeholder="Ví dụ: 4" disabled={!!editingPrice} /></Form.Item>
