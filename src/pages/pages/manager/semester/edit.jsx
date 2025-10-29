@@ -1,25 +1,15 @@
-import {AppLayout} from "../../../../components/layout/AppLayout.jsx";
-import {NotificationProvider} from "../../../../providers/NotificationProvider.jsx";
-import {Button, Card, DatePicker, Form, Input} from "antd";
+import {App, Button, Card, DatePicker, Form, Input} from "antd";
 import {ChevronLeft} from "lucide-react";
-import {useEffect, useState} from "react";
+import {useEffect} from "react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {useApi} from "../../../../hooks/useApi.js";
-import {useNotif} from "../../../../hooks/useNotif.js";
 import dayjs from "dayjs";
+import {LayoutManager} from "../../../../components/layout/LayoutManager.jsx";
 
 function EditForm({ semester }) {
     const [form] = Form.useForm();
-
+    const {notification} = App.useApp();
     const {put, data, error} = useApi()
-
-    form.validateFields((err, values) => {
-        if (err) {
-            return;
-        }
-    })
-
-    const notif = useNotif();
 
     const navigate = useNavigate()
 
@@ -37,11 +27,13 @@ function EditForm({ semester }) {
 
     useEffect(() => {
         data && navigate("/pages/manager/semester/")
-    }, [data]);
+    }, [data, navigate]);
+    
+    
 
     useEffect(() => {
-        error && notif.error({ message: "Lỗi", description: error })
-    }, [error]);
+        error && notification.error({ message: "Lỗi", description: error })
+    }, [error, notification]);
 
     return <Form initialValues={{
         name: semester.name,
@@ -73,31 +65,29 @@ function EditForm({ semester }) {
 
 export default function EditSemester() {
     const {get, data, error} = useApi();
-    const notif = useNotif();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const {notification} = App.useApp();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate()
     const id = searchParams.get("id");
 
     useEffect(() => {
         get("/semesters/" + id);
-    }, [id]);
+    }, [id, get]);
 
     useEffect(() => {
-        error && notif.error({ message: "Lỗi", description: error })
-    }, [error]);
+        error && notification.error({ message: "Lỗi", description: error })
+    }, [error, notification]);
 
     return <>
-        <NotificationProvider>
-            <AppLayout>
-                <Card title={<>
-                    <div className={"flex gap-2"}>
-                        <Button onClick={() => navigate("/pages/manager/semester")} size={"small"}><ChevronLeft size={14}/></Button>
-                        <div>Sửa Kỳ </div>
-                    </div>
-                </>}>
-                    {data && <EditForm semester={data}/>}
-                </Card>
-            </AppLayout>
-        </NotificationProvider>
+        <LayoutManager active={"semester"}>
+            <Card title={<>
+                <div className={"flex gap-2"}>
+                    <Button onClick={() => navigate("/pages/manager/semester")} size={"small"}><ChevronLeft size={14}/></Button>
+                    <div>Sửa Kỳ </div>
+                </div>
+            </>}>
+                {data != null && <EditForm semester={data}/>}
+            </Card>
+        </LayoutManager>
     </>
 }

@@ -19,6 +19,7 @@ import {StudentInformationPage} from "../pages/resident/information/StudentInfor
 import {MyRequest} from "../pages/resident/request/MyRequest.jsx";
 import {CreateRequest} from "../pages/resident/request/CreateRequest.jsx";
 import {ResidentRequestDetail} from "../pages/resident/request/residentrequestdetail.jsx";
+import {ReportManagePage} from "../pages/manager/Report/ReportManagePage.jsx";
 // THÊM IMPORT TRANG CHI TIẾT
 import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
 import { ManagerRequests } from "../pages/manager/Request/ManagerRequests.jsx";
@@ -63,6 +64,7 @@ const routes = [
     { path: "/manager/shifts", element: ShiftConfigurationPage },
     { path: "/manager/surveys", element: SurveyManagementPage },
     {path: "/manager/residents", element: ResidentManagerPage},
+    {path: "/manager/reports", element: ReportManagePage},
 ];
 
 // dynamic route register

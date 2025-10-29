@@ -3,6 +3,7 @@ import {Button, Card, Form, InputNumber} from "antd";
 import {useApi} from "../../../../hooks/useApi.js";
 import {useEffect, useState} from "react";
 import {formatTime} from "../../../../util/formatTime.js";
+import {LayoutManager} from "../../../../components/layout/LayoutManager.jsx";
 
 function ElectricWaterForm({ children, onFinish, initialValues, disable = false }) {
     const [form] = Form.useForm();
@@ -69,12 +70,12 @@ export default function ManageElectricWaterPricing() {
     }, []);
 
     return <>
-        <AppLayout>
+        <LayoutManager active={"electric-water-pricing"}>
             <Card title={"Quản lý giá điện nước"}>
                 {data && <div>Lần cuối cập nhật: {formatTime(data.startDate)}</div>}
                 {data && !edit && <ReadPage pricing={data} setEdit={setEdit} />}
                 {isSuccess && edit && <EditPage pricing={data} setEdit={setEdit} fetchData={fetchData} />}
             </Card>
-        </AppLayout>
+        </LayoutManager>
     </>
 }
