@@ -7,12 +7,16 @@ const { Title, Text } = Typography;
 
 export function StudentInformationPage() {
     const { get, data, isComplete, isSuccess } = useApi();
+    const { get: getRoom, data: roomData, isSuccess: isRoomSuccess } = useApi();
     const [student, setStudent] = useState(null);
 
     useEffect(() => {
         get("/users/profile");
     }, [get]);
 
+    useEffect(() => {
+        getRoom("/rooms/current");
+    }, [getRoom]);
 
     useEffect(() => {
         if (isSuccess && data) {
@@ -57,9 +61,6 @@ export function StudentInformationPage() {
                                         <Text strong>Mail: </Text>
                                         <a href={`mailto:${student.mail}`}>{student.mail}</a>
                                         <br />
-                                        <Text strong>Bed: </Text>
-                                        <Text>{student.bed}</Text>
-                                        <br />
                                         <Text strong>Student ID: </Text>
                                         <Text>{student.StudentId}</Text>
                                     </Card>
@@ -76,10 +77,20 @@ export function StudentInformationPage() {
                                     >
                                         <Title level={4}>More Information</Title>
                                         <Divider />
-                                        <Text type="secondary">
-                                            (Hiển thị các thông tin bổ sung như: địa chỉ, CMND, ngày nhập
-                                            KTX, thời hạn phòng, v.v...)
-                                        </Text>
+                                    <div className="space-y-2">
+                                        <div>
+                                            <Text strong>Dorm: </Text>
+                                            <Text>{isRoomSuccess && roomData?.dorm?.dormName ? roomData.dorm.dormName : 'N/A'}</Text>
+                                        </div>
+                                        <div>
+                                            <Text strong>Room: </Text>
+                                            <Text>{isRoomSuccess && roomData?.roomNumber ? roomData.roomNumber : 'N/A'}</Text>
+                                        </div>
+                                        <div>
+                                            <Text strong>Slot: </Text>
+                                            <Text>{student?.bed || 'N/A'}</Text>
+                                        </div>
+                                    </div>
                                     </Card>
                                 </Col>
                             </Row>

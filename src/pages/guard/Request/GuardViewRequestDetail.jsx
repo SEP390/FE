@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
-import { Layout, Typography, Card, Button, Tag, Form, Select, Input, message, Space, Spin, Descriptions } from "antd";
+import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
+import { AppHeader } from "../../../components/layout/AppHeader.jsx";
+import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Input, message } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
 
-const { Header, Content } = Layout;
+const { Content } = Layout;
 const { Title } = Typography;
-const { Option } = Select;
 const { TextArea } = Input;
 
-export function RequestDetailPage() {
+export function GuardViewRequestDetail() {
     const { requestId } = useParams();
     const navigate = useNavigate();
-    const [collapsed] = useState(false);
-    const [form] = Form.useForm();
+    const [collapsed, setCollapsed] = useState(false);
     const [requestData, setRequestData] = useState(null);
+    const [form] = Form.useForm();
     const [isUpdating, setIsUpdating] = useState(false);
 
     // API hooks
@@ -59,14 +59,8 @@ export function RequestDetailPage() {
                 setRequestData(requestData);
                 // Set form values
                 form.setFieldsValue({
-                    requestStatus: requestData.responseStatus || requestData.requestStatus,
                     responseMessage: requestData.responseMessage || requestData.ResponseMessage || ""
                 });
-
-                // Note: We don't fetch student info here because there's no API endpoint
-                // to get another user's profile by userId. The /users/profile endpoint only 
-                // returns the current authenticated user's information.
-                // We'll just show the userId in the display if needed.
             }
         }
     }, [isRequestSuccess, requestResponse]);
@@ -91,9 +85,9 @@ export function RequestDetailPage() {
 
     // Status color mapping
     const statusColor = (status) => {
-        if (status === "ACCEPTED" || status === "CHECKED") return "green";
-        if (status === "PENDING") return "blue";
-        if (status === "REJECTED") return "red";
+        if (status === "APPROVED" || status === "COMPLETED" || status === "ACCEPTED" || status === "CHECKED") return "green";
+        if (status === "PENDING" || status === "PROCESSING") return "blue";
+        if (status === "REJECTED" || status === "CANCELLED") return "red";
         return "default";
     };
 
@@ -101,9 +95,13 @@ export function RequestDetailPage() {
     const formatStatus = (status) => {
         const statusMap = {
             PENDING: "Đang xử lý",
+            PROCESSING: "Đang xử lý",
+            APPROVED: "Đã duyệt",
             ACCEPTED: "Đã chấp nhận",
             CHECKED: "Đã kiểm tra",
-            REJECTED: "Từ chối"
+            REJECTED: "Từ chối",
+            COMPLETED: "Hoàn thành",
+            CANCELLED: "Đã hủy"
         };
         return statusMap[status] || status;
     };
@@ -121,19 +119,6 @@ export function RequestDetailPage() {
         return typeMap[type] || type;
     };
 
-    // Handle form submission
-    const handleUpdateRequest = async (values) => {
-        setIsUpdating(true);
-        console.log("Updating request with values:", values);
-
-        const updatePayload = {
-            requestStatus: values.requestStatus,
-            responseMessage: values.responseMessage
-        };
-
-        updateRequest(`/requests/${requestId}`, updatePayload);
-    };
-
     // Format date
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
@@ -147,24 +132,33 @@ export function RequestDetailPage() {
         });
     };
 
+    // Handle form submission
+    const handleUpdateRequest = async (values) => {
+        setIsUpdating(true);
+        console.log("Updating request with values:", values);
+
+        const updatePayload = {
+            requestStatus: "CHECKED",
+            responseMessage: values.responseMessage
+        };
+
+        updateRequest(`/requests/${requestId}`, updatePayload);
+    };
+
+    const toggleSideBar = () => {
+        setCollapsed(!collapsed);
+    };
+
     return (
         <Layout style={{ minHeight: "100vh" }}>
-            <SideBarManager collapsed={collapsed} active="manager-requests" />
+            <GuardSidebar collapsed={collapsed} active="guard-requests" />
             <Layout>
-                <Header
-                    style={{
-                        background: "#fff",
-                        padding: "0 24px",
-                        borderBottom: "1px solid #f0f0f0",
-                        height: 80,
-                        display: "flex",
-                        alignItems: "center",
-                    }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px", width: "100%" }}>
+                <AppHeader toggleSideBar={toggleSideBar} />
+                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+                    <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: "16px" }}>
                         <Button
                             icon={<ArrowLeftOutlined />}
-                            onClick={() => navigate("/manager/requests")}
+                            onClick={() => navigate("/guard/requests")}
                         >
                             Quay lại
                         </Button>
@@ -172,9 +166,7 @@ export function RequestDetailPage() {
                             {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
                         </Title>
                     </div>
-                </Header>
 
-                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
                     {isRequestLoading && (
                         <div style={{ textAlign: "center", padding: "60px 0" }}>
                             <Spin size="large" />
@@ -185,7 +177,7 @@ export function RequestDetailPage() {
                     {!isRequestLoading && !requestData && (
                         <div style={{ textAlign: "center", padding: "60px 0" }}>
                             <h2>Không tìm thấy request</h2>
-                            <Button type="primary" onClick={() => navigate("/manager/requests")}>
+                            <Button type="primary" onClick={() => navigate("/guard/requests")}>
                                 Quay lại danh sách
                             </Button>
                         </div>
@@ -204,9 +196,9 @@ export function RequestDetailPage() {
                                             {formatRequestType(requestData.requestType)}
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Trạng thái">
-                                                <Tag color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
-                                                    {formatStatus(requestData.responseStatus || requestData.requestStatus)}
-                                                </Tag>
+                                            <Tag color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
+                                                {formatStatus(requestData.responseStatus || requestData.requestStatus)}
+                                            </Tag>
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Tên phòng">
                                             {requestData.roomName || 'N/A'}
@@ -230,7 +222,7 @@ export function RequestDetailPage() {
                                     </Descriptions>
                                 </Card>
 
-                                {/* Update Form */}
+                                {/* Update Status Card */}
                                 <Card title="Cập nhật trạng thái" className="h-fit">
                                     <Form
                                         form={form}
@@ -241,12 +233,12 @@ export function RequestDetailPage() {
                                         <Form.Item
                                             label="Trạng thái mới"
                                             name="requestStatus"
-                                            rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
                                         >
-                                            <Select placeholder="Chọn trạng thái">
-                                                <Option value="ACCEPTED">Chấp nhận</Option>
-                                                <Option value="REJECTED">Từ chối</Option>
-                                            </Select>
+                                            <div className="p-2 bg-green-50 border border-green-200 rounded">
+                                                <Tag color="green" className="text-sm">
+                                                    Đã kiểm tra (CHECKED)
+                                                </Tag>
+                                            </div>
                                         </Form.Item>
 
                                         <Form.Item
@@ -261,19 +253,16 @@ export function RequestDetailPage() {
                                         </Form.Item>
 
                                         <Form.Item>
-                                            <Space>
-                                                <Button
-                                                    type="primary"
-                                                    htmlType="submit"
-                                                    icon={<SaveOutlined />}
-                                                    loading={isUpdateLoading}
-                                                >
-                                                    Cập nhật
-                                                </Button>
-                                                <Button onClick={() => form.resetFields()}>
-                                                    Đặt lại
-                                                </Button>
-                                            </Space>
+                                            <Button
+                                                type="primary"
+                                                htmlType="submit"
+                                                icon={<SaveOutlined />}
+                                                loading={isUpdateLoading}
+                                                block
+                                                style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
+                                            >
+                                                Cập nhật trạng thái
+                                            </Button>
                                         </Form.Item>
                                     </Form>
                                 </Card>
@@ -287,14 +276,13 @@ export function RequestDetailPage() {
                             </Card>
 
                             {/* Response Message */}
-                            {requestData.responseMessage || requestData.ResponseMessage ? (
+                            {(requestData.responseMessage || requestData.ResponseMessage) && (
                                 <Card title="Tin nhắn phản hồi" className="mt-6">
                                     <div className="bg-blue-50 p-4 rounded-lg">
                                         <p className="whitespace-pre-wrap">{requestData.responseMessage || requestData.ResponseMessage}</p>
                                     </div>
                                 </Card>
-                            ) : null}
-
+                            )}
                         </>
                     )}
                 </Content>
@@ -302,3 +290,4 @@ export function RequestDetailPage() {
         </Layout>
     );
 }
+
