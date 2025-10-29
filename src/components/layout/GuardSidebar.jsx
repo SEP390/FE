@@ -32,10 +32,10 @@ const items = [
         key: "guard-requests",
     },
     {
-        label: <Link to={"/guard/electric-water"}>Nhập liệu số điện</Link>,
+        key: "electric-water",
         icon: <ThunderboltOutlined />,
-        key: "guard-electric-water",
-    },
+        label: <Link to={"/pages/guard/electric-water"}>Điện nước</Link>,
+    }
 ];
 
 export function GuardSidebar({ collapsed, active }) {
