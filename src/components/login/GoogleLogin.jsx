@@ -4,6 +4,7 @@ import {useApi} from "../../hooks/useApi.js";
 import {useToken} from "../../hooks/useToken.js";
 import {useNavigate} from "react-router-dom";
 import {notification, Spin} from "antd";
+import {getRedirectPathForRole, getRoleFromToken} from "../../util/auth.js";
 
 export function GoogleLogin() {
     const {post, data, isSuccess, isError, error, isLoading} = useApi();
@@ -18,8 +19,11 @@ export function GoogleLogin() {
     
     useEffect(() => {
         if (isSuccess) {
-            setToken(data.token);
-            navigate('/');
+            const token = data.token;
+            setToken(token);
+            const role = getRoleFromToken(token);
+            const redirect = getRedirectPathForRole(role);
+            navigate(redirect);
         }
     }, [data, isSuccess, navigate, setToken])
 
