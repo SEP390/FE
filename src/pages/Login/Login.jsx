@@ -3,6 +3,7 @@ import {Card, Form, Input, Button, Checkbox, Alert, message, Divider} from 'antd
 import { EyeInvisibleOutlined, EyeTwoTone, UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../api/authApi/authApi';
+import {getRedirectPathForRole, getRoleFromToken} from '../../util/auth.js';
 import {useToken} from "../../hooks/useToken.js";
 import {GoogleLogin} from "../../components/login/GoogleLogin.jsx";
 
@@ -30,9 +31,13 @@ const Login = () => {
       message.success('Đăng nhập thành công!');
       // res.data giả sử { token, fullName }
 
-      setToken(res.data?.data.token || null);
+      const token = res.data?.data.token || null;
+      setToken(token);
       localStorage.setItem('fullName', res.data?.data.fullName || '');
-      navigate('/');
+
+      const role = getRoleFromToken(token);
+      const redirect = getRedirectPathForRole(role);
+      navigate(redirect);
     } else {
       setAlert({
         show: true,
