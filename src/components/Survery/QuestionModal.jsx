@@ -5,6 +5,8 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
     const [question, setQuestion] = useState("");
     const [answers, setAnswers] = useState([{ id: Date.now(), optionName: "", isNew: true }]);
     const [loading, setLoading] = useState(false);
+    const [originalAnswers, setOriginalAnswers] = useState([]);
+
     const token = localStorage.getItem("token");
 
     // Reset mỗi khi mở modal hoặc questionId thay đổi
@@ -28,6 +30,14 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
                                         isExisting: true,
                                     }))
                                     : [{ id: Date.now(), optionName: "", isNew: true }]
+                            );
+                            setOriginalAnswers(
+                                q.options?.length
+                                    ? q.options.map(o => ({
+                                        id: o.id,
+                                        optionName: o.optionContent || "",
+                                    }))
+                                    : []
                             );
                         } else {
                             message.error("Không tải được dữ liệu câu hỏi");
@@ -105,14 +115,17 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
                     if (!a.optionName.trim()) continue;
 
                     if (a.isExisting) {
-                        await fetch(`http://localhost:8080/api/survey-options/${a.id}`, {
-                            method: "PUT",
-                            headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${token}`,
-                            },
-                            body: JSON.stringify({ optionName: a.optionName }),
-                        });
+                        const original = originalAnswers.find(o => o.id === a.id);
+                        if (original && original.optionName !== a.optionName) {
+                            await fetch(`http://localhost:8080/api/survey-options/${a.id}`, {
+                                method: "PUT",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify({ content: a.optionName }),
+                            });
+                        }
                     } else if (a.isNew) {
                         await fetch("http://localhost:8080/api/survey-select", {
                             method: "POST",
@@ -122,7 +135,7 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
                             },
                             body: JSON.stringify({
                                 surveyId: questionId,
-                                optionName: a.optionName,
+                                content: a.optionName,
                             }),
                         });
                     }
