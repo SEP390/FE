@@ -15,6 +15,7 @@ export function GuardViewRequestDetail() {
     const navigate = useNavigate();
     const [collapsed, setCollapsed] = useState(false);
     const [requestData, setRequestData] = useState(null);
+    const [residentInfo, setResidentInfo] = useState(null);
     const [form] = Form.useForm();
     const [isUpdating, setIsUpdating] = useState(false);
 
@@ -33,6 +34,15 @@ export function GuardViewRequestDetail() {
         isSuccess: isUpdateSuccess,
         isComplete: isUpdateComplete,
         isLoading: isUpdateLoading
+    } = useApi();
+
+    // API hook to get user by id
+    const {
+        get: getUserById,
+        data: userResponse,
+        isSuccess: isUserSuccess,
+        isComplete: isUserComplete,
+        isLoading: isUserLoading
     } = useApi();
 
     // Fetch request details on mount
@@ -64,6 +74,31 @@ export function GuardViewRequestDetail() {
             }
         }
     }, [isRequestSuccess, requestResponse]);
+
+    // Fetch resident info by userId once request data is available
+    useEffect(() => {
+        if (requestData?.userId) {
+            getUserById(`/users/residents/${requestData.userId}`);
+        }
+    }, [requestData, getUserById]);
+
+    // Handle user info response
+    useEffect(() => {
+        if (isUserSuccess && userResponse) {
+            let userData = null;
+            if (userResponse.data) {
+                userData = userResponse.data;
+            } else if (userResponse.username) {
+                userData = userResponse;
+            }
+            if (userData) {
+                setResidentInfo({
+                    username: userData.username,
+                    userCode: userData.userCode
+                });
+            }
+        }
+    }, [isUserSuccess, userResponse]);
 
     // Handle update response
     useEffect(() => {
@@ -205,6 +240,12 @@ export function GuardViewRequestDetail() {
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Học kỳ">
                                             {requestData.semesterName || 'N/A'}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Username người ở">
+                                            {residentInfo?.username || (isUserLoading ? 'Đang tải...' : 'N/A')}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Mã người ở">
+                                            {residentInfo?.userCode || (isUserLoading ? 'Đang tải...' : 'N/A')}
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Ngày tạo">
                                             {formatDate(requestData.createTime)}
