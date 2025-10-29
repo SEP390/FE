@@ -2,7 +2,6 @@ import {Layout, Typography, Table, Dropdown, Button, message, Space, Input} from
 import {EllipsisOutlined, PlusOutlined, SearchOutlined} from "@ant-design/icons";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { useEffect, useState } from "react";
-import {useNavigate} from "react-router-dom";
 import {QuestionModal} from "../../../components/Survery/QuestionModal.jsx";
 
 const { Header, Content } = Layout;

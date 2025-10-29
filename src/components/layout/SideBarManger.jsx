@@ -61,9 +61,9 @@ const managerItems = [
         key: "manager-staff",
     },
     {
-        label: <Link to={"/manager/violations"}>Quản lí báo cáo vi phạm</Link>,
+        label: <Link to={"/manager/reports"}>Quản lí báo cáo</Link>,
         icon: <WarningOutlined/>,
-        key: "manager-violations",
+        key: "manager-reports",
     },
     {
         label: <Link to={"/manager/surveys"}>Quản lí khảo sát</Link>,
