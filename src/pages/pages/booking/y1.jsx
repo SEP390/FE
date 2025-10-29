@@ -4,8 +4,30 @@ import {useEffect, useState} from "react";
 import {useApi} from "../../../hooks/useApi.js";
 import {Alert, App, Card, Skeleton} from "antd";
 import {AppLayout} from "../../../components/layout/AppLayout.jsx";
+import {useNavigate} from "react-router-dom";
 
-export default function BookingYear1Page() {
+function AuthorizationLayer() {
+    const {get, data, error, isSuccess} = useApi();
+    const navigate = useNavigate();
+    useEffect(() => {
+        if(error) navigate("/");
+    }, [error]);
+    useEffect(() => {
+        get("/booking/current")
+    }, [get]);
+
+    useEffect(() => {
+        if (!isSuccess) return;
+        if (data && data.status === 'UNAVAILABLE') navigate("/booking");
+        if (data && data.status === 'LOCK') navigate("/booking");
+    }, [isSuccess, data, navigate]);
+    
+    if (!isSuccess) return <></>;
+    
+    return <BookingYear1 />
+}
+
+function BookingYear1() {
     const [isOpen, setIsOpen] = useState(false);
     const [room, setRoom] = useState(null);
     const {get, data, error, isSuccess} = useApi();
@@ -35,4 +57,8 @@ export default function BookingYear1Page() {
             </Card>
         </AppLayout>
     </>
+}
+
+export default function BookingYear1Page() {
+    return <AuthorizationLayer />
 }

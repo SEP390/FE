@@ -7,7 +7,7 @@ import {formatTime} from "../../util/formatTime.js";
 const columns = [
     {
         title: 'Kỳ',
-        dataIndex: 'semesterName',
+        dataIndex: ['slotHistory', 'semester', 'name'],
         key: 'semesterId',
         render: (semesterName) => {
             return <Tag>{semesterName}</Tag>
@@ -15,22 +15,17 @@ const columns = [
     },
     {
         title: 'Dorm',
-        dataIndex: 'dormName',
+        dataIndex: ['slotHistory', 'dormName'],
         key: 'dormId',
     },
     {
-        title: 'Tầng',
-        dataIndex: 'floor',
-        key: 'floor',
-    },
-    {
         title: 'Phòng',
-        dataIndex: 'roomNumber',
+        dataIndex: ['slotHistory', 'roomNumber'],
         key: 'roomId',
     },
     {
         title: 'Slot',
-        dataIndex: 'slotName',
+        dataIndex: ['slotHistory', 'slotName'],
         key: 'slotId',
     },
     {
@@ -77,11 +72,7 @@ export function BookingHistoryPage() {
     }
 
     const dataSource = data ? data.content.map(row => {
-        row.roomNumber = row.slotHistory.slot.room.roomNumber;
-        row.slotName = row.slotHistory.slot.slotName;
-        row.floor = row.slotHistory.slot.room.floor;
-        row.dormName = row.slotHistory.slot.room.dorm.dormName;
-        row.semesterName = row.slotHistory.semester.name;
+        row.key = row.id;
         return row;
     }) : [];
 

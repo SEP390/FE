@@ -1,10 +1,25 @@
-import {Alert, Button, Card, Form, InputNumber, notification, Skeleton, Tabs} from "antd";
+import {
+    Alert,
+    Button,
+    Card,
+    Form,
+    InputNumber,
+    notification,
+    Skeleton,
+    Spin,
+    Tabs,
+    Table,
+    App,
+    Descriptions, Tag
+} from "antd";
 import {useApi} from "../../../hooks/useApi.js";
 import {useCallback, useEffect, useState} from "react";
 import {ChevronLeft} from "lucide-react";
 import {LayoutGuard} from "../../../components/layout/LayoutGuard.jsx";
+import {formatPrice} from "../../../util/formatPrice.js";
+import {formatTime} from "../../../util/formatTime.js";
 
-const mockDorm = "4e8a9e06-548f-43cb-ac81-e253ccc1c96a";
+const {Item} = Descriptions;
 
 function RoomButton({data, setSelect}) {
     const onClick = () => {
@@ -194,6 +209,8 @@ function CreateBillButton({index, onSuccess}) {
             indexId: index.id
         })
     }
+    
+    const {notification} = App.useApp();
 
     useEffect(() => {
         data && onSuccess(data);
@@ -201,11 +218,35 @@ function CreateBillButton({index, onSuccess}) {
 
     useEffect(() => {
         error && notification.error({ message: "Lỗi", description: error, placement: "topLeft"})
-    }, [error]);
+    }, [error, notification]);
 
     return <>
         <Button onClick={createBill}>Tạo hóa đơn</Button>
     </>
+}
+
+function BillInfo({index}) {
+    const {get, data, error} = useApi();
+
+    useEffect(() => {
+        get(`/electric-water-index/${index.id}/bill`)
+    }, [get]);
+    if (!data) return <></>
+
+    const status = (data) => {
+        if (data.status === 'PENDING') return <Tag>Chờ thanh toán</Tag>
+        if (data.status === 'SUCCESS') return <Tag color={"success"}>Đã thanh toán</Tag>
+    }
+
+    return <Card title={"Hóa đơn"}>
+        <Descriptions layout={"vertical"}>
+            <Item label={"Ngày tạo"}>{formatTime(data.createDate)}</Item>
+            <Item label={"Tổng giá"}>{formatPrice(data.price)}</Item>
+            <Item label={"Số người trong phòng"}>{data.userCount} người</Item>
+            <Item label={"Giá mỗi người phải trả"}>{formatPrice(data.price)}</Item>
+            <Item label={"Trạng thái"}>{status(data)}</Item>
+        </Descriptions>
+    </Card>
 }
 
 function IndexInfo({room, semester}) {
@@ -236,18 +277,23 @@ function IndexInfo({room, semester}) {
     if (data && edit) return <UpdateIndex initValues={data} setEdit={setEdit} room={room} semester={semester} fetchData={fetchData}/>
 
     return <>
-        <Form layout={"vertical"} initialValues={{
-            electricIndex: data && data.electricIndex,
-            waterIndex: data && data.waterIndex
-        }}>
-            <IndexFormItems disable={true}/>
-            <Form.Item>
-                <div className={"flex gap-3"}>
-                    <Button onClick={() => setEdit(true)}>Sửa</Button>
-                    {data && <CreateBillButton index={data} onSuccess={onBillCreated} />}
-                </div>
-            </Form.Item>
-        </Form>
+        <div className={"grid grid-cols-2"}>
+            <Form layout={"vertical"} initialValues={{
+                electricIndex: data && data.electricIndex,
+                waterIndex: data && data.waterIndex
+            }}>
+                <IndexFormItems disable={true}/>
+                <Form.Item>
+                    <div className={"flex gap-3"}>
+                        <Button onClick={() => setEdit(true)}>Sửa</Button>
+                        {data && <CreateBillButton index={data} onSuccess={onBillCreated} />}
+                    </div>
+                </Form.Item>
+            </Form>
+            <div>
+                {data && <BillInfo index={data}/>}
+            </div>
+        </div>
     </>
 }
 
@@ -292,13 +338,25 @@ function RoomIndexInfo({room, setSelect}) {
     </>
 }
 
-export default function GuardElectricWaterPage() {
+function MockDormContext() {
+    const {get, data, error, isError} = useApi();
+
+    useEffect(() => {
+        get("/dorms")
+    }, [get]);
+
+    if (!data) return <Spin spinning={true}></Spin>
+
+    return <GuardElectricWaterPage dorm={data[0]}/>
+}
+
+function GuardElectricWaterPage({ dorm }) {
     const {get, data, error, isError} = useApi();
 
     const [select, setSelect] = useState(null);
     
     useEffect(() => {
-        get(`/dorms/${mockDorm}/rooms`);
+        get(`/dorms/${dorm.id}/rooms`);
     }, [get]);
 
     useEffect(() => {
@@ -321,4 +379,8 @@ export default function GuardElectricWaterPage() {
             </Card>
         </LayoutGuard>
     </>
+}
+
+export default function MockGuardElectricWaterPage() {
+    return <MockDormContext />
 }
