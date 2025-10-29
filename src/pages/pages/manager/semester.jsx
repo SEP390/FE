@@ -4,6 +4,7 @@ import {useEffect, useState} from "react";
 import {Button, Card, Form, Input, Table, Tag} from "antd";
 import {Plus} from "lucide-react";
 import {useNavigate} from "react-router-dom";
+import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 
 export default function ManageSemester() {
     const {get, data, error, isSuccess} = useApi();
@@ -53,12 +54,12 @@ export default function ManageSemester() {
         return row;
     }) : [];
 
-    return <AppLayout>
+    return <LayoutManager active={"semester"}>
         <Card title={"Quản lý kỳ"}>
             <div className={"mb-3"}>
                 <Button onClick={() => navigate("/pages/manager/semester/create")} className={"flex items-center"}><Plus size={14}/>Thêm</Button>
             </div>
             <Table bordered dataSource={dataSource} columns={cols}></Table>
         </Card>
-    </AppLayout>
+    </LayoutManager>
 }
