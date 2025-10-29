@@ -1,7 +1,7 @@
 import {useEffect} from "react";
-import {useSearchParams} from "react-router-dom";
+import {Link, useSearchParams} from "react-router-dom";
 import {useApi} from "../../hooks/useApi.js";
-import {Result, Skeleton} from "antd";
+import {Button, Result, Skeleton} from "antd";
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 
 export function PaymentResult() {
@@ -17,8 +17,32 @@ export function PaymentResult() {
 
     const subTitle = (data) => {
         if (data && data.slotHistory) {
-            return <span>{data.slotHistory.slot.slotName}, {data.slotHistory.slot.room.roomNumber}, {data.slotHistory.slot.room.dorm.dormName}</span>
+            return <span>{data.slotHistory.slotName}, {data.slotHistory.roomNumber}, {data.slotHistory.dormName}</span>
         }
+        return "";
+    }
+
+    const extra = (data) => {
+        if (data && data.slotHistory) {
+            return [
+                <Button><Link to={"/booking-history"}>Lịch sử đặt phòng</Link></Button>, data.status !== 'SUCCESS' && <Button><Link to={"/booking"}>Đặt lại phòng</Link></Button>
+            ]
+        }
+        if (data && data.electricWaterBill) {
+            return [
+                <Button><Link to={"/electric-water"}>Quay về hóa đơn điện nước</Link></Button>
+            ]
+        }
+    }
+
+    const status = (data) => {
+        if (data.status === "CANCEL") return "info";
+        if (data.status === "SUCCESS") return "success";
+        return "";
+    }
+    const title = (data) => {
+        if (data.status === "CANCEL") return "Bạn đã hủy thanh toán";
+        if (data.status === "SUCCESS") return "Thanh toán thành công";
         return "";
     }
 
@@ -27,19 +51,12 @@ export function PaymentResult() {
             <div className={"h-full bg-white rounded-lg flex items-center justify-center"}>
                 <div className={"p-3"}>
                     {isLoading && <Skeleton active />}
-                    {data && data.status === "CANCEL" && <>
-                        <Result
-                            status="info"
-                            title="Bạn đã hủy thanh toán"
-                        />
-                    </>}
-                    {data && data.status === "SUCCESS" && <>
-                        <Result
-                            status="success"
-                            title="Thanh toán thành công"
-                            subTitle={subTitle(data)}
-                        />
-                    </>}
+                    {data && <Result
+                        status={status(data)}
+                        title={title(data)}
+                        subTitle={subTitle(data)}
+                        extra={extra(data)}
+                    />}
                 </div>
             </div>
         </AppLayout>

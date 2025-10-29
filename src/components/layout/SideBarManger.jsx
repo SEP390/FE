@@ -31,9 +31,9 @@ const managerItems = [
         key: "manager-students",
     },
     {
-        label: <Link to={"/manager/electric-water"}>Hóa đơn điện nước</Link>,
+        label: <Link to={"/pages/manager/electric-water/pricing"}>Giá điện nước</Link>,
         icon: <ThunderboltOutlined/>,
-        key: "manager-electric-water",
+        key: "electric-water-pricing",
     },
     {
         label: <Link to={"/manager/requests"}>Quản lí yêu cầu</Link>,
@@ -69,6 +69,11 @@ const managerItems = [
         label: <Link to={"/manager/surveys"}>Quản lí khảo sát</Link>,
         icon: <FileSearchOutlined/>,
         key: "manager-surveys",
+    },
+    {
+        label: <Link to={"/pages/manager/semester"}>Quản lí kỳ</Link>,
+        icon: <FileSearchOutlined/>,
+        key: "semester",
     }
 ];
 
