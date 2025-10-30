@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Layout, Typography, Row, Col, Table, Input, Select, Button, Tag, Space,
-    Dropdown, Menu, message, Spin, Modal, Form, DatePicker // Import DatePicker
+    Dropdown, Menu, message, Spin, Modal, Form, DatePicker
 } from 'antd';
 import {
     SearchOutlined,
@@ -18,9 +18,6 @@ import { SideBarManager } from '../../components/layout/SideBarManger';
 import axiosClient from '../../api/axiosClient/axiosClient';
 // Import dayjs for DatePicker
 import dayjs from 'dayjs';
-// Import customParseFormat plugin for dayjs if needed for dob parsing
-// import customParseFormat from 'dayjs/plugin/customParseFormat';
-// dayjs.extend(customParseFormat);
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -53,7 +50,7 @@ export function StaffManager() {
     const fetchStaff = async () => {
         setLoading(true);
         try {
-            // !!! LƯU Ý BE: Cần sửa lỗi NullPointerException trong service getAllEmployee() !!!
+            // LƯU Ý BE: Hàm service getAllEmployee() cần sửa lỗi NullPointerException!
             const response = await axiosClient.get('/employees');
             if (response && response.data) {
                 const dataWithKey = response.data.map(staff => ({ ...staff, key: staff.employeeId }));
@@ -99,13 +96,14 @@ export function StaffManager() {
     const handleAddStaff = async (values) => {
         setIsSubmittingAdd(true);
         try {
+            // Định dạng lại ngày sinh
             const formattedValues = {
                 ...values,
                 dob: values.dob ? dayjs(values.dob).format('YYYY-MM-DD') : null,
-                // dormId không được gửi khi tạo mới (theo DTO và Service)
+                dormId: values.dormId || null // Gửi dormId (khớp DTO mới)
             };
-            delete formattedValues.dormId;
 
+            // LƯU Ý BE: Hàm service createEmployee() cần xử lý dormId được gửi lên!
             await axiosClient.post('/employees', formattedValues);
             message.success(`Đã thêm nhân viên ${values.username}!`);
             handleCancelAdd(); fetchStaff();
@@ -119,11 +117,11 @@ export function StaffManager() {
     // --- Handlers cho Modal Sửa ---
     const showEditModal = (record) => {
         setEditingStaff(record);
-        // Gọi API GET /employees/{id} để lấy thông tin chi tiết (vì bảng thiếu 'dob')
+        // Gọi API GET /employees/{id} để lấy thông tin chi tiết
         axiosClient.get(`/employees/${record.employeeId}`)
             .then(response => {
                 if (response && response.data) {
-                    const details = response.data;
+                    const details = response.data; // Đây là GetEmployeeById DTO
                     formEditStaff.setFieldsValue({
                         // Tìm dormId từ dormName (của record) so với danh sách dorms
                         dormId: dorms.find(d => d.dormName === record.dormName)?.id || undefined,
@@ -148,24 +146,22 @@ export function StaffManager() {
 
     const handleCancelEdit = () => { setIsEditModalVisible(false); setEditingStaff(null); formEditStaff.resetFields(); };
 
+    // Bên trong hàm handleUpdateStaff
     const handleUpdateStaff = async (values) => {
         if (!editingStaff) return;
         setIsSubmittingEdit(true);
         try {
-            const employeeId = editingStaff.employeeId;
-            // Tạo payload khớp với UpdateEmployeeRequest DTO
+            const employeeId = editingStaff.employeeId; // Lấy ID từ record
             const payload = {
                 dormId: values.dormId || null,
                 phoneNumber: values.phoneNumber,
                 birthDate: values.birthDate ? dayjs(values.birthDate).format('YYYY-MM-DD') : null,
                 role: values.role,
-                EmployeeId: employeeId // DTO BE có trường này
+                EmployeeId: employeeId // Gửi cả EmployeeId (khớp DTO)
             };
 
-            // === GỌI ĐÚNG API PUT ===
-            // Endpoint: @PutMapping("/api/employees/{id}")
+            // Gọi đúng API PUT /api/employees/{id}
             await axiosClient.put(`/employees/${employeeId}`, payload);
-            // === KẾT THÚC GỌI API ===
 
             message.success(`Đã cập nhật nhân viên ${editingStaff.username}!`);
             handleCancelEdit(); fetchStaff();
@@ -256,7 +252,7 @@ export function StaffManager() {
                 </Content>
             </Layout>
 
-            {/* Modal Thêm Nhân Viên (Đã XÓA dormId) */}
+            {/* === Modal Thêm Nhân Viên (ĐÃ THÊM LẠI dormId) === */}
             <Modal title="Thêm nhân viên mới" open={isAddModalVisible} onCancel={handleCancelAdd} footer={null} destroyOnClose>
                 <Form form={formAddStaff} layout="vertical" onFinish={handleAddStaff} name="add_staff_form">
                     <Row gutter={16}><Col span={12}><Form.Item name="username" label="Username" rules={[{ required: true }]}><Input /></Form.Item></Col><Col span={12}><Form.Item name="password" label="Mật khẩu" rules={[{ required: true }]}><Input.Password /></Form.Item></Col></Row>
@@ -265,7 +261,8 @@ export function StaffManager() {
                     <Row gutter={16}><Col span={12}><Form.Item name="dob" label="Ngày sinh" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/></Form.Item></Col><Col span={12}><Form.Item name="gender" label="Giới tính" rules={[{ required: true }]}><Select><Option value="MALE">Nam</Option><Option value="FEMALE">Nữ</Option><Option value="OTHER">Khác</Option></Select></Form.Item></Col></Row>
                     <Form.Item name="userCode" label="Mã NV (Tùy chọn)"><Input /></Form.Item>
                     <Form.Item name="role" label="Chức vụ" rules={[{ required: true }]}><Select><Option value="GUARD">Bảo vệ</Option><Option value="CLEANER">Lao công</Option><Option value="MANAGER">Quản lý</Option></Select></Form.Item>
-                    {/* Đã xóa Form.Item dormId */}
+                    {/* Thêm lại dormId (khớp DTO mới) */}
+                    <Form.Item name="dormId" label="Khu vực làm việc"><Select placeholder="Chọn khu vực (nếu có)" loading={dorms.length === 0} allowClear>{dorms.map(dorm => (<Option key={dorm.id} value={dorm.id}>{dorm.dormName}</Option> ))}</Select></Form.Item>
                     <Form.Item style={{ textAlign: 'right', marginTop: 24 }}><Space><Button onClick={handleCancelAdd}>Hủy</Button><Button type="primary" htmlType="submit" loading={isSubmittingAdd}>Thêm</Button></Space></Form.Item>
                 </Form>
             </Modal>
@@ -281,7 +278,6 @@ export function StaffManager() {
                     <Form.Item style={{ textAlign: 'right', marginTop: 24 }}><Space><Button onClick={handleCancelEdit}> Hủy </Button><Button type="primary" htmlType="submit" loading={isSubmittingEdit}> Cập nhật </Button></Space></Form.Item>
                 </Form>
             </Modal>
-
         </Layout>
     );
 }
