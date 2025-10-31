@@ -30,6 +30,8 @@ export function getRedirectPathForRole(role) {
   const normalized = String(role).toLowerCase();
   if (normalized.includes('manager')) return '/manager';
   if (normalized.includes('guard')) return '/guard/requests';
+  if (normalized.includes('cleaner')) return '/cleaner/schedule';
+  if (normalized.includes('technical') || normalized.includes('technician')) return '/technical/requests';
   if (normalized.includes('resident') || normalized.includes('student')) return '/student-info';
   return '/';
 }
