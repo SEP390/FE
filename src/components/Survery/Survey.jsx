@@ -14,8 +14,28 @@ import {
 import { AppLayout } from "../../components/layout/AppLayout.jsx";
 import { surveyApi } from "../../api/surveyApi/surveyApi.js";
 import { useToken } from "../../hooks/useToken.js";
+import axios from "axios";
 
 const { Title, Text } = Typography;
+
+
+const BASE_URL = "http://localhost:8080/api";
+
+export const postsurveyApi = {
+    // ...
+    submitAnswers: (ids, token) => {
+        return axios.post(
+            `${BASE_URL}/survey-select`,
+            { ids },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+    },
+};
 
 const Survey = () => {
   const { token } = useToken();
@@ -68,12 +88,34 @@ const Survey = () => {
   const progress = total ? Math.round((answeredCount / total) * 100) : 0;
   const canSubmit = total > 0 && answeredCount === total;
 
-  const handleSubmit = () => {
-    console.log("User answers:", answers);
-    message.success("Cảm ơn bạn đã hoàn thành khảo sát!");
-  };
+    const handleSubmit = async () => {
+        if (!canSubmit) {
+            message.warning("Vui lòng trả lời hết tất cả câu hỏi!");
+            return;
+        }
 
-  return (
+        try {
+            setLoading(true);
+
+            // Lấy danh sách optionId người dùng đã chọn
+            const selectedIds = Object.values(answers);
+
+            const res = await postsurveyApi.submitAnswers(selectedIds, token);
+            if (res.status === 200) {
+                message.success("Cảm ơn bạn đã hoàn thành khảo sát!");
+                setAnswers({});
+            } else {
+                message.error("Gửi khảo sát thất bại!");
+            }
+        } catch (err) {
+            message.error("Có lỗi xảy ra khi gửi khảo sát!");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    return (
     <AppLayout activeSidebar="survey">
       <div
         style={{

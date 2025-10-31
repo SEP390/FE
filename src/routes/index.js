@@ -24,7 +24,7 @@ import {ReportManagePage} from "../pages/manager/Report/ReportManagePage.jsx";
 import { RoomInforDetail } from "../pages/manager/RoomInforDetail.jsx";
 import { ManagerRequests } from "../pages/manager/Request/ManagerRequests.jsx";
 import { RequestDetailPage } from "../pages/manager/Request/RequestDetailPage.jsx";
-import {ResidentManagerPage} from "../pages/pages/manager/resident_manager/ResidentManagerPage.jsx";
+import {ResidentManagerPage} from "../pages/manager/ResidentManagerPage.jsx";
 import {StaffManager} from "../pages/manager/StaffManager.jsx";
 import {SurveyManagementPage} from "../pages/manager/Survey/SurveyManagementPage.jsx";
 import {ScheduleManager} from "../pages/manager/ScheduleManager.jsx";
@@ -35,6 +35,7 @@ import {CleanerSupplies} from "../pages/cleaner/CleanerSupplies.jsx";
 import {TechnicalRequests} from "../pages/technical/TechnicalRequests.jsx";
 import {TeachnicalCreateReport} from "../pages/technical/TeachnicalCreateReport.jsx";
 import {WarehouseManagement} from "../pages/technical/WarehouseManagement.jsx";
+import {ResidentDetail} from "../pages/manager/ResidentDetail.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -71,6 +72,7 @@ const routes = [
     { path: "/manager/attendance", element: AttendanceManagementPage },
     { path: "/manager/surveys", element: SurveyManagementPage },
     {path: "/manager/residents", element: ResidentManagerPage},
+    { path: "/manager/resident-detail/:residentId", element: ResidentDetail },
     {path: "/manager/reports", element: ReportManagePage},
 
     // --- ROUTES DÀNH CHO CLEANER ---

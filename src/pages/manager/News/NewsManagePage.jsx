@@ -48,7 +48,7 @@ export function NewsManagePage() {
     const fetchNews = async () => {
         setLoading(true);
         try {
-            const base = "http://localhost:8080/api/users";
+            const base = "http://localhost:8080/api";
             const res = await fetch(`${base}/news`, {
                 headers: {
                     "Content-Type": "application/json",
@@ -102,7 +102,7 @@ export function NewsManagePage() {
         const newStatus = record.status === "VISIBLE" ? "HIDDEN" : "VISIBLE";
 
         try {
-            const res = await fetch(`http://localhost:8080/api/users/updatenews/${record.newsid}`, {
+            const res = await fetch(`http://localhost:8080/api/news/updatenews/${record.newsid}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
