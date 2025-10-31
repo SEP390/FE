@@ -84,7 +84,7 @@ export function CurrentBooking({ data }) {
 }
 
 export function BookingPage() {
-    const {get, data, error, isSuccess} = useApi();
+    const {get, data, error, isSuccess, isComplete} = useApi();
 
     const navigate = useNavigate()
     const {notification} = App.useApp();
@@ -99,7 +99,7 @@ export function BookingPage() {
         if (isSuccess && (!data || data.status === 'CANCEL')) navigate("/pages/booking/y1")
     }, [data, isSuccess, navigate]);
 
-    return <Spin spinning={!isSuccess}>
+    return <Spin spinning={!isComplete}>
         <AppLayout activeSidebar={"booking"}>
             <CurrentBooking data={data}/>
         </AppLayout>
