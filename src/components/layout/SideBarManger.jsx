@@ -9,6 +9,7 @@ import {
     TeamOutlined,
     WarningOutlined,
     FileSearchOutlined,
+    CheckSquareOutlined,
 } from "@ant-design/icons";
 // CHUẨN HÓA IMPORTS: Import Layout và Menu từ 'antd'
 import { Layout, Menu } from "antd";
@@ -59,6 +60,11 @@ const managerItems = [
         label: <Link to={"/manager/staff"}>Quản lí nhân viên</Link>,
         icon: <TeamOutlined/>,
         key: "manager-staff",
+    },
+    {
+        label: <Link to={"/manager/attendance"}>Quản lí chấm công</Link>,
+        icon: <CheckSquareOutlined/>,
+        key: "manager-attendance",
     },
     {
         label: <Link to={"/manager/reports"}>Quản lí báo cáo</Link>,
