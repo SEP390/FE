@@ -14,7 +14,7 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
     const handleSubmit = async () => {
         try {
             const values = await form.validateFields();
-            const res = await fetch(`http://localhost:8080/api/news/updatenews/${news.newsid}`, {
+            const res = await fetch(`http://localhost:8080/api/news/${news.newsid}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

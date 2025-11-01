@@ -17,7 +17,7 @@ export function CreateNewsPage() {
     const handleSubmit = async (values) => {
         setLoading(true);
         try {
-            const res = await fetch("http://localhost:8080/api/news/createnews", {
+            const res = await fetch("http://localhost:8080/api/news", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

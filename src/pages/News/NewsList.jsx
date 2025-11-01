@@ -38,7 +38,7 @@ export function NewsList() {
     const fetchNews = async () => {
         setLoading(true);
         try {
-            const base = "http://localhost:8080/api/users";
+            const base = "http://localhost:8080/api";
             const res = await fetch(`${base}/news`, {
                 headers: {
                     "Content-Type": "application/json",
