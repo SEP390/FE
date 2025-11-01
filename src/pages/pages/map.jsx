@@ -40,7 +40,7 @@ function OpenStreetMap() {
 }
 export default function MapPage() {
     return <>
-        <AppLayout>
+        <AppLayout activeSidebar={"map"}>
             <Card title={"Bản đồ trường học"} className={"!h-full !box-border"}>
                 <OpenStreetMap />
             </Card>
