@@ -1,48 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Card, Divider, Row, Col, Button, Spin, Alert, Descriptions, Tag } from 'antd';
+// === SỬA LỖI: Thêm Avatar, Row, Col, Space ===
+import {
+    Layout, Typography, Card, Divider, Row, Col, Button, Spin, Alert, Descriptions, Tag, Space, Avatar
+} from 'antd';
+// === KẾT THÚC SỬA ===
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeftOutlined, UserOutlined } from "@ant-design/icons";
-import { SideBarManager } from '../../components/layout/SideBarManger'; // Đảm bảo đường dẫn đúng
-import axiosClient from '../../api/axiosClient/axiosClient'; // Đảm bảo đường dẫn đúng
-import dayjs from 'dayjs'; // Import dayjs
+import { SideBarManager } from '../../components/layout/SideBarManger';
+import axiosClient from '../../api/axiosClient/axiosClient';
+import dayjs from 'dayjs';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-// === HÀM HỖ TRỢ (đặt bên ngoài component) ===
-// Dịch GenderEnum sang tiếng Việt
+// (Các hàm hỗ trợ translateGender và translateRole giữ nguyên)
 const translateGender = (gender) => {
     if (gender === 'MALE') return 'Nam';
     if (gender === 'FEMALE') return 'Nữ';
     return 'Khác';
 };
-
-// Dịch RoleEnum sang tiếng Việt
 const translateRole = (role) => {
     if (role === 'RESIDENT') return 'Sinh viên';
     if (role === 'GUARD') return 'Bảo vệ';
     if (role === 'CLEANER') return 'Lao công';
     if (role === 'MANAGER') return 'Quản lý';
     if (role === 'ADMIN') return 'Quản trị viên';
-    return role; // Trả về giá trị gốc nếu không khớp
+    return role;
 }
 
+
 // --- COMPONENT CHÍNH ---
-// Đảm bảo export function (named export)
 export function ResidentDetail() {
-    // Lấy ID từ URL (phải khớp với tên tham số trong Route)
     const { residentId } = useParams();
-
-    // State cho sidebar
-    const activeKey = 'manager-residents'; // Đặt active key cho đúng trang
+    const activeKey = 'manager-residents';
     const [collapsed, setCollapsed] = useState(false);
-
-    // State cho dữ liệu và loading/error
     const [residentData, setResidentData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // useEffect để gọi API
+    // useEffect để gọi API (Giữ nguyên logic)
     useEffect(() => {
         const fetchData = async () => {
             if (!residentId) {
@@ -53,20 +49,19 @@ export function ResidentDetail() {
             setLoading(true);
             setError(null);
             try {
-                // Gọi API GET /api/users/{id}
-                const response = await axiosClient.get(`/users/${residentId}`);
-
+                // API đã sửa đúng đường dẫn
+                const response = await axiosClient.get(`/users/residents/${residentId}`);
                 if (response && response.data) {
-                    setResidentData(response.data); // Dữ liệu từ GetUserByIdResponse
+                    setResidentData(response.data);
                 } else {
-                    console.warn("API user details response missing data:", response);
                     throw new Error("Không tìm thấy thông tin người ở.");
                 }
-
             } catch (err) {
                 console.error("Lỗi khi tải dữ liệu chi tiết:", err);
                 if (err.response?.status === 401) {
                     setError("Bạn chưa đăng nhập hoặc phiên đã hết hạn.");
+                } else if (err.response?.status === 404) {
+                    setError("Không tìm thấy người ở này (Lỗi 404).");
                 } else {
                     setError(err.response?.data?.message || err.message || "Đã có lỗi xảy ra.");
                 }
@@ -74,11 +69,10 @@ export function ResidentDetail() {
                 setLoading(false);
             }
         };
-
         fetchData();
-    }, [residentId]); // Gọi lại khi residentId thay đổi
+    }, [residentId]);
 
-    // --- HIỂN THỊ LOADING HOẶC LỖI ---
+    // --- HIỂN THỊ LOADING HOẶC LỖI (Giữ nguyên) ---
     if (loading) {
         return (
             <Layout style={{ minHeight: '100vh' }}>
@@ -95,7 +89,6 @@ export function ResidentDetail() {
             </Layout>
         );
     }
-
     if (error) {
         return (
             <Layout style={{ minHeight: '100vh' }}>
@@ -114,55 +107,80 @@ export function ResidentDetail() {
         );
     }
 
-    // --- HIỂN THỊ DỮ LIỆU ---
+    // --- === GIAO DIỆN MỚI === ---
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
 
             <Layout>
+                {/* Header giữ nguyên */}
                 <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80 }}>
                     <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>
                         <Link to="/manager/residents" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)' }}>
                             <ArrowLeftOutlined />
                         </Link>
-                        Chi tiết người ở: {residentData?.fullName || residentData?.username || '...'}
+                        Chi tiết sinh viên
                     </Title>
                 </Header>
 
-                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
+                {/* Sửa lại Content: Bỏ nền trắng, thay bằng nền xám nhạt */}
+                <Content style={{ margin: '24px 16px', padding: 24, background: '#f0f2f5' }}>
 
-                    <Card title={<Space><UserOutlined /> Thông tin cá nhân</Space>}>
-                        {/* Dùng Antd Descriptions để hiển thị thông tin chi tiết */}
-                        <Descriptions bordered column={{ xs: 1, sm: 1, md: 2 }}>
-
-                            {/* Hiển thị các trường từ DTO GetUserByIdResponse */}
-                            <Descriptions.Item label="Họ và tên">{residentData.fullName || 'N/A'}</Descriptions.Item>
-                            <Descriptions.Item label="Username">{residentData.username || 'N/A'}</Descriptions.Item>
-                            <Descriptions.Item label="Mã SV (User Code)">{residentData.userCode || 'N/A'}</Descriptions.Item>
-                            <Descriptions.Item label="Email">{residentData.email || 'N/A'}</Descriptions.Item>
-                            <Descriptions.Item label="Số điện thoại">{residentData.phoneNumber || 'N/A'}</Descriptions.Item>
-                            <Descriptions.Item label="Giới tính">{translateGender(residentData.gender)}</Descriptions.Item>
-                            <Descriptions.Item label="Ngày sinh">
-                                {residentData.dob ? dayjs(residentData.dob).format('DD/MM/YYYY') : 'N/A'}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="Vai trò">
-                                <Tag color="blue">{translateRole(residentData.role)}</Tag>
-                            </Descriptions.Item>
-
-                            {/* Hiển thị ID (nếu cần gỡ lỗi) */}
-                            {/* <Descriptions.Item label="UserID (debug)">{residentData.userID || 'N/A'}</Descriptions.Item> */}
-                        </Descriptions>
+                    {/* === 1. THẺ PROFILE HEADER === */}
+                    <Card bordered={false} style={{ marginBottom: 24 }}>
+                        <Space align="center" size={24}>
+                            <Avatar size={80} icon={<UserOutlined />} />
+                            <div>
+                                <Title level={3} style={{ marginBottom: 4 }}>
+                                    {residentData.fullName || 'N/A'}
+                                </Title>
+                                <Text type="secondary" style={{ fontSize: '16px' }}>
+                                    @{residentData.username || 'N/A'}
+                                </Text>
+                            </div>
+                            <Tag color="blue" style={{ fontSize: '14px', padding: '5px 10px', marginLeft: 32 }}>
+                                {translateRole(residentData.role)}
+                            </Tag>
+                        </Space>
                     </Card>
 
-                    {/* Bạn có thể thêm Card khác ở đây để hiển thị thông tin phòng (nếu DTO có) */}
-                    {/* Ví dụ:
-                     <Card title="Thông tin Cư trú" style={{ marginTop: 20 }}>
-                         <Descriptions bordered column={1}>
-                            <Descriptions.Item label="Tòa nhà">...</Descriptions.Item>
-                            <Descriptions.Item label="Số phòng">...</Descriptions.Item>
-                         </Descriptions>
-                    </Card>
-                    */}
+                    {/* === 2. BỐ CỤC 2 CỘT === */}
+                    <Row gutter={[24, 24]}>
+
+                        {/* CỘT BÊN TRÁI: Thông tin cá nhân */}
+                        <Col xs={24} md={16}>
+                            <Card title="Thông tin cá nhân" bordered={false}>
+                                {/* Bỏ 'bordered', dùng layout 'horizontal' để 2 cột */}
+                                <Descriptions column={1} layout="horizontal">
+                                    <Descriptions.Item label="Họ và tên">{residentData.fullName || 'N/A'}</Descriptions.Item>
+                                    <Descriptions.Item label="Mã SV">{residentData.userCode || 'N/A'}</Descriptions.Item>
+                                    <Descriptions.Item label="Ngày sinh">
+                                        {residentData.dob ? dayjs(residentData.dob).format('DD/MM/YYYY') : 'N/A'}
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Giới tính">{translateGender(residentData.gender)}</Descriptions.Item>
+                                </Descriptions>
+                            </Card>
+                        </Col>
+
+                        {/* CỘT BÊN PHẢI: Thông tin liên lạc & Phòng */}
+                        <Col xs={24} md={8}>
+                            <Card title="Thông tin liên lạc" bordered={false}>
+                                <Descriptions column={1} layout="horizontal">
+                                    <Descriptions.Item label="Email">{residentData.email || 'N/A'}</Descriptions.Item>
+                                    <Descriptions.Item label="Số điện thoại">{residentData.phoneNumber || 'N/A'}</Descriptions.Item>
+                                </Descriptions>
+                            </Card>
+
+                            <Card title="Thông tin cư trú" bordered={false} style={{ marginTop: 24 }}>
+                                {/* Bạn có thể cập nhật DTO để lấy thông tin phòng ở đây */}
+                                <Text type='secondary'>Chưa có thông tin phòng.</Text>
+                                {/* <Descriptions column={1} layout="horizontal">
+                                    <Descriptions.Item label="Tòa nhà">A1</Descriptions.Item>
+                                    <Descriptions.Item label="Phòng">P.101</Descriptions.Item>
+                                </Descriptions> */}
+                            </Card>
+                        </Col>
+                    </Row>
 
                 </Content>
             </Layout>

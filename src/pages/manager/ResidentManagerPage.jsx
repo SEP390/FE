@@ -109,7 +109,7 @@ export function ResidentManagerPage() {
                     }}
                 >
                     <Title level={2} style={{ margin: 0, lineHeight: "80px" }}>
-                        Quản lý người ở
+                        Quản lý sinh viên
                     </Title>
                 </Header>
                 <Content className={"!overflow-auto h-full p-5 flex flex-col"}>
