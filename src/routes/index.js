@@ -32,9 +32,10 @@ import {ShiftConfigurationPage} from "../pages/manager/ShiftConfigurationPage.js
 import {AttendanceManagementPage} from "../pages/manager/AttendanceManagementPage.jsx";
 import {CleanerSchedule} from "../pages/cleaner/CleanerSchedule.jsx";
 import {CleanerSupplies} from "../pages/cleaner/CleanerSupplies.jsx";
-import {TechnicalRequests} from "../pages/technical/TechnicalRequests.jsx";
-import {TeachnicalCreateReport} from "../pages/technical/TeachnicalCreateReport.jsx";
-import {WarehouseManagement} from "../pages/technical/WarehouseManagement.jsx";
+import {TechnicalRequests} from "../pages/technical/Requetst/TechnicalRequests.jsx";
+import {TechnicalRequestDetail} from "../pages/technical/Requetst/TechnicalRequestDetail.jsx";
+import {TeachnicalCreateReport} from "../pages/technical/report/TeachnicalCreateReport.jsx";
+import {WarehouseManagement} from "../pages/technical/warehouse/WarehouseManagement.jsx";
 import {ResidentDetail} from "../pages/manager/ResidentDetail.jsx";
 
 const routes = [
@@ -81,6 +82,7 @@ const routes = [
 
     // --- ROUTES DÀNH CHO TECHNICAL ---
     { path: "/technical/requests", element: TechnicalRequests },
+    { path: "/technical/request-detail/:requestId", element: TechnicalRequestDetail },
     { path: "/technical/reports/create", element: TeachnicalCreateReport },
     { path: "/technical/inventory", element: WarehouseManagement },
 

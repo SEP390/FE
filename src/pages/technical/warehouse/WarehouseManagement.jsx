@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import { Button, Card, Table, Typography, Layout } from "antd";
-import { SideBarTechnical } from "../../components/layout/SideBarTechnical.jsx";
-import { AppHeader } from "../../components/layout/AppHeader.jsx";
+import { SideBarTechnical } from "../../../components/layout/SideBarTechnical.jsx";
+import { AppHeader } from "../../../components/layout/AppHeader.jsx";
 
 const { Title } = Typography;
 const { Content } = Layout;

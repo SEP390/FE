@@ -255,11 +255,6 @@ export function GuardViewRequestDetail() {
                                                 {formatDate(requestData.executeTime)}
                                             </Descriptions.Item>
                                         )}
-                                        {requestData.userId && (
-                                            <Descriptions.Item label="User ID">
-                                                {requestData.userId}
-                                            </Descriptions.Item>
-                                        )}
                                     </Descriptions>
                                 </Card>
 
