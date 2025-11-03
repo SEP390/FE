@@ -36,6 +36,7 @@ import {TechnicalRequests} from "../pages/technical/TechnicalRequests.jsx";
 import {TeachnicalCreateReport} from "../pages/technical/TeachnicalCreateReport.jsx";
 import {WarehouseManagement} from "../pages/technical/WarehouseManagement.jsx";
 import {ResidentDetail} from "../pages/manager/ResidentDetail.jsx";
+import {GuardCreateReport} from "../pages/guard/Report/GuardCreateReport.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -51,6 +52,7 @@ const routes = [
     { path: "/guard/schedule", element: GuardSchedule },
     { path: "/guard/requests", element: GuardViewRequest },
     { path: "/guard/request-detail/:requestId", element: GuardViewRequestDetail },
+    { path: "/guard/reports", element: GuardCreateReport },
 
     // --- ROUTES DÀNH CHO CƯ DÂN (RESIDENT) ---
     { path: "/student-info", element: StudentInformationPage },
