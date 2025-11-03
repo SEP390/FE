@@ -4,10 +4,25 @@ import {useApi} from "../../hooks/useApi.js";
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import {formatTime} from "../../util/formatTime.js";
 
+const paymentStatus = {
+    SUCCESS: {
+        text: "ĐÃ THANH TOÁN",
+        color: "success"
+    },
+    PENDING: {
+        text: "CHỜ THANH TOÁN",
+        color: "default"
+    },
+    CANCEL: {
+        text: "HỦY THANH TOÁN",
+        color: "error"
+    },
+}
+
 const columns = [
     {
         title: 'Kỳ',
-        dataIndex: ['slotHistory', 'semester', 'name'],
+        dataIndex: ['semester', 'name'],
         key: 'semesterId',
         render: (semesterName) => {
             return <Tag>{semesterName}</Tag>
@@ -15,26 +30,25 @@ const columns = [
     },
     {
         title: 'Dorm',
-        dataIndex: ['slotHistory', 'dormName'],
+        dataIndex: ['dormName'],
         key: 'dormId',
     },
     {
         title: 'Phòng',
-        dataIndex: ['slotHistory', 'roomNumber'],
+        dataIndex: ['roomNumber'],
         key: 'roomId',
     },
     {
         title: 'Slot',
-        dataIndex: ['slotHistory', 'slotName'],
+        dataIndex: ['slotName'],
         key: 'slotId',
     },
     {
         title: "Trạng thái",
-        dataIndex: "status",
+        dataIndex: ['payment', 'status'],
         key: 'status',
         render: (status) => {
-            if (status === 'SUCCESS') return <Tag color="green">THÀNH CÔNG</Tag>
-            return <Tag color="red">HỦY THANH TOÁN</Tag>
+            return <Tag color={paymentStatus[status].color}>{paymentStatus[status].text}</Tag>
         },
         filters: [
             { text: 'Đã thanh toán', value: 'SUCCESS' },
@@ -44,7 +58,7 @@ const columns = [
     },
     {
         title: 'Ngày tạo',
-        dataIndex: 'createDate',
+        dataIndex: ['payment', 'createDate'],
         key: 'createDate',
         render: (createDate) => formatTime(createDate)
     },
