@@ -20,43 +20,26 @@ const statusLabel = {
     }
 }
 
-/**
- * @type import("antd").TableColumnsType
- */
-const columns = [
-    {
-        title: 'Giá',
-        dataIndex: 'price',
-        key: 'price',
-        render: (value) => formatPrice(value),
-        sorter: {
-            multiple: false
+function PaymentAction({payment}) {
+    const {get, data} = useApi();
+
+    const onClick = () => {
+        get(`/payment/${payment.id}/url`);
+    }
+
+    useEffect(() => {
+        if (data) {
+            window.location.href = data;
         }
-    },
-    {
-        title: 'Ngày tạo',
-        dataIndex: 'createDate',
-        key: 'createDate',
-        render: (createDate) => {
-            return formatTime(createDate);
-        },
-        sorter: {
-            multiple: false
-        }
-    },
-    {
-        title: "Trạng thái",
-        dataIndex: "status",
-        key: 'status',
-        render: (status) => <Tag color={statusLabel[status].color}>{statusLabel[status].text}</Tag>,
-        filters: Object.entries(statusLabel).map(entry => ({value: entry[0], text: entry[1].text}))
-    },
-    {
-        title: 'Ghi chú',
-        dataIndex: 'note',
-        key: 'note',
-    },
-];
+    }, [data]);
+
+    if (!payment) return <></>
+    if (payment.status !== 'PENDING') return <></>
+
+    return <>
+        <a onClick={onClick}>Thanh toán</a>
+    </>;
+}
 
 export function PaymentHistoryPage() {
     const {get, data, isSuccess} = useApi();
@@ -70,6 +53,43 @@ export function PaymentHistoryPage() {
         item.key = item.id;
         return item;
     }) : [];
+
+    /**
+     * @type import("antd").TableColumnsType
+     */
+    const columns = [
+        {
+            title: 'Giá',
+            dataIndex: 'price',
+            key: 'price',
+            render: (value) => formatPrice(value),
+            sorter: {
+                multiple: false
+            }
+        },
+        {
+            title: 'Ngày tạo',
+            dataIndex: 'createDate',
+            key: 'createDate',
+            render: (createDate) => {
+                return formatTime(createDate);
+            },
+            sorter: {
+                multiple: false
+            }
+        },
+        {
+            title: "Trạng thái",
+            dataIndex: "status",
+            key: 'status',
+            render: (status) => <Tag color={statusLabel[status].color}>{statusLabel[status].text}</Tag>,
+            filters: Object.entries(statusLabel).map(entry => ({value: entry[0], text: entry[1].text}))
+        },
+        {
+            title: 'Hành động',
+            render: (value, row) => <PaymentAction payment={row} />
+        },
+    ];
 
     const onTableChange = ({current}, {status}, {field, order}, extra) => {
         if (field && page > 0) {

@@ -7,6 +7,11 @@ import {LayoutManager} from "../../../../components/layout/LayoutManager.jsx";
 
 function ElectricWaterForm({ children, onFinish, initialValues, disable = false }) {
     const [form] = Form.useForm();
+
+    useEffect(() => {
+        form.setFieldsValue(initialValues);
+    }, [form, initialValues]);
+    
     return <>
         <Form onFinish={onFinish} initialValues={initialValues} form={form} layout={"vertical"}>
             <FormItems disable={disable} />
@@ -56,6 +61,14 @@ function ReadPage({ pricing, setEdit }) {
     </ElectricWaterForm>
 }
 
+function CreatePage() {
+    return <ElectricWaterForm>
+        <div className={"flex gap-3"}>
+            <Button>Tạo</Button>
+        </div>
+    </ElectricWaterForm>
+}
+
 export default function ManageElectricWaterPricing() {
     const {get, data, error, isSuccess} = useApi();
 
@@ -66,8 +79,8 @@ export default function ManageElectricWaterPricing() {
     }
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (!edit) fetchData();
+    }, [edit]);
 
     return <>
         <LayoutManager active={"electric-water-pricing"}>
@@ -75,6 +88,7 @@ export default function ManageElectricWaterPricing() {
                 {data && <div>Lần cuối cập nhật: {formatTime(data.startDate)}</div>}
                 {data && !edit && <ReadPage pricing={data} setEdit={setEdit} />}
                 {isSuccess && edit && <EditPage pricing={data} setEdit={setEdit} fetchData={fetchData} />}
+                {isSuccess && !edit && !data && <EditPage pricing={data} setEdit={setEdit} fetchData={fetchData} />}
             </Card>
         </LayoutManager>
     </>

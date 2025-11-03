@@ -11,7 +11,7 @@ import {
 } from "@ant-design/icons";
 import { Menu, Layout } from "antd";
 import { Link } from "react-router-dom";
-import { Bed } from "lucide-react";
+import {Bed, MapPin} from "lucide-react";
 
 const {Sider} = Layout;
 
@@ -30,6 +30,11 @@ const items = [
         label: <Link to={"/booking"}>Đặt phòng</Link>,
         icon: <CalendarOutlined />,
         key: "booking",
+    },
+    {
+        label: <Link to={"/pages/map"}>Bản đồ</Link>,
+        icon: <MapPin size={16} />,
+        key: "map",
     },
     {
         label: <Link to={"/booking-history"}>Lịch sử đặt phòng</Link>,

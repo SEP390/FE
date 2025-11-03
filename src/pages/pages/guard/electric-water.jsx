@@ -1,23 +1,11 @@
-import {
-    Alert,
-    Button,
-    Card,
-    Form,
-    InputNumber,
-    notification,
-    Skeleton,
-    Spin,
-    Tabs,
-    Table,
-    App,
-    Descriptions, Tag
-} from "antd";
+import {Alert, App, Button, Card, Descriptions, Form, InputNumber, notification, Skeleton, Spin, Tabs, Tag} from "antd";
 import {useApi} from "../../../hooks/useApi.js";
 import {useCallback, useEffect, useState} from "react";
 import {ChevronLeft} from "lucide-react";
 import {LayoutGuard} from "../../../components/layout/LayoutGuard.jsx";
 import {formatPrice} from "../../../util/formatPrice.js";
 import {formatTime} from "../../../util/formatTime.js";
+import {create} from 'zustand'
 
 const {Item} = Descriptions;
 
@@ -89,7 +77,7 @@ function RoomSkeleton() {
     </>
 }
 
-function IndexFormItems({ disable = false }) {
+function IndexFormItems({disable = false}) {
     return <>
         <Form.Item
             name="electricIndex"
@@ -129,7 +117,7 @@ function UpdateIndex({initValues, setEdit, fetchData}) {
 
     const {put, data, error} = useApi();
 
-    const onFinish = ({ electricIndex, waterIndex }) => {
+    const onFinish = ({electricIndex, waterIndex}) => {
         put("/electric-water-index", {
             id: initValues.id,
             electricIndex,
@@ -138,7 +126,7 @@ function UpdateIndex({initValues, setEdit, fetchData}) {
     }
 
     useEffect(() => {
-        if(data) {
+        if (data) {
             setEdit(false);
             fetchData();
         }
@@ -151,7 +139,7 @@ function UpdateIndex({initValues, setEdit, fetchData}) {
             onFinish={onFinish}
             initialValues={initValues}
         >
-            <IndexFormItems />
+            <IndexFormItems/>
             <Form.Item>
                 <div className={"flex gap-2"}>
                     <Button htmlType={"submit"}>Cập nhật</Button>
@@ -168,7 +156,7 @@ function CreateIndex({room, semester, fetchData, setEdit}) {
 
     const {post, data, error} = useApi();
 
-    const onFinish = ({ electricIndex, waterIndex }) => {
+    const onFinish = ({electricIndex, waterIndex}) => {
         post("/electric-water-index", {
             roomId: room.id,
             semesterId: semester.id,
@@ -178,7 +166,7 @@ function CreateIndex({room, semester, fetchData, setEdit}) {
     }
 
     useEffect(() => {
-        if(data) {
+        if (data) {
             setEdit(false);
             fetchData();
         }
@@ -190,7 +178,7 @@ function CreateIndex({room, semester, fetchData, setEdit}) {
             layout={"vertical"}
             onFinish={onFinish}
         >
-            <IndexFormItems />
+            <IndexFormItems/>
             <Form.Item>
                 <div className={"flex gap-2"}>
                     <Button htmlType={"submit"}>Tạo</Button>
@@ -203,13 +191,13 @@ function CreateIndex({room, semester, fetchData, setEdit}) {
 
 function CreateBillButton({index, onSuccess}) {
     const {post, data, error} = useApi();
-    
+
     const createBill = () => {
         post("/electric-water-bill", {
             indexId: index.id
         })
     }
-    
+
     const {notification} = App.useApp();
 
     useEffect(() => {
@@ -217,7 +205,7 @@ function CreateBillButton({index, onSuccess}) {
     }, [data, onSuccess]);
 
     useEffect(() => {
-        error && notification.error({ message: "Lỗi", description: error, placement: "topLeft"})
+        error && notification.error({message: "Lỗi", description: error, placement: "topLeft"})
     }, [error, notification]);
 
     return <>
@@ -225,12 +213,12 @@ function CreateBillButton({index, onSuccess}) {
     </>
 }
 
-function BillInfo({index}) {
+function BillInfo({index, refresh}) {
     const {get, data, error} = useApi();
 
     useEffect(() => {
-        get(`/electric-water-index/${index.id}/bill`)
-    }, [get]);
+        if (index) get(`/electric-water-index/${index.id}/bill`)
+    }, [get, refresh]);
     if (!data) return <></>
 
     const status = (data) => {
@@ -252,7 +240,11 @@ function BillInfo({index}) {
 function IndexInfo({room, semester}) {
     const {get, data, error} = useApi();
 
+    const [form] = Form.useForm();
+
     const [edit, setEdit] = useState(false);
+
+    const [refreshBill, setRefreshBill] = useState(false);
 
     const fetchData = useCallback(() => {
         get("/electric-water-index", {
@@ -262,23 +254,35 @@ function IndexInfo({room, semester}) {
     }, [get, room.id, semester.id])
 
     useEffect(() => {
-        error && notification.error({ message: "Lôi", description: error})
+        error && notification.error({message: "Lôi", description: error})
     }, [error]);
 
     const onBillCreated = () => {
-
+        setRefreshBill(re => !re);
     }
 
     useEffect(() => {
         fetchData();
     }, [fetchData, room, semester]);
 
-    if (!data) return <CreateIndex initValues={data} setEdit={setEdit} room={room} semester={semester} fetchData={fetchData}/>
-    if (data && edit) return <UpdateIndex initValues={data} setEdit={setEdit} room={room} semester={semester} fetchData={fetchData}/>
+    useEffect(() => {
+        if (data) {
+            form.setFieldsValue({
+                electricIndex: data && data.electricIndex,
+                waterIndex: data && data.waterIndex
+            })
+        }
+    }, [data]);
+
+    if (!data) return <CreateIndex initValues={data} setEdit={setEdit} room={room} semester={semester}
+                                   fetchData={fetchData}/>
+    if (data && edit) return <UpdateIndex initValues={data} setEdit={setEdit} room={room} semester={semester}
+                                          fetchData={fetchData}/>
+
 
     return <>
         <div className={"grid grid-cols-2"}>
-            <Form layout={"vertical"} initialValues={{
+            <Form form={form} layout={"vertical"} initialValues={{
                 electricIndex: data && data.electricIndex,
                 waterIndex: data && data.waterIndex
             }}>
@@ -286,12 +290,12 @@ function IndexInfo({room, semester}) {
                 <Form.Item>
                     <div className={"flex gap-3"}>
                         <Button onClick={() => setEdit(true)}>Sửa</Button>
-                        {data && <CreateBillButton index={data} onSuccess={onBillCreated} />}
+                        {data && <CreateBillButton index={data} onSuccess={onBillCreated}/>}
                     </div>
                 </Form.Item>
             </Form>
             <div>
-                {data && <BillInfo index={data}/>}
+                {data && <BillInfo refresh={refreshBill} index={data}/>}
             </div>
         </div>
     </>
@@ -299,7 +303,7 @@ function IndexInfo({room, semester}) {
 
 function RoomIndexInfo({room, setSelect}) {
     const {get, data, error} = useApi();
-    
+
     const [currentSemester, setCurrentSemester] = useState(null);
 
     useEffect(() => {
@@ -311,7 +315,7 @@ function RoomIndexInfo({room, setSelect}) {
     }, [get]);
 
     useEffect(() => {
-        error && notification.error({ message: "Lôi", description: error})
+        error && notification.error({message: "Lôi", description: error})
     }, [error]);
 
     useEffect(() => {
@@ -323,11 +327,13 @@ function RoomIndexInfo({room, setSelect}) {
     return <>
         <Card title={<>
             <div className={"flex items-center gap-2"}>
-                <Button onClick={() => setSelect(null)} size={"small"} variant={"filled"}><ChevronLeft size={14} /></Button>
+                <Button onClick={() => setSelect(null)} size={"small"} variant={"filled"}><ChevronLeft
+                    size={14}/></Button>
                 <span>Phòng {room.roomNumber}</span>
             </div>
         </>}>
-            <Tabs onChange={(id) => setCurrentSemester(semesters[id])} type={"card"} activeKey={currentSemester ? currentSemester.id : ""}>
+            <Tabs onChange={(id) => setCurrentSemester(semesters[id])} type={"card"}
+                  activeKey={currentSemester ? currentSemester.id : ""}>
                 {data != null && data.map(semester => <>
                     <Tabs.TabPane tab={semester.name} key={semester.id}>
                         <IndexInfo room={room} semester={semester}/>
@@ -340,21 +346,43 @@ function RoomIndexInfo({room, setSelect}) {
 
 function MockDormContext() {
     const {get, data, error, isError} = useApi();
+    const {notification} = App.useApp();
 
     useEffect(() => {
         get("/dorms")
     }, [get]);
 
-    if (!data) return <Spin spinning={true}></Spin>
+    useEffect(() => {
+        if (error) notification.error({message: "Lỗi", description: error})
+    }, [error]);
+
+    if (error) return <>
+        <LayoutGuard active={"electric-water"}>
+            <Card className={"h-full overflow-auto"} title={"Hóa đơn điện nước"}>
+                <div className={"h-full"}></div>
+            </Card>
+        </LayoutGuard>
+    </>
+
+    if (!data) return <>
+        <Spin fullscreen={true}>
+        </Spin>
+        <LayoutGuard active={"electric-water"}>
+            <Card className={"h-full overflow-auto"} title={"Hóa đơn điện nước"}>
+                <div className={"h-full"}></div>
+            </Card>
+        </LayoutGuard>
+    </>
+
 
     return <GuardElectricWaterPage dorm={data[0]}/>
 }
 
-function GuardElectricWaterPage({ dorm }) {
+function GuardElectricWaterPage({dorm}) {
     const {get, data, error, isError} = useApi();
 
     const [select, setSelect] = useState(null);
-    
+
     useEffect(() => {
         get(`/dorms/${dorm.id}/rooms`);
     }, [get]);
@@ -382,5 +410,5 @@ function GuardElectricWaterPage({ dorm }) {
 }
 
 export default function MockGuardElectricWaterPage() {
-    return <MockDormContext />
+    return <MockDormContext/>
 }
