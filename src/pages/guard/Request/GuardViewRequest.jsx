@@ -57,19 +57,21 @@ export function GuardViewRequest() {
 
             if (dataArray.length > 0) {
                 // Map dữ liệu từ backend response
-                const formattedData = dataArray.map((item) => {
-                    console.log("Mapping item:", item);
-                    return {
-                        key: item.requestId,
-                        requestId: item.requestId,
-                        requestType: item.requestType,
-                        userName: item.userName,
-                        roomName: item.roomName,
-                        semester: item.semesterName,
-                        createdDate: item.createTime,
-                        status: item.responseStatus,
-                    };
-                });
+                const formattedData = dataArray
+                    .map((item) => {
+                        console.log("Mapping item:", item);
+                        return {
+                            key: item.requestId,
+                            requestId: item.requestId,
+                            requestType: item.requestType,
+                            userName: item.userName,
+                            roomName: item.roomName,
+                            semester: item.semesterName,
+                            createdDate: item.createTime,
+                            status: item.responseStatus,
+                        };
+                    })
+                    .filter((item) => item.requestType !== "TECHNICAL_ISSUE"); // Loại bỏ TECHNICAL_ISSUE
 
                 console.log("Formatted data:", formattedData);
                 setDataSource(formattedData);
