@@ -46,6 +46,12 @@ export function StaffManager() {
     const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
     const [formEditStaff] = Form.useForm();
 
+    // === MỚI: State cho Modal Reset Mật khẩu ===
+    const [isResetModalVisible, setIsResetModalVisible] = useState(false);
+    const [isResettingPassword, setIsResettingPassword] = useState(false);
+    const [resettingStaff, setResettingStaff] = useState(null); // Lưu NV đang reset
+    const [formResetPassword] = Form.useForm(); // Form cho modal reset
+
     // --- API Calls ---
     const fetchStaff = async () => {
         setLoading(true);
@@ -96,16 +102,13 @@ export function StaffManager() {
     const handleAddStaff = async (values) => {
         setIsSubmittingAdd(true);
         try {
-            // Định dạng lại ngày sinh
             const formattedValues = {
                 ...values,
                 dob: values.dob ? dayjs(values.dob).format('YYYY-MM-DD') : null,
-                dormId: values.dormId || null // Gửi dormId (khớp DTO mới)
+                dormId: values.dormId || null
             };
-
-            // LƯU Ý BE: Hàm service createEmployee() cần xử lý dormId được gửi lên!
             await axiosClient.post('/employees', formattedValues);
-            message.success(`Đã thêm nhân viên ${values.username}!`);
+            message.success(`Đã thêm nhân viên ${values.username} thành công!`);
             handleCancelAdd(); fetchStaff();
         } catch (error) {
             message.error(`Thêm nhân viên thất bại! ` + (error.response?.data?.message || error.message));
@@ -117,52 +120,42 @@ export function StaffManager() {
     // --- Handlers cho Modal Sửa ---
     const showEditModal = (record) => {
         setEditingStaff(record);
-        // Gọi API GET /employees/{id} để lấy thông tin chi tiết
         axiosClient.get(`/employees/${record.employeeId}`)
             .then(response => {
                 if (response && response.data) {
-                    const details = response.data; // Đây là GetEmployeeById DTO
+                    const details = response.data;
                     formEditStaff.setFieldsValue({
-                        // Tìm dormId từ dormName (của record) so với danh sách dorms
                         dormId: dorms.find(d => d.dormName === record.dormName)?.id || undefined,
-                        phoneNumber: details.phoneNumber, // Lấy SĐT chi tiết
+                        phoneNumber: details.phoneNumber,
                         role: details.role,
-                        birthDate: details.dob ? dayjs(details.dob) : null, // Lấy dob chi tiết
+                        birthDate: details.dob ? dayjs(details.dob) : null,
                     });
                 }
             })
             .catch(err => {
                 message.error("Không thể tải chi tiết nhân viên để sửa!");
-                // Điền thông tin cơ bản nếu API chi tiết lỗi
                 formEditStaff.setFieldsValue({
                     dormId: dorms.find(d => d.dormName === record.dormName)?.id || undefined,
-                    phoneNumber: record.phone, // Dùng tạm 'phone'
+                    phoneNumber: record.phone,
                     role: record.role,
                 });
             });
-
         setIsEditModalVisible(true);
     };
-
     const handleCancelEdit = () => { setIsEditModalVisible(false); setEditingStaff(null); formEditStaff.resetFields(); };
-
-    // Bên trong hàm handleUpdateStaff
     const handleUpdateStaff = async (values) => {
         if (!editingStaff) return;
         setIsSubmittingEdit(true);
         try {
-            const employeeId = editingStaff.employeeId; // Lấy ID từ record
+            const employeeId = editingStaff.employeeId;
             const payload = {
                 dormId: values.dormId || null,
                 phoneNumber: values.phoneNumber,
                 birthDate: values.birthDate ? dayjs(values.birthDate).format('YYYY-MM-DD') : null,
                 role: values.role,
-                EmployeeId: employeeId // Gửi cả EmployeeId (khớp DTO)
+                EmployeeId: employeeId
             };
-
-            // Gọi đúng API PUT /api/employees/{id}
             await axiosClient.put(`/employees/${employeeId}`, payload);
-
             message.success(`Đã cập nhật nhân viên ${editingStaff.username}!`);
             handleCancelEdit(); fetchStaff();
         } catch (error) {
@@ -173,12 +166,52 @@ export function StaffManager() {
         }
     };
 
-    // --- Dropdown Actions ---
+    // === MỚI: Handlers cho Modal Reset Mật khẩu ===
+    const showResetPasswordModal = (record) => {
+        setResettingStaff(record); // Lưu nhân viên đang được reset
+        setIsResetModalVisible(true);
+    };
+
+    const handleCancelResetPassword = () => {
+        setIsResetModalVisible(false);
+        formResetPassword.resetFields();
+        setResettingStaff(null);
+    };
+
+    const handleOkResetPassword = async () => {
+        if (!resettingStaff) return;
+        try {
+            const values = await formResetPassword.validateFields(); // Lấy giá trị từ form
+            setIsResettingPassword(true);
+
+            // !!! GIẢ ĐỊNH: DTO ResetPasswordRequest yêu cầu "newPassword" !!!
+            // (Nếu DTO chỉ cần rỗng, gửi {})
+            const payload = {
+                newPassword: values.newPassword
+            };
+
+            // !!! KIỂM TRA: Đảm bảo hằng số ApiConstant.EMPLOYEE.RESET_PASSWORD trỏ đến đúng đường dẫn !!!
+            // (Giả sử là: /{id}/reset-password)
+            const resetPasswordPath = `/employees/${resettingStaff.employeeId}/passwords`;
+
+            await axiosClient.put(resetPasswordPath, payload); // Dùng PUT (theo controller)
+            message.success(`Đã đặt lại mật khẩu cho ${resettingStaff.username}!`);
+            handleCancelResetPassword(); // Đóng modal
+        } catch (error) {
+            console.error("Lỗi khi reset mật khẩu:", error.response || error);
+            message.error(`Reset mật khẩu thất bại! ` + (error.response?.data?.message || error.message));
+        } finally {
+            setIsResettingPassword(false);
+        }
+    };
+
+
+    // --- Dropdown Actions (Cập nhật) ---
     const handleMenuClick = (key, record) => {
         if (key === 'edit') {
             showEditModal(record);
         } else if (key === 'resetPass') {
-            message.info('Chức năng reset mật khẩu chưa được triển khai.');
+            showResetPasswordModal(record); // <-- GỌI HANDLER MỚI
         }
     };
     const getActionMenu = (record) => (
@@ -187,36 +220,21 @@ export function StaffManager() {
                 Chỉnh sửa thông tin
             </Menu.Item>
             <Menu.Divider />
-            <Menu.Item key="resetPass" icon={<UnlockOutlined />}>Reset mật khẩu (Cần BE)</Menu.Item>
+            <Menu.Item key="resetPass" icon={<UnlockOutlined />}>
+                Reset mật khẩu
+            </Menu.Item>
         </Menu>
     );
 
 
-    // === Định nghĩa columns (Khớp GetAllEmployeeResponse) ===
+    // (Định nghĩa columns - giữ nguyên)
     const columns = [
-        {
-            title: 'Username', dataIndex: 'username', key: 'username',
-            sorter: (a, b) => (a.username || '').localeCompare(b.username || ''),
-            render: (text) => <Text strong>{text || 'N/A'}</Text>
-        },
+        { title: 'Username', dataIndex: 'username', key: 'username', sorter: (a, b) => (a.username || '').localeCompare(b.username || ''), render: (text) => <Text strong>{text || 'N/A'}</Text> },
         { title: 'Email', dataIndex: 'email', key: 'email' },
-        { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone' }, // Dùng 'phone'
-        {
-            title: 'Khu vực', dataIndex: 'dormName', key: 'dormName',
-            filters: [...new Set(staffData.map(item => item.dormName).filter(Boolean))].map(name => ({ text: name, value: name })),
-            onFilter: (value, record) => (record.dormName || '').indexOf(value) === 0,
-            render: (text) => text || 'N/A'
-        },
-        {
-            title: 'Chức vụ', dataIndex: 'role', key: 'role',
-            filters: [...new Set(staffData.map(item => item.role).filter(Boolean))].map(role => ({ text: role, value: role })),
-            onFilter: (value, record) => (record.role || '').indexOf(value) === 0,
-            render: (role) => <Tag color="blue">{role || 'N/A'}</Tag>
-        },
-        {
-            title: 'Hành động', key: 'action',
-            render: (text, record) => ( <Dropdown overlay={() => getActionMenu(record)} trigger={['click']}><Button type="text" icon={<MoreOutlined />} /></Dropdown> ),
-        },
+        { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone' },
+        { title: 'Khu vực', dataIndex: 'dormName', key: 'dormName', filters: [...new Set(staffData.map(item => item.dormName).filter(Boolean))].map(name => ({ text: name, value: name })), onFilter: (value, record) => (record.dormName || '').indexOf(value) === 0, render: (text) => text || 'N/A' },
+        { title: 'Chức vụ', dataIndex: 'role', key: 'role', filters: [...new Set(staffData.map(item => item.role).filter(Boolean))].map(role => ({ text: role, value: role })), onFilter: (value, record) => (record.role || '').indexOf(value) === 0, render: (role) => <Tag color="blue">{role || 'N/A'}</Tag> },
+        { title: 'Hành động', key: 'action', render: (text, record) => ( <Dropdown overlay={() => getActionMenu(record)} trigger={['click']}><Button type="text" icon={<MoreOutlined />} /></Dropdown> ) },
     ];
 
     return (
@@ -227,32 +245,22 @@ export function StaffManager() {
                     <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>Quản lý nhân viên</Title>
                 </Header>
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
-                    {/* Tiêu đề và nút Thêm */}
+                    {/* (Tiêu đề, Nút Thêm, Filter, Bảng - giữ nguyên) */}
                     <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
                         <Col><Title level={4} style={{ margin: 0 }}>Danh sách nhân viên</Title></Col>
                         <Col><Button type="primary" icon={<UserAddOutlined />} onClick={showAddModal}>+ Thêm nhân viên</Button></Col>
                     </Row>
-                    {/* Tìm kiếm và Lọc */}
                     <Row gutter={[16, 16]} style={{ marginBottom: 20, alignItems: 'center' }}>
                         <Col flex="400px"><Input placeholder="Tìm kiếm (Username, Email, SĐT)..." prefix={<SearchOutlined />} value={searchText} onChange={(e) => setSearchText(e.target.value)} /></Col>
-                        <Col>
-                            <Select placeholder="Lọc theo Khu vực" style={{ width: 150 }} value={filterArea} onChange={setFilterArea} allowClear loading={dorms.length === 0}>
-                                {dorms.map(dorm => (<Option key={dorm.id} value={dorm.dormName}>{dorm.dormName}</Option>))}
-                            </Select>
-                        </Col>
-                        <Col>
-                            <Select placeholder="Lọc theo Chức vụ" style={{ width: 150 }} value={filterPosition} onChange={setFilterPosition} allowClear>
-                                {[...new Set(staffData.map(item => item.role).filter(Boolean))].map(role => (<Option key={role} value={role}>{role}</Option>))}
-                            </Select>
-                        </Col>
+                        <Col> <Select placeholder="Lọc theo Khu vực" style={{ width: 150 }} value={filterArea} onChange={setFilterArea} allowClear loading={dorms.length === 0}> {dorms.map(dorm => (<Option key={dorm.id} value={dorm.dormName}>{dorm.dormName}</Option>))} </Select> </Col>
+                        <Col> <Select placeholder="Lọc theo Chức vụ" style={{ width: 150 }} value={filterPosition} onChange={setFilterPosition} allowClear> {[...new Set(staffData.map(item => item.role).filter(Boolean))].map(role => (<Option key={role} value={role}>{role}</Option>))} </Select> </Col>
                         <Col><Button onClick={handleClearFilters} icon={<ClearOutlined />}>Xóa bộ lọc</Button></Col>
                     </Row>
-                    {/* BẢNG */}
                     <Table columns={columns} dataSource={filteredData} loading={loading} pagination={{ pageSize: 10 }} bordered />
                 </Content>
             </Layout>
 
-            {/* === Modal Thêm Nhân Viên (ĐÃ THÊM LẠI dormId) === */}
+            {/* (Modal Thêm Nhân Viên - giữ nguyên) */}
             <Modal title="Thêm nhân viên mới" open={isAddModalVisible} onCancel={handleCancelAdd} footer={null} destroyOnClose>
                 <Form form={formAddStaff} layout="vertical" onFinish={handleAddStaff} name="add_staff_form">
                     <Row gutter={16}><Col span={12}><Form.Item name="username" label="Username" rules={[{ required: true }]}><Input /></Form.Item></Col><Col span={12}><Form.Item name="password" label="Mật khẩu" rules={[{ required: true }]}><Input.Password /></Form.Item></Col></Row>
@@ -261,16 +269,14 @@ export function StaffManager() {
                     <Row gutter={16}><Col span={12}><Form.Item name="dob" label="Ngày sinh" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/></Form.Item></Col><Col span={12}><Form.Item name="gender" label="Giới tính" rules={[{ required: true }]}><Select><Option value="MALE">Nam</Option><Option value="FEMALE">Nữ</Option><Option value="OTHER">Khác</Option></Select></Form.Item></Col></Row>
                     <Form.Item name="userCode" label="Mã NV (Tùy chọn)"><Input /></Form.Item>
                     <Form.Item name="role" label="Chức vụ" rules={[{ required: true }]}><Select><Option value="GUARD">Bảo vệ</Option><Option value="CLEANER">Lao công</Option><Option value="MANAGER">Quản lý</Option></Select></Form.Item>
-                    {/* Thêm lại dormId (khớp DTO mới) */}
                     <Form.Item name="dormId" label="Khu vực làm việc"><Select placeholder="Chọn khu vực (nếu có)" loading={dorms.length === 0} allowClear>{dorms.map(dorm => (<Option key={dorm.id} value={dorm.id}>{dorm.dormName}</Option> ))}</Select></Form.Item>
                     <Form.Item style={{ textAlign: 'right', marginTop: 24 }}><Space><Button onClick={handleCancelAdd}>Hủy</Button><Button type="primary" htmlType="submit" loading={isSubmittingAdd}>Thêm</Button></Space></Form.Item>
                 </Form>
             </Modal>
 
-            {/* Modal Sửa Nhân Viên */}
+            {/* (Modal Sửa Nhân Viên - giữ nguyên) */}
             <Modal title={`Cập nhật thông tin ${editingStaff?.username || ''}`} open={isEditModalVisible} onCancel={handleCancelEdit} footer={null} destroyOnClose >
                 <Form form={formEditStaff} layout="vertical" onFinish={handleUpdateStaff} name="edit_staff_form">
-                    {/* Các trường khớp với UpdateEmployeeRequest */}
                     <Form.Item name="phoneNumber" label="Số điện thoại" rules={[{ required: true }]}><Input /></Form.Item>
                     <Form.Item name="birthDate" label="Ngày sinh" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/></Form.Item>
                     <Form.Item name="role" label="Chức vụ" rules={[{ required: true }]}><Select><Option value="GUARD">Bảo vệ</Option><Option value="CLEANER">Lao công</Option><Option value="MANAGER">Quản lý</Option></Select></Form.Item>
@@ -278,6 +284,54 @@ export function StaffManager() {
                     <Form.Item style={{ textAlign: 'right', marginTop: 24 }}><Space><Button onClick={handleCancelEdit}> Hủy </Button><Button type="primary" htmlType="submit" loading={isSubmittingEdit}> Cập nhật </Button></Space></Form.Item>
                 </Form>
             </Modal>
+
+            {/* === MỚI: Modal Reset Mật khẩu === */}
+            <Modal
+                title={`Reset mật khẩu cho ${resettingStaff?.username || ''}`}
+                open={isResetModalVisible}
+                onOk={handleOkResetPassword} // Gọi khi nhấn OK
+                onCancel={handleCancelResetPassword} // Gọi khi nhấn Cancel
+                confirmLoading={isResettingPassword} // Hiển thị loading ở nút OK
+                destroyOnClose // Xóa form khi đóng
+            >
+                <Form form={formResetPassword} layout="vertical" name="reset_password_form">
+                    {/* !!! GIẢ ĐỊNH: DTO ResetPasswordRequest yêu cầu "newPassword" !!! */}
+                    <Form.Item
+                        name="newPassword"
+                        label="Mật khẩu mới"
+                        rules={[
+                            { required: true, message: 'Vui lòng nhập mật khẩu mới!' },
+                            { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' }
+                        ]}
+                        hasFeedback
+                    >
+                        <Input.Password placeholder="Nhập mật khẩu mới" />
+                    </Form.Item>
+                    {/* Thêm trường "Xác nhận mật khẩu" */}
+                    <Form.Item
+                        name="confirmPassword"
+                        label="Xác nhận mật khẩu mới"
+                        dependencies={['newPassword']} // Phụ thuộc vào trường newPassword
+                        hasFeedback
+                        rules={[
+                            { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    if (!value || getFieldValue('newPassword') === value) {
+                                        return Promise.resolve(); // Khớp
+                                    }
+                                    return Promise.reject(new Error('Hai mật khẩu không khớp!')); // Không khớp
+                                },
+                            }),
+                        ]}
+                    >
+                        <Input.Password placeholder="Nhập lại mật khẩu mới" />
+                    </Form.Item>
+                </Form>
+            </Modal>
+
         </Layout>
     );
 }
+
+// Lưu ý: Cần đảm bảo RoleEnum bên FE (ví dụ 'CLEANER') khớp với giá trị Enum bên BE.
