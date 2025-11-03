@@ -4,32 +4,37 @@ import {
     Dropdown, Menu, message, Spin
 } from "antd";
 import { SideBarManager } from "../../components/layout/SideBarManger.jsx";
-// === THÊM: Import Link và EyeOutlined ===
 import { Link } from 'react-router-dom';
-import { EllipsisOutlined, EyeOutlined } from "@ant-design/icons";
-// === KẾT THÚC THÊM ===
+// === THÊM MỚI: Thêm icon Search và Clear ===
+import { EyeOutlined, SearchOutlined, ClearOutlined } from "@ant-design/icons";
+// === KẾT THÚC THÊM MỚI ===
 import axiosClient from '../../api/axiosClient/axiosClient.js';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
+// (Lấy Option từ Select nếu bạn cần Filter sau này)
+const { Option } = Select;
 
 export function ResidentManagerPage() {
     const [loading, setLoading] = useState(false);
+    // [residents] là state lưu trữ danh sách GỐC từ API
     const [residents, setResidents] = useState([]);
 
-    // Hàm gọi API lấy danh sách sinh viên
+    // === THÊM MỚI: State cho tìm kiếm ===
+    const [searchText, setSearchText] = useState('');
+    // (Bạn có thể thêm state cho filter (ví dụ filterKhuVuc) ở đây sau)
+    // const [filterKhuVuc, setFilterKhuVuc] = useState(undefined);
+
+    // Hàm gọi API lấy danh sách sinh viên (Giữ nguyên)
     const fetchResidents = async () => {
         setLoading(true);
         try {
-            // 1. Gọi API GET /api/users/residents
             const response = await axiosClient.get('/users/residents');
-
-            // 2. Xử lý dữ liệu trả về (List<GetAllResidentResponse>)
             if (response && response.data) {
                 const dataWithKeyAndIndex = response.data.map((item, index) => ({
                     ...item,
-                    key: item.residentId, // Dùng residentId từ DTO
-                    index: index + 1, // Tạo STT
+                    key: item.residentId,
+                    index: index + 1,
                 }));
                 setResidents(dataWithKeyAndIndex);
             } else {
@@ -43,13 +48,37 @@ export function ResidentManagerPage() {
         }
     };
 
-    // useEffect để gọi API khi trang tải
+    // useEffect (Giữ nguyên)
     useEffect(() => {
         fetchResidents();
-    }, []); // Chỉ gọi 1 lần
+    }, []);
 
+    // === THÊM MỚI: Logic Lọc và Xóa Filter ===
+    const handleClearFilters = () => {
+        setSearchText('');
+        // (setFilterKhuVuc(undefined); // Nếu có)
+    };
 
-    // === CỘT (Đã cập nhật HÀNH ĐỘNG) ===
+    const filteredData = residents.filter(item => {
+        // 1. Chuẩn bị chuỗi mục tiêu để tìm kiếm
+        const searchTarget = `
+            ${item.fullName || ''} 
+            ${item.userName || ''} 
+            ${item.email || ''} 
+            ${item.phoneNumber || ''}
+        `.toLowerCase();
+
+        // 2. Kiểm tra match với searchText
+        const matchesSearch = searchTarget.includes(searchText.toLowerCase());
+
+        // (3. Kiểm tra match với filterKhuVuc - ví dụ sau này)
+        // const matchesKhuVuc = filterKhuVuc ? item.dormName === filterKhuVuc : true;
+
+        // Trả về true nếu tất cả điều kiện đều đúng
+        return matchesSearch; // && matchesKhuVuc;
+    });
+
+    // === CỘT (Giữ nguyên) ===
     const columns = [
         {
             title: "STT",
@@ -59,38 +88,37 @@ export function ResidentManagerPage() {
         },
         {
             title: "Họ và tên",
-            dataIndex: "fullName", // <-- DTO có
+            dataIndex: "fullName",
             key: "fullName",
+            sorter: (a, b) => (a.fullName || '').localeCompare(b.fullName || ''),
         },
         {
-            title: "Username", // <-- DTO có
+            title: "Username",
             dataIndex: "userName",
             key: "userName",
+            sorter: (a, b) => (a.userName || '').localeCompare(b.userName || ''),
         },
         {
             title: "Email",
-            dataIndex: "email", // <-- DTO có
+            dataIndex: "email",
             key: "email",
         },
         {
             title: "Số điện thoại",
-            dataIndex: "phoneNumber", // <-- DTO có
+            dataIndex: "phoneNumber",
             key: "phoneNumber",
         },
-        // (Bỏ cột Giới tính và Phòng vì DTO không có)
         {
             title: "Hành động",
             key: "action",
             align: "center",
             render: (_, record) => (
                 <Space>
-                    {/* === SỬA LẠI: Chỉ còn nút Xem chi tiết === */}
                     <Link to={`/manager/resident-detail/${record.residentId}`}>
                         <Button type="primary" icon={<EyeOutlined />} title="Xem chi tiết">
                             Xem
                         </Button>
                     </Link>
-                    {/* === KẾT THÚC SỬA === */}
                 </Space>
             ),
         }
@@ -108,17 +136,43 @@ export function ResidentManagerPage() {
                         height: 80,
                     }}
                 >
+                    {/* === SỬA LẠI: Title cho nhất quán === */}
                     <Title level={2} style={{ margin: 0, lineHeight: "80px" }}>
                         Quản lý sinh viên
                     </Title>
                 </Header>
                 <Content className={"!overflow-auto h-full p-5 flex flex-col"}>
-                    <Space style={{ marginBottom: 16 }}>
-                        {/* Có thể thêm Filter/Search ở đây */}
-                    </Space>
+
+                    {/* === SỬA LẠI: Thêm thanh tìm kiếm === */}
+                    <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+                        <Col flex="400px">
+                            <Input
+                                placeholder="Tìm kiếm (Họ tên, Username, Email, SĐT)..."
+                                prefix={<SearchOutlined />}
+                                value={searchText}
+                                onChange={(e) => setSearchText(e.target.value)}
+                            />
+                        </Col>
+                        {/* (Bạn có thể thêm Select lọc theo Tòa/Phòng ở đây) */}
+                        {/* <Col>
+                            <Select placeholder="Lọc theo Tòa" style={{ width: 150 }} onChange={setFilterKhuVuc} value={filterKhuVuc} allowClear>
+                                <Option value="A1">Tòa A1</Option>
+                                <Option value="B2">Tòa B2</Option>
+                            </Select>
+                        </Col> */}
+                        <Col>
+                            <Button onClick={handleClearFilters} icon={<ClearOutlined />}>
+                                Xóa bộ lọc
+                            </Button>
+                        </Col>
+                    </Row>
+                    {/* === KẾT THÚC SỬA === */}
+
                     <Table
                         columns={columns}
-                        dataSource={residents} // <-- Dùng state
+                        // === SỬA LẠI: Dùng dữ liệu đã lọc ===
+                        dataSource={filteredData}
+                        // === KẾT THÚC SỬA ===
                         loading={loading}
                         pagination={{ pageSize: 10, showSizeChanger: true }}
                         bordered
