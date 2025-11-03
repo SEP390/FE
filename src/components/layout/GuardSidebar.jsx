@@ -22,9 +22,9 @@ const items = [
         key: "guard-rooms",
     },
     {
-        label: <Link to={"/guard/violations"}>Báo cáo vi phạm</Link>,
+        label: <Link to={"/guard/reports"}>Báo cáo</Link>,
         icon: <WarningOutlined />,
-        key: "guard-violations",
+        key: "guard-reports",
     },
     {
         label: <Link to={"/guard/requests"}>Yêu cầu của sinh viên</Link>,

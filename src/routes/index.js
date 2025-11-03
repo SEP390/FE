@@ -29,7 +29,14 @@ import {StaffManager} from "../pages/manager/StaffManager.jsx";
 import {SurveyManagementPage} from "../pages/manager/Survey/SurveyManagementPage.jsx";
 import {ScheduleManager} from "../pages/manager/ScheduleManager.jsx";
 import {ShiftConfigurationPage} from "../pages/manager/ShiftConfigurationPage.jsx";
+import {AttendanceManagementPage} from "../pages/manager/AttendanceManagementPage.jsx";
+import {CleanerSchedule} from "../pages/cleaner/CleanerSchedule.jsx";
+import {CleanerSupplies} from "../pages/cleaner/CleanerSupplies.jsx";
+import {TechnicalRequests} from "../pages/technical/TechnicalRequests.jsx";
+import {TeachnicalCreateReport} from "../pages/technical/TeachnicalCreateReport.jsx";
+import {WarehouseManagement} from "../pages/technical/WarehouseManagement.jsx";
 import {ResidentDetail} from "../pages/manager/ResidentDetail.jsx";
+import {GuardCreateReport} from "../pages/guard/Report/GuardCreateReport.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -45,6 +52,7 @@ const routes = [
     { path: "/guard/schedule", element: GuardSchedule },
     { path: "/guard/requests", element: GuardViewRequest },
     { path: "/guard/request-detail/:requestId", element: GuardViewRequestDetail },
+    { path: "/guard/reports", element: GuardCreateReport },
 
     // --- ROUTES DÀNH CHO CƯ DÂN (RESIDENT) ---
     { path: "/student-info", element: StudentInformationPage },
@@ -63,10 +71,21 @@ const routes = [
     { path: "/manager/staff", element: StaffManager },
     { path: "/manager/schedule", element: ScheduleManager },
     { path: "/manager/shifts", element: ShiftConfigurationPage },
+    { path: "/manager/attendance", element: AttendanceManagementPage },
     { path: "/manager/surveys", element: SurveyManagementPage },
     {path: "/manager/residents", element: ResidentManagerPage},
     { path: "/manager/resident-detail/:residentId", element: ResidentDetail },
     {path: "/manager/reports", element: ReportManagePage},
+
+    // --- ROUTES DÀNH CHO CLEANER ---
+    { path: "/cleaner/schedule", element: CleanerSchedule },
+    { path: "/cleaner/supplies", element: CleanerSupplies },
+
+    // --- ROUTES DÀNH CHO TECHNICAL ---
+    { path: "/technical/requests", element: TechnicalRequests },
+    { path: "/technical/reports/create", element: TeachnicalCreateReport },
+    { path: "/technical/inventory", element: WarehouseManagement },
+
 ];
 
 // dynamic route register

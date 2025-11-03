@@ -17,7 +17,7 @@ export function CreateNewsPage() {
     const handleSubmit = async (values) => {
         setLoading(true);
         try {
-            const res = await fetch("http://localhost:8080/api/users/createNews", {
+            const res = await fetch("http://localhost:8080/api/news", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -26,6 +26,7 @@ export function CreateNewsPage() {
                 body: JSON.stringify({
                     title: values.title,
                     content: values.content,
+                    userId: "",
                     status: "VISIBLE",
                 }),
             });
@@ -33,7 +34,6 @@ export function CreateNewsPage() {
             if (!res.ok) throw new Error("Tạo tin thất bại");
             message.success("Tạo tin thành công!");
             form.resetFields();
-
             setTimeout(() => navigate("/manager/news"), 1000);
         } catch (e) {
             message.error(e.message || "Không thể tạo tin tức");

@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AppLayout } from '../../components/layout/AppLayout.jsx';
-import { Card, Typography, List, Divider, Spin, Alert } from 'antd';
+import { Card, Typography, List, Divider, Spin, Alert, Modal, Skeleton, message } from 'antd';
+import { NewsDetailModal } from '../../components/news/NewsDetailModal.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useSemester } from '../../hooks/useSemester.js';
 
@@ -11,34 +12,69 @@ export function DashboardPage() {
 
     // 🔥 Sử dụng hook useSemester để lấy thông tin học kỳ hiện tại
     const { currentSemester, loading: semesterLoading, error: semesterError } = useSemester();
+    const [news, setNews] = useState([]);
+    const [newsLoading, setNewsLoading] = useState(true);
+    const [newsError, setNewsError] = useState("");
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedNews, setSelectedNews] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
 
-    const newsData = [
-        {
-            title: 'THÔNG BÁO VỀ VIỆC ĐĂNG KÝ PHÒNG KTX KỲ FA25',
-            author: 'huongct12',
-            date: '2025-08-11T18:55:36.573',
-        },
-        {
-            title: 'THÔNG BÁO V/V CẮT ĐIỆN NGÀY 01/7/2025',
-            author: 'huongct12',
-            date: '2025-06-30T17:14:49.673',
-        },
-        {
-            title: 'QUY ĐỊNH VỀ SỬ DỤNG THIẾT BỊ ĐIỆN TẠI KTX',
-            author: 'huongct12',
-            date: '2025-05-28T09:14:28.59',
-        },
-        {
-            title: 'TB. VIỆC ĐẢM BẢO AN NINH AN TOÀN TRONG THỜI GIAN NGHỈ LỄ 30/4, 01/5',
-            author: 'huongct12',
-            date: '2025-04-27T15:00:45.9',
-        },
-        {
-            title: 'THÔNG BÁO V/V ĐĂNG KÝ/HỦY PHÒNG KTX KỲ SUMMER 2025',
-            author: 'huongct12',
-            date: '2025-04-03T10:12:10.74',
-        },
-    ];
+    const baseUrl = useMemo(() => import.meta.env.VITE_API_URL || 'http://localhost:8080/api', []);
+    const token = useMemo(() => localStorage.getItem('token'), []);
+
+    const fetchAllNews = async () => {
+        setNewsLoading(true);
+        setNewsError("");
+        try {
+            const res = await fetch(`${baseUrl}/news`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+            const json = await res.json();
+            const items = Array.isArray(json?.data) ? json.data : [];
+            const visible = items.filter((n) => n?.status === 'VISIBLE');
+            visible.sort((a, b) => {
+                const aDt = new Date(a?.date ? `${a.date}T${a.time || '00:00:00'}` : 0).getTime();
+                const bDt = new Date(b?.date ? `${b.date}T${b.time || '00:00:00'}` : 0).getTime();
+                return bDt - aDt;
+            });
+            setNews(visible.slice(0, 5));
+        } catch (e) {
+            setNews([]);
+            setNewsError('Không thể tải tin tức');
+        } finally {
+            setNewsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAllNews();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const openDetail = async (item) => {
+        if (!item?.newsid) return;
+        setDetailLoading(true);
+        setModalVisible(true);
+        try {
+            const res = await fetch(`${baseUrl}/news/getnewsdetail/${item.newsid}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+            const json = await res.json();
+            if (!json?.data) throw new Error('No detail');
+            setSelectedNews(json.data);
+        } catch (e) {
+            message.error('Không thể tải chi tiết tin tức');
+            setSelectedNews(item); // fallback hiển thị dữ liệu hiện có
+        } finally {
+            setDetailLoading(false);
+        }
+    };
 
     return (
         <AppLayout>
@@ -49,25 +85,44 @@ export function DashboardPage() {
                     headStyle={{ background: '#004aad' }}
                     className="lg:col-span-2"
                 >
-                    <List
-                        dataSource={newsData}
-                        renderItem={(item) => (
-                            <List.Item>
-                                <div>
-                                    <Link strong style={{ color: '#004aad', fontSize: '16px' }}>
-                                        {item.title}
-                                    </Link>
-                                    <br />
-                                    <Text type="secondary">
-                                        By {item.author} {new Date(item.date).toLocaleString()}
-                                    </Text>
-                                </div>
-                            </List.Item>
-                        )}
-                    />
+                    {newsLoading ? (
+                        <Skeleton active />
+                    ) : newsError ? (
+                        <Alert type="error" message={newsError} />
+                    ) : (
+                        <List
+                            dataSource={news}
+                            renderItem={(item) => {
+                                const dateTime = item?.date
+                                    ? new Date(item.time ? `${item.date}T${item.time}` : item.date)
+                                    : null;
+                                return (
+                                    <List.Item style={{ cursor: 'pointer' }} onClick={() => openDetail(item)}>
+                                        <div>
+                                            <Link strong style={{ color: '#004aad', fontSize: '16px' }}>
+                                                {item.title}
+                                            </Link>
+                                            <br />
+                                            <Text type="secondary">
+                                                {item.userNames} {dateTime ? dateTime.toLocaleString() : ''}
+                                            </Text>
+                                        </div>
+                                    </List.Item>
+                                );
+                            }}
+                        />
+                    )}
                     <div style={{ textAlign: 'center', marginTop: 8 }}>
                         <Link onClick={() => navigate('/news')}>See more</Link>
                     </div>
+                    <Modal
+                        open={modalVisible}
+                        onCancel={() => setModalVisible(false)}
+                        footer={null}
+                        width={900}
+                    >
+                        {detailLoading ? <Skeleton active /> : <NewsDetailModal news={selectedNews} />}
+                    </Modal>
                 </Card>
 
                 {/* Cột bên phải - Sidebar */}
