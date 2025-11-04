@@ -6,7 +6,7 @@ import { PlusOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { SideBarManager } from '../../components/layout/SideBarManger';
 import dayjs from 'dayjs';
 
-// Import các plugin (Đã có isSameOrBefore)
+// Import các plugin
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 dayjs.extend(isSameOrAfter);
@@ -28,19 +28,28 @@ export function ShiftConfigurationPage() {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    // Hàm fetchShifts (Cần API GET)
+    // === SỬA LỖI "INVALID DATE" TRONG HÀM NÀY ===
     const fetchShifts = async () => {
         setLoading(true);
         try {
             const response = await axiosClient.get('/shifts');
 
             if (response && response.data) {
-                const formattedData = response.data.map(shift => ({
-                    ...shift,
-                    key: shift.id,
-                    startTime: dayjs(shift.startTime).format('HH:mm'),
-                    endTime: dayjs(shift.endTime).format('HH:mm'),
-                }));
+                const formattedData = response.data.map(shift => {
+                    // Backend (GetAllShiftResponse) trả về LocalTime (ví dụ: "09:00:00")
+                    // dayjs() không thể parse "09:00:00" trực tiếp.
+                    // Ta cần thêm một ngày giả (dummy date) để dayjs hiểu.
+                    const validStartTime = dayjs(`2000-01-01T${shift.startTime}`);
+                    const validEndTime = dayjs(`2000-01-01T${shift.endTime}`);
+
+                    return {
+                        ...shift,
+                        key: shift.id,
+                        // Giờ chúng ta format từ dayjs object đã hợp lệ
+                        startTime: validStartTime.format('HH:mm'),
+                        endTime: validEndTime.format('HH:mm'),
+                    };
+                });
                 setShifts(formattedData);
             } else {
                 setShifts([]);
@@ -56,6 +65,8 @@ export function ShiftConfigurationPage() {
             setLoading(false);
         }
     };
+    // === KẾT THÚC SỬA ===
+
 
     useEffect(() => {
         fetchShifts();
@@ -66,8 +77,11 @@ export function ShiftConfigurationPage() {
         setEditingShift(record);
         setIsModalVisible(true);
         if (record) {
+            // Khi mở modal Edit, ta cũng cần dùng ngày giả
+            // vì record.startTime lúc này là "09:00"
             let start = dayjs(record.startTime, 'HH:mm');
             let end = dayjs(record.endTime, 'HH:mm');
+
             if (end.isSameOrBefore(start)) {
                 end = end.add(1, 'day');
             }
@@ -80,7 +94,7 @@ export function ShiftConfigurationPage() {
         }
     };
 
-    // === SỬA LỖI ĐỊNH DẠNG (FORMAT) THỜI GIAN ===
+    // (Hàm handleSaveShift - Logic gửi đi (POST/PUT) đã đúng)
     const handleSaveShift = async (values) => {
         setSubmitting(true);
         const [startTime, endTime] = values.timeRange;
@@ -93,19 +107,17 @@ export function ShiftConfigurationPage() {
             endDateTime = endDateTime.add(1, 'day');
         }
 
-        // Định dạng chuỗi mà LocalDateTime (Java) chấp nhận
         const formatString = "YYYY-MM-DDTHH:mm:ss";
 
         const payload = {
             name: values.name,
-            // Sửa lại format: Bỏ múi giờ (+07:00)
-            startTime: startDateTime.format(formatString), // e.g., "2025-11-03T00:00:00"
-            endTime: endDateTime.format(formatString),     // e.g., "2025-11-03T03:00:00"
+            startTime: startDateTime.format(formatString),
+            endTime: endDateTime.format(formatString),
         };
-        // === KẾT THÚC SỬA ===
 
         try {
             if (editingShift) {
+                // (Cần API PUT /shifts/{id} ở backend)
                 await axiosClient.put(`/shifts/${editingShift.key}`, payload);
                 message.success('Cập nhật ca làm việc thành công!');
             } else {
@@ -131,6 +143,7 @@ export function ShiftConfigurationPage() {
     // (Hàm handleDelete)
     const handleDelete = async (shiftId) => {
         try {
+            // (Cần API DELETE /shifts/{id} ở backend)
             await axiosClient.delete(`/shifts/${shiftId}`);
             message.success('Xóa ca làm việc thành công!');
             fetchShifts();
