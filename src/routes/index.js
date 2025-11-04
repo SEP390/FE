@@ -8,7 +8,12 @@ import {PaymentHistoryPage} from "../pages/booking/PaymentHistoryPage.jsx";
 import {NewsList} from "../pages/News/NewsList.jsx";
 import {ElectricWaterBillPage} from "../pages/electric-water/ElectricWaterBillPage.jsx";
 //import {GuardElectricWaterPage} from "../pages/guard/electric-water/GuardElectricWaterPage.jsx";
-import {GuardSchedule} from "../pages/guard/Scheduale/GuardSchedule.jsx";
+
+// === THAY ĐỔI IMPORT TẠI ĐÂY ===
+// import {GuardSchedule} from "../pages/guard/Scheduale/GuardSchedule.jsx"; // Đây là file cũ
+import { StaffAttendancePage } from "../pages/guard/Attendance/StaffAttendancePage.jsx"; // Đây là file chấm công mới
+// === KẾT THÚC THAY ĐỔI ===
+
 import {GuardViewRequest} from "../pages/guard/Request/GuardViewRequest.jsx";
 import {GuardViewRequestDetail} from "../pages/guard/Request/GuardViewRequestDetail.jsx";
 import {DashboardManager} from "../pages/manager/DashboardManager.jsx";
@@ -49,8 +54,13 @@ const routes = [
     { path: "/vnpay", element: PaymentResult },
     { path: "/payment", element: PaymentHistoryPage },
     { path: "/electric-water", element: ElectricWaterBillPage },
-   // { path: "/guard/electric-water", element: GuardElectricWaterPage },
-    { path: "/guard/schedule", element: GuardSchedule },
+    // { path: "/guard/electric-water", element: GuardElectricWaterPage },
+
+    // === THAY ĐỔI ĐƯỜNG DẪN TẠI ĐÂY ===
+    // { path: "/guard/schedule", element: GuardSchedule }, // Đường dẫn cũ
+    { path: "/guard/schedule", element: StaffAttendancePage }, // Đường dẫn mới trỏ đến trang chấm công
+    // === KẾT THÚC THAY ĐỔI ===
+
     { path: "/guard/requests", element: GuardViewRequest },
     { path: "/guard/request-detail/:requestId", element: GuardViewRequestDetail },
     { path: "/guard/reports", element: GuardCreateReport },
