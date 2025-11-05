@@ -43,6 +43,7 @@ import {TeachnicalCreateReport} from "../pages/technical/report/TeachnicalCreate
 import {WarehouseManagement} from "../pages/technical/warehouse/WarehouseManagement.jsx";
 import {ResidentDetail} from "../pages/manager/ResidentDetail.jsx";
 import {GuardCreateReport} from "../pages/guard/Report/GuardCreateReport.jsx";
+import {HolidayManagePage} from "../pages/manager/Holiday/HolidayManagePage.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -87,6 +88,7 @@ const routes = [
     {path: "/manager/residents", element: ResidentManagerPage},
     { path: "/manager/resident-detail/:residentId", element: ResidentDetail },
     {path: "/manager/reports", element: ReportManagePage},
+    {path: "/manager/holidays", element: HolidayManagePage},
 
     // --- ROUTES DÀNH CHO CLEANER ---
     { path: "/cleaner/schedule", element: CleanerSchedule },
