@@ -1,8 +1,8 @@
 // File: src/pages/manager/ShiftConfigurationPage.jsx
 
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Table, Button, Space, Modal, Form, Input, TimePicker, Popconfirm, Select, message } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { Layout, Typography, Table, Button, Space, Modal, Form, Input, TimePicker, message } from 'antd'; // <- Đã xóa Popconfirm
+import { PlusOutlined, EditOutlined } from "@ant-design/icons"; // <- Đã xóa DeleteOutlined
 import { SideBarManager } from '../../components/layout/SideBarManger';
 import dayjs from 'dayjs';
 
@@ -28,7 +28,7 @@ export function ShiftConfigurationPage() {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    // === SỬA LỖI "INVALID DATE" TRONG HÀM NÀY ===
+    // (Hàm fetchShifts - Giữ nguyên, đã đúng)
     const fetchShifts = async () => {
         setLoading(true);
         try {
@@ -37,15 +37,12 @@ export function ShiftConfigurationPage() {
             if (response && response.data) {
                 const formattedData = response.data.map(shift => {
                     // Backend (GetAllShiftResponse) trả về LocalTime (ví dụ: "09:00:00")
-                    // dayjs() không thể parse "09:00:00" trực tiếp.
-                    // Ta cần thêm một ngày giả (dummy date) để dayjs hiểu.
                     const validStartTime = dayjs(`2000-01-01T${shift.startTime}`);
                     const validEndTime = dayjs(`2000-01-01T${shift.endTime}`);
 
                     return {
                         ...shift,
                         key: shift.id,
-                        // Giờ chúng ta format từ dayjs object đã hợp lệ
                         startTime: validStartTime.format('HH:mm'),
                         endTime: validEndTime.format('HH:mm'),
                     };
@@ -65,20 +62,16 @@ export function ShiftConfigurationPage() {
             setLoading(false);
         }
     };
-    // === KẾT THÚC SỬA ===
-
 
     useEffect(() => {
         fetchShifts();
     }, []);
 
-    // (Hàm handleOpenModal)
+    // (Hàm handleOpenModal - Giữ nguyên, đã đúng)
     const handleOpenModal = (record = null) => {
         setEditingShift(record);
         setIsModalVisible(true);
         if (record) {
-            // Khi mở modal Edit, ta cũng cần dùng ngày giả
-            // vì record.startTime lúc này là "09:00"
             let start = dayjs(record.startTime, 'HH:mm');
             let end = dayjs(record.endTime, 'HH:mm');
 
@@ -94,26 +87,23 @@ export function ShiftConfigurationPage() {
         }
     };
 
-    // (Hàm handleSaveShift - Logic gửi đi (POST/PUT) đã đúng)
+    // === SỬA HÀM NÀY ĐỂ GỬI ĐÚNG PAYLOAD (LOCAL TIME) ===
     const handleSaveShift = async (values) => {
         setSubmitting(true);
         const [startTime, endTime] = values.timeRange;
 
-        const now = dayjs();
-        const startDateTime = now.hour(startTime.hour()).minute(startTime.minute()).second(0);
-        let endDateTime = now.hour(endTime.hour()).minute(endTime.minute()).second(0);
-
-        if (endDateTime.isSameOrBefore(startDateTime)) {
-            endDateTime = endDateTime.add(1, 'day');
-        }
-
-        const formatString = "YYYY-MM-DDTHH:mm:ss";
+        // Backend DTO (Create/Update) chỉ nhận LocalTime.
+        // Format về "HH:mm:ss" để Spring Boot hiểu.
+        const formatString = "HH:mm:ss";
 
         const payload = {
             name: values.name,
-            startTime: startDateTime.format(formatString),
-            endTime: endDateTime.format(formatString),
+            startTime: startTime.format(formatString), // Ví dụ: "09:00:00"
+            endTime: endTime.format(formatString),     // Ví dụ: "17:00:00"
         };
+
+        // Ghi chú: Nếu ca qua đêm (VD: 22:00 - 06:00),
+        // logic kiểm tra và xử lý phải nằm ở backend (ShiftService).
 
         try {
             if (editingShift) {
@@ -121,6 +111,7 @@ export function ShiftConfigurationPage() {
                 await axiosClient.put(`/shifts/${editingShift.key}`, payload);
                 message.success('Cập nhật ca làm việc thành công!');
             } else {
+                // (API POST /shifts)
                 await axiosClient.post('/shifts', payload);
                 message.success('Thêm ca làm việc mới thành công!');
             }
@@ -139,20 +130,12 @@ export function ShiftConfigurationPage() {
             setSubmitting(false);
         }
     };
+    // === KẾT THÚC SỬA ===
 
-    // (Hàm handleDelete)
-    const handleDelete = async (shiftId) => {
-        try {
-            // (Cần API DELETE /shifts/{id} ở backend)
-            await axiosClient.delete(`/shifts/${shiftId}`);
-            message.success('Xóa ca làm việc thành công!');
-            fetchShifts();
-        } catch (error) {
-            message.error(`Xóa thất bại! ` + (error.response?.data?.message || error.message));
-        }
-    };
 
-    // (Columns)
+    // (Hàm handleDelete đã bị xóa vì không dùng)
+
+    // === SỬA COLUMNS (XÓA NÚT DELETE) ===
     const columns = [
         { title: 'Tên Ca', dataIndex: 'name', key: 'name' },
         { title: 'Bắt đầu', dataIndex: 'startTime', key: 'startTime' },
@@ -163,20 +146,11 @@ export function ShiftConfigurationPage() {
             title: 'Hành động',
             key: 'action',
             render: (text, record) => (
-                <Space size="middle">
-                    <Button icon={<EditOutlined />} onClick={() => handleOpenModal(record)} />
-                    <Popconfirm
-                        title="Bạn có chắc chắn muốn xóa ca này?"
-                        okText="Có"
-                        cancelText="Không"
-                        onConfirm={() => handleDelete(record.key)}
-                    >
-                        <Button icon={<DeleteOutlined />} danger />
-                    </Popconfirm>
-                </Space>
+                <Button icon={<EditOutlined />} onClick={() => handleOpenModal(record)} />
             ),
         },
     ];
+    // === KẾT THÚC SỬA COLUMNS ===
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
