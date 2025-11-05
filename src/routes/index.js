@@ -44,6 +44,7 @@ import {WarehouseManagement} from "../pages/technical/warehouse/WarehouseManagem
 import {ResidentDetail} from "../pages/manager/ResidentDetail.jsx";
 import {GuardCreateReport} from "../pages/guard/Report/GuardCreateReport.jsx";
 import {HolidayManagePage} from "../pages/manager/Holiday/HolidayManagePage.jsx";
+import {CleanerCreateReport} from "../pages/cleaner/report/CleanerCreateReport.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -93,6 +94,7 @@ const routes = [
     // --- ROUTES DÀNH CHO CLEANER ---
     { path: "/cleaner/schedule", element: CleanerSchedule },
     { path: "/cleaner/supplies", element: CleanerSupplies },
+    { path: "/cleaner/reports", element: CleanerCreateReport },
 
     // --- ROUTES DÀNH CHO TECHNICAL ---
     { path: "/technical/requests", element: TechnicalRequests },

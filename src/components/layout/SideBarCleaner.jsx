@@ -1,4 +1,4 @@
-import { CalendarOutlined, ToolOutlined } from "@ant-design/icons";
+import {CalendarOutlined, ToolOutlined, WarningOutlined} from "@ant-design/icons";
 import { Layout, Menu } from "antd";
 import { Link } from "react-router-dom";
 import { Bed } from "lucide-react";
@@ -15,6 +15,11 @@ const cleanerItems = [
         label: <Link to={"/cleaner/supplies"}>Quản lý vật tư vệ sinh</Link>,
         icon: <ToolOutlined/>,
         key: "cleaner-supplies",
+    },
+    {
+        label: <Link to={"/cleaner/reports"}>Quản lý báo cáo</Link>,
+        icon: <WarningOutlined/>,
+        key: "cleaner-reports",
     },
 ];
 
