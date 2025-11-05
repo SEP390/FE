@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { SideBarTechnical } from "../../../components/layout/SideBarTechnical.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Select, Input, message } from "antd";
+import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Select, Input, message, Modal } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
@@ -19,6 +19,9 @@ export function TechnicalRequestDetail() {
     const [residentInfo, setResidentInfo] = useState(null);
     const [form] = Form.useForm();
     const [isUpdating, setIsUpdating] = useState(false);
+    const [reportVisible, setReportVisible] = useState(false);
+    const [reportTarget, setReportTarget] = useState("ROOM");
+    const [reportForm] = Form.useForm();
     const activeKey = 'technical-requests';
 
     // API hooks
@@ -36,6 +39,15 @@ export function TechnicalRequestDetail() {
         isSuccess: isUpdateSuccess,
         isComplete: isUpdateComplete,
         isLoading: isUpdateLoading
+    } = useApi();
+
+    // API hook to create report
+    const {
+        post: createReport,
+        data: reportCreateResponse,
+        isSuccess: isReportCreateSuccess,
+        isComplete: isReportCreateComplete,
+        isLoading: isReportCreateLoading
     } = useApi();
 
     // API hook to get user by id
@@ -188,6 +200,39 @@ export function TechnicalRequestDetail() {
         setCollapsed(!collapsed);
     };
 
+    // Handle create report response
+    useEffect(() => {
+        if (isReportCreateSuccess && reportCreateResponse) {
+            message.success("Tạo report thành công!");
+            setReportVisible(false);
+            reportForm.resetFields();
+            setReportTarget("ROOM");
+        }
+    }, [isReportCreateSuccess, reportCreateResponse, reportForm]);
+
+    useEffect(() => {
+        if (isReportCreateComplete && !isReportCreateSuccess) {
+            message.error("Tạo report thất bại, vui lòng thử lại!");
+        }
+    }, [isReportCreateComplete, isReportCreateSuccess]);
+
+    const handleOpenReport = () => {
+        setReportVisible(true);
+        // preset room name when opening
+        if (requestData?.roomName) {
+            reportForm.setFieldsValue({ roomName: requestData.roomName });
+        }
+    };
+
+    const handleSubmitReport = (values) => {
+        const targetLabel = values.targetType === "INDIVIDUAL" ? "Cá nhân" : "Phòng";
+        const studentCodeLine = values.targetType === "INDIVIDUAL" && values.studentCode ? `\nMã sinh viên: ${values.studentCode}` : "";
+        const requestLine = requestData?.requestId ? `\nRequest ID: ${requestData.requestId}` : "";
+        const content = `Report từ kỹ thuật\nPhòng: ${requestData?.roomName || values.roomName || "N/A"}\nĐối tượng: ${targetLabel}${studentCodeLine}${requestLine}\n\nGhi chú:\n${values.note || ""}`;
+
+        createReport(`/reports`, { content });
+    };
+
     return (
         <Layout style={{ minHeight: "100vh" }}>
             <SideBarTechnical active={activeKey} collapsed={collapsed} />
@@ -204,6 +249,11 @@ export function TechnicalRequestDetail() {
                         <Title level={2} style={{ margin: 0 }}>
                             {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
                         </Title>
+                        <div style={{ marginLeft: "auto" }}>
+                            <Button type="primary" onClick={handleOpenReport}>
+                                Tạo report
+                            </Button>
+                        </div>
                     </div>
 
                     {isRequestLoading && (
@@ -277,7 +327,7 @@ export function TechnicalRequestDetail() {
                                         >
                                             <Select placeholder="Chọn trạng thái">
 
-                                                <Option value="CHECKED">Đã kiểm tra</Option>
+                                                <Option value="ACCEPTED">Đã kiểm tra</Option>
 
                                             </Select>
                                         </Form.Item>
@@ -326,6 +376,64 @@ export function TechnicalRequestDetail() {
                             )}
                         </>
                     )}
+
+                    {/* Create Report Modal */}
+                    <Modal
+                        title="Tạo report"
+                        open={reportVisible}
+                        onCancel={() => setReportVisible(false)}
+                        footer={null}
+                        destroyOnClose
+                    >
+                        <Form
+                            layout="vertical"
+                            form={reportForm}
+                            initialValues={{ targetType: reportTarget, roomName: requestData?.roomName }}
+                            onFinish={handleSubmitReport}
+                        >
+                            <Form.Item label="Phòng" name="roomName">
+                                <Input placeholder="Tên phòng" disabled value={requestData?.roomName} />
+                            </Form.Item>
+
+                            <Form.Item
+                                label="Đối tượng"
+                                name="targetType"
+                                rules={[{ required: true, message: "Vui lòng chọn đối tượng" }]}
+                            >
+                                <Select
+                                    onChange={(val) => setReportTarget(val)}
+                                    options={[
+                                        { value: "ROOM", label: "Phòng" },
+                                        { value: "INDIVIDUAL", label: "Cá nhân" }
+                                    ]}
+                                />
+                            </Form.Item>
+
+                            {reportTarget === "INDIVIDUAL" && (
+                                <Form.Item
+                                    label="Mã sinh viên"
+                                    name="studentCode"
+                                    rules={[{ required: true, message: "Vui lòng nhập mã sinh viên" }]}
+                                >
+                                    <Input placeholder="Nhập mã sinh viên" />
+                                </Form.Item>
+                            )}
+
+                            <Form.Item
+                                label="Ghi chú"
+                                name="note"
+                                rules={[{ required: true, message: "Vui lòng nhập nội dung ghi chú" }]}
+                            >
+                                <TextArea rows={5} placeholder="Nhập nội dung ghi chú" />
+                            </Form.Item>
+
+                            <Form.Item>
+                                <Button type="primary" htmlType="submit" loading={isReportCreateLoading} block>
+                                    Tạo report
+                                </Button>
+                            </Form.Item>
+                        </Form>
+                    </Modal>
                 </Content>
             </Layout>
         </Layout>
