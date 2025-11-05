@@ -9,7 +9,7 @@ import {
     TeamOutlined,
     WarningOutlined,
     FileSearchOutlined,
-    CheckSquareOutlined,
+    CheckSquareOutlined, CoffeeOutlined,
 } from "@ant-design/icons";
 // CHUẨN HÓA IMPORTS: Import Layout và Menu từ 'antd'
 import { Layout, Menu } from "antd";
@@ -80,6 +80,11 @@ const managerItems = [
         label: <Link to={"/pages/manager/semester"}>Quản lí kỳ</Link>,
         icon: <FileSearchOutlined/>,
         key: "semester",
+    },
+    {
+        label: <Link to={"/manager/holidays"}>Quản lí kỳ nghỉ</Link>,
+        icon: <CoffeeOutlined/>,
+        key: "holiday"
     }
 ];
 
