@@ -3,12 +3,12 @@ import {
     Layout, Typography, Row, Col, Table, Input, Select, Button, Tag, Space,
     Dropdown, Menu, message, Spin
 } from "antd";
-import { SideBarManager } from "../../components/layout/SideBarManger.jsx";
+import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { Link } from 'react-router-dom';
 // === THÊM MỚI: Thêm icon Search và Clear ===
 import { EyeOutlined, SearchOutlined, ClearOutlined } from "@ant-design/icons";
 // === KẾT THÚC THÊM MỚI ===
-import axiosClient from '../../api/axiosClient/axiosClient.js';
+import axiosClient from '../../../api/axiosClient/axiosClient.js';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
