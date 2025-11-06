@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
-import { Layout, Typography, Card, Table, Button, Tag, Select, Input, Space } from "antd";
+import { Layout, Typography, Card, Table, Button, Tag, Select, Input, Space, DatePicker } from "antd";
 import { useNavigate } from "react-router-dom";
 import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
+import dayjs from "dayjs";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 export function ManagerRequests() {
     const navigate = useNavigate();
@@ -17,6 +19,11 @@ export function ManagerRequests() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [typeFilter, setTypeFilter] = useState("all");
     const [searchText, setSearchText] = useState("");
+    const [dateRange, setDateRange] = useState(() => {
+        const today = dayjs();
+        return [today, today];
+    });
+    const [quickDateFilter, setQuickDateFilter] = useState("today");
 
     // API call for requests
     const { get: getRequests, data: requestsData, isSuccess: isRequestsSuccess, isComplete: isRequestsComplete } = useApi();
@@ -83,6 +90,57 @@ export function ManagerRequests() {
         }
     }, [isRequestsSuccess, requestsData, isRequestsComplete]);
 
+    // Handler cho quick date filter
+    const handleQuickDateFilterChange = (value) => {
+        setQuickDateFilter(value);
+        
+        if (value === "all") {
+            setDateRange(null);
+        } else if (value === "today") {
+            const today = dayjs();
+            setDateRange([today, today]);
+        } else if (value === "week") {
+            const today = dayjs();
+            const weekAgo = today.subtract(7, 'day');
+            setDateRange([weekAgo, today]);
+        } else if (value === "month") {
+            const today = dayjs();
+            const monthAgo = today.subtract(1, 'month');
+            setDateRange([monthAgo, today]);
+        } else if (value === "3months") {
+            const today = dayjs();
+            const threeMonthsAgo = today.subtract(3, 'month');
+            setDateRange([threeMonthsAgo, today]);
+        }
+    };
+
+    // Reset quick filter khi user chọn date range thủ công
+    const handleDateRangeChange = (dates) => {
+        setDateRange(dates);
+        if (!dates) {
+            setQuickDateFilter("all");
+        } else {
+            // Kiểm tra xem date range có khớp với quick filter nào không
+            const startDate = dayjs(dates[0]).startOf('day');
+            const endDate = dayjs(dates[1]).startOf('day');
+            const today = dayjs().startOf('day');
+            const weekAgo = today.subtract(7, 'day');
+            const monthAgo = today.subtract(1, 'month');
+            const threeMonthsAgo = today.subtract(3, 'month');
+            
+            if (startDate.isSame(today, 'day') && endDate.isSame(today, 'day')) {
+                setQuickDateFilter("today");
+            } else if (startDate.isSame(weekAgo, 'day') && endDate.isSame(today, 'day')) {
+                setQuickDateFilter("week");
+            } else if (startDate.isSame(monthAgo, 'day') && endDate.isSame(today, 'day')) {
+                setQuickDateFilter("month");
+            } else if (startDate.isSame(threeMonthsAgo, 'day') && endDate.isSame(today, 'day')) {
+                setQuickDateFilter("3months");
+            }
+            // Nếu không khớp với quick filter nào, giữ nguyên giá trị hiện tại
+        }
+    };
+
     // Filter data based on filters
     useEffect(() => {
         let filtered = [...dataSource];
@@ -104,8 +162,22 @@ export function ManagerRequests() {
             );
         }
 
+        // Filter by date range
+        if (dateRange && dateRange.length === 2) {
+            const startDate = dayjs(dateRange[0]).startOf('day');
+            const endDate = dayjs(dateRange[1]).endOf('day');
+            
+            filtered = filtered.filter(item => {
+                if (!item.createdDate) return false;
+                const itemDate = dayjs(item.createdDate).startOf('day');
+                // Kiểm tra xem ngày của item có nằm trong khoảng từ startDate đến endDate không (bao gồm cả 2 đầu)
+                return (itemDate.isSame(startDate, 'day') || itemDate.isAfter(startDate, 'day')) && 
+                       (itemDate.isSame(endDate, 'day') || itemDate.isBefore(endDate, 'day'));
+            });
+        }
+
         setFilteredData(filtered);
-    }, [dataSource, statusFilter, typeFilter, searchText]);
+    }, [dataSource, statusFilter, typeFilter, searchText, dateRange]);
 
     // Màu cho trạng thái
     const statusColor = (status) => {
@@ -231,11 +303,11 @@ export function ManagerRequests() {
 
     const isLoading = !isRequestsComplete;
 
-    // Statistics
-    const totalRequests = dataSource.length;
-    const pendingRequests = dataSource.filter(d => d.status === "PENDING" || d.status === "PROCESSING").length;
-    const approvedRequests = dataSource.filter(d => d.status === "APPROVED" || d.status === "COMPLETED" || d.status === "ACCEPTED").length;
-    const rejectedRequests = dataSource.filter(d => d.status === "REJECTED" || d.status === "CANCELLED").length;
+    // Statistics - tính theo filteredData để hiển thị đúng với bộ lọc
+    const totalRequests = filteredData.length;
+    const pendingRequests = filteredData.filter(d => d.status === "PENDING" || d.status === "PROCESSING").length;
+    const approvedRequests = filteredData.filter(d => d.status === "APPROVED" || d.status === "COMPLETED" || d.status === "ACCEPTED").length;
+    const rejectedRequests = filteredData.filter(d => d.status === "REJECTED" || d.status === "CANCELLED").length;
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
@@ -294,6 +366,25 @@ export function ManagerRequests() {
                                 allowClear
                             />
                             <Select
+                                value={quickDateFilter}
+                                onChange={handleQuickDateFilterChange}
+                                style={{ width: 180 }}
+                            >
+                                <Option value="all">Tất cả thời gian</Option>
+                                <Option value="today">Hôm nay</Option>
+                                <Option value="week">1 tuần</Option>
+                                <Option value="month">1 tháng</Option>
+                                <Option value="3months">3 tháng đổ lại</Option>
+                            </Select>
+                            <RangePicker
+                                placeholder={["Từ ngày", "Đến ngày"]}
+                                format="DD/MM/YYYY"
+                                value={dateRange}
+                                onChange={handleDateRangeChange}
+                                style={{ width: 250 }}
+                                allowClear
+                            />
+                            <Select
                                 value={statusFilter}
                                 onChange={setStatusFilter}
                                 style={{ width: 150 }}
@@ -322,6 +413,8 @@ export function ManagerRequests() {
                                     setStatusFilter("all");
                                     setTypeFilter("all");
                                     setSearchText("");
+                                    setDateRange(null);
+                                    setQuickDateFilter("all");
                                 }}
                             >
                                 Xóa bộ lọc
