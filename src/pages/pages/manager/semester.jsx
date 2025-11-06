@@ -22,7 +22,7 @@ async function fetchData(set, method, url, data) {
     console.log(method, url, data)
     set({loading: true});
     try {
-        const res = await axiosClient({method, url, data})
+        const res = await axiosClient({method, url, data, params: method === "GET" ? data : null})
         if (res.status === 200) {
             console.log(res.data)
             return res.data;
@@ -35,13 +35,19 @@ async function fetchData(set, method, url, data) {
     }
 }
 
-const useSemesterStore = create((set) => ({
+const useSemesterStore = create((set, get) => ({
+    page: 0,
+    setPage: (page) => set({page}),
+    total: 0,
     semesters: [],
     loading: false,
     error: null,
     fetchSemesters: async () => {
-        const data = await fetchData(set, "GET", "/semesters", null)
-        set({semesters: data.content || []})
+        const page = get().page;
+        const data = await fetchData(set, "GET", "/semesters", {
+            page
+        })
+        set({semesters: data.content || [], total: data.page?.totalElements})
     },
     createSemester: (semester) => fetchData(set, "POST", "/semesters", semester),
     updateSemester: (id, data) => fetchData(set, "POST", `/semesters/${id}`, data),
@@ -103,7 +109,10 @@ const SemesterPage = () => {
         createSemester,
         updateSemester,
         error,
-        deleteSemester
+        deleteSemester,
+        page,
+        setPage,
+        total
     } = useSemesterStore();
 
     const {notification} = App.useApp();
@@ -127,6 +136,12 @@ const SemesterPage = () => {
         });
         setEditingKey(record.id);
     };
+
+    const onChange = (page) => {
+        cancel();
+        setPage(page - 1)
+        fetchSemesters();
+    }
 
     const cancel = () => {
         // If we were adding a new row, remove it from the table on cancel
@@ -314,7 +329,9 @@ const SemesterPage = () => {
                         rowKey="id"
                         loading={loading}
                         pagination={{
-                            onChange: cancel,
+                            current: page + 1,
+                            total: total,
+                            onChange: onChange,
                             pageSize: 10,
                         }}
                     />
