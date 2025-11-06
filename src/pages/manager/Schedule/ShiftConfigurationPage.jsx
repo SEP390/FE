@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Table, Button, Space, Modal, Form, Input, TimePicker, message } from 'antd'; // <- Đã xóa Popconfirm
 import { PlusOutlined, EditOutlined } from "@ant-design/icons"; // <- Đã xóa DeleteOutlined
-import { SideBarManager } from '../../components/layout/SideBarManger';
+import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 import dayjs from 'dayjs';
 
 // Import các plugin
@@ -12,7 +12,7 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-import axiosClient from '../../api/axiosClient/axiosClient';
+import axiosClient from '../../../api/axiosClient/axiosClient.js';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;

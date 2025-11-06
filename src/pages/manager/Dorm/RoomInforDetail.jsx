@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Layout, Typography, List, Card, Space, Tag, Divider, Row, Col, Button, Spin, Alert } from 'antd';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeftOutlined, UserOutlined } from "@ant-design/icons";
-import { SideBarManager } from '../../components/layout/SideBarManger'; // Đảm bảo đường dẫn đúng
-import axiosClient from '../../api/axiosClient/axiosClient'; // Đảm bảo đường dẫn đúng
+import { SideBarManager } from '../../../components/layout/SideBarManger.jsx'; // Đảm bảo đường dẫn đúng
+import axiosClient from '../../../api/axiosClient/axiosClient.js'; // Đảm bảo đường dẫn đúng
 import dayjs from 'dayjs'; // Import dayjs
 
 const { Header, Content } = Layout;

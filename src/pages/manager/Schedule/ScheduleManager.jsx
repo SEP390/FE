@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Layout, Typography, Calendar, Select, Button, Tag, Space, Modal, Form, Input, TimePicker, Row, Col, message } from 'antd';
 import { PlusOutlined, SettingOutlined, UserOutlined, ClockCircleOutlined, EnvironmentOutlined } from "@ant-design/icons";
-import { SideBarManager } from '../../components/layout/SideBarManger';
+import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 

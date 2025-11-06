@@ -14,13 +14,13 @@ import {
 } from "@ant-design/icons";
 
 // Import SideBarManager
-import { SideBarManager } from '../../components/layout/SideBarManger';
+import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 // Import axiosClient
-import axiosClient from '../../api/axiosClient/axiosClient';
+import axiosClient from '../../../api/axiosClient/axiosClient.js';
 // Import dayjs for DatePicker
 import dayjs from 'dayjs';
 // --- MỚI: Import hàm tạo mật khẩu ---
-import { generateRandomPassword } from '../../util/password'; // (Hãy kiểm tra lại đường dẫn này)
+import { generateRandomPassword } from '../../../util/password.js'; // (Hãy kiểm tra lại đường dẫn này)
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;

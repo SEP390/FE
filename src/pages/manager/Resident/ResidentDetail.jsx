@@ -6,8 +6,8 @@ import {
 // === KẾT THÚC SỬA ===
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeftOutlined, UserOutlined } from "@ant-design/icons";
-import { SideBarManager } from '../../components/layout/SideBarManger';
-import axiosClient from '../../api/axiosClient/axiosClient';
+import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
+import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
 
 const { Header, Content } = Layout;

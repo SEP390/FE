@@ -9,10 +9,10 @@ import {
 import { Link } from 'react-router-dom';
 
 // Import SideBarManager
-import { SideBarManager } from '../../components/layout/SideBarManger';
+import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 
 // Import axiosClient của bạn
-import axiosClient from '../../api/axiosClient/axiosClient';
+import axiosClient from '../../../api/axiosClient/axiosClient.js';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
