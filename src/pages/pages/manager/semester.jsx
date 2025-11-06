@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {create} from 'zustand';
-import {App, Button, Card, DatePicker, Form, Input, Popconfirm, Space, Table, Typography,} from 'antd';
-import {CalendarDays, Pencil, PlusCircle, Save, Trash, XCircle,} from 'lucide-react';
+import {App, Button, Card, DatePicker, Form, Input, Popconfirm, Space, Table,} from 'antd';
+import {CalendarDays, Pencil, Plus, Save, Trash, XCircle,} from 'lucide-react';
 import dayjs from 'dayjs';
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
@@ -24,6 +24,7 @@ async function fetchData(set, method, url, data) {
     try {
         const res = await axiosClient({method, url, data})
         if (res.status === 200) {
+            console.log(res.data)
             return res.data;
         }
     } catch (error) {
@@ -40,7 +41,7 @@ const useSemesterStore = create((set) => ({
     error: null,
     fetchSemesters: async () => {
         const data = await fetchData(set, "GET", "/semesters", null)
-        set({semesters: data})
+        set({semesters: data.content || []})
     },
     createSemester: (semester) => fetchData(set, "POST", "/semesters", semester),
     updateSemester: (id, data) => fetchData(set, "POST", `/semesters/${id}`, data),
@@ -145,9 +146,6 @@ const SemesterPage = () => {
     const save = async (id) => {
         try {
             const row = await form.validateFields();
-
-            // Convert dayjs objects back to ISO strings for the API
-
             console.log(row)
             const data = {
                 name: row.name,
@@ -167,11 +165,6 @@ const SemesterPage = () => {
             setEditingKey('');
             await fetchSemesters();
         } catch (errInfo) {
-            console.log('Validate Failed:', errInfo);
-            notification.error({
-                message: 'Validation Failed',
-                description: 'Please check the fields and try again.',
-            });
         }
     };
 
@@ -201,13 +194,13 @@ const SemesterPage = () => {
 
     const columns = [
         {
-            title: 'Semester Name',
+            title: 'Kỳ',
             dataIndex: 'name',
             editable: true,
             sorter: (a, b) => a.name.localeCompare(b.name),
         },
         {
-            title: 'Start Date',
+            title: 'Ngày bắt đầu',
             dataIndex: 'startDate',
             editable: true,
             inputType: 'date',
@@ -215,7 +208,7 @@ const SemesterPage = () => {
             sorter: (a, b) => new Date(a.startDate) - new Date(b.startDate),
         },
         {
-            title: 'End Date',
+            title: 'Ngày kết thúc',
             dataIndex: 'endDate',
             editable: true,
             inputType: 'date',
@@ -223,7 +216,7 @@ const SemesterPage = () => {
             sorter: (a, b) => new Date(a.endDate) - new Date(b.endDate),
         },
         {
-            title: 'Actions',
+            title: 'Hành động',
             dataIndex: 'actions',
             width: 120,
             render: (_, record) => {
@@ -294,19 +287,16 @@ const SemesterPage = () => {
 
     return (
         <LayoutManager>
-            <Card className="h-full mx-auto bg-white p-6 rounded-lg shadow-md overflow-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <Typography.Title level={2} className="!mb-0">
-                        Manage Semesters
-                    </Typography.Title>
+            <Card title={"Quản lý kỳ"} className="h-full mx-auto bg-white p-6 rounded-lg shadow-md overflow-auto">
+                <div className="flex justify-end items-center mb-3">
                     <Button
                         type="primary"
                         onClick={handleAdd}
                         disabled={editingKey !== ''}
-                        icon={<PlusCircle size={16}/>}
+                        icon={<Plus size={16}/>}
                         className="flex items-center"
                     >
-                        Add Semester
+                        Thêm
                     </Button>
                 </div>
 
