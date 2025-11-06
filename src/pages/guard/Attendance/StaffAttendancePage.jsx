@@ -2,11 +2,71 @@ import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Card, Button, Space, message, Descriptions, Tag, Spin, Empty, Alert } from 'antd';
 import { ClockCircleOutlined, LoginOutlined, LogoutOutlined, CheckCircleOutlined, EnvironmentOutlined } from "@ant-design/icons";
 import { GuardSidebar } from '../../../components/layout/GuardSidebar'; // Điểu chỉnh đường dẫn import
-import axiosClient from '../../../api/axiosClient/axiosClient'; // Đảm bảo đường dẫn này đúng
+// import axiosClient from '../../../api/axiosClient/axiosClient'; // Tạm thời không cần cho mock data
 import dayjs from 'dayjs';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
+
+// --- DỮ LIỆU GIẢ LẬP (MOCK DATA) ---
+
+// Kịch bản 1: Chờ check-in
+const mockAssignment_Pending = {
+    id: 'asg-12345',
+    staffName: 'Nguyễn Văn Bảo',
+    position: 'Bảo vệ',
+    shiftName: 'Ca Sáng (6:00 - 14:00)',
+    // Đặt giờ bắt đầu ca là 6h sáng HÔM NAY
+    shiftStartTime: dayjs().hour(6).minute(0).second(0).format('HH:mm:ss'),
+    shiftEndTime: dayjs().hour(14).minute(0).second(0).format('HH:mm:ss'),
+    area: 'Khu vực Cổng Chính (Dorm A)',
+    actualCheckIn: null,
+    actualCheckOut: null,
+    status: 'PENDING'
+};
+
+// Kịch bản 2: Đang trong ca (Đã check-in)
+const mockAssignment_InProgress = {
+    id: 'asg-12345',
+    staffName: 'Nguyễn Văn Bảo',
+    position: 'Bảo vệ',
+    shiftName: 'Ca Sáng (6:00 - 14:00)',
+    shiftStartTime: dayjs().hour(6).minute(0).second(0).format('HH:mm:ss'),
+    shiftEndTime: dayjs().hour(14).minute(0).second(0).format('HH:mm:ss'),
+    area: 'Khu vực Cổng Chính (Dorm A)',
+    // Giả lập đã check-in vào 1 giờ trước
+    actualCheckIn: dayjs().subtract(1, 'hour').toISOString(),
+    actualCheckOut: null,
+    status: 'IN_PROGRESS'
+};
+
+// Kịch bản 3: Đã hoàn thành
+const mockAssignment_Completed = {
+    id: 'asg-12345',
+    staffName: 'Nguyễn Văn Bảo',
+    position: 'Bảo vệ',
+    shiftName: 'Ca Sáng (6:00 - 14:00)',
+    shiftStartTime: dayjs().hour(6).minute(0).second(0).format('HH:mm:ss'),
+    shiftEndTime: dayjs().hour(14).minute(0).second(0).format('HH:mm:ss'),
+    area: 'Khu vực Cổng Chính (Dorm A)',
+    actualCheckIn: dayjs().subtract(8, 'hour').toISOString(),
+    actualCheckOut: dayjs().subtract(10, 'minute').toISOString(),
+    status: 'COMPLETED'
+};
+
+// --- BIẾN ĐIỀU KHIỂN TRẠNG THÁI ---
+// Thay đổi giá trị này để test các kịch bản
+// 1. mockAssignment_Pending  (Test check-in)
+// 2. mockAssignment_InProgress (Test check-out)
+// 3. mockAssignment_Completed (Test đã xong ca)
+// 4. null                   (Test không có ca)
+
+// ****** CHỈNH SỬA TẠI ĐÂY ĐỂ TEST ******
+let currentAssignmentState = mockAssignment_Pending;
+// ****************************************
+
+// --- KẾT THÚC DỮ LIỆU GIẢ LẬP ---
+
 
 export function StaffAttendancePage() {
     const [collapsed] = useState(false);
@@ -26,13 +86,31 @@ export function StaffAttendancePage() {
         return () => clearInterval(timer);
     }, []);
 
-    // API: Lấy ca làm việc được phân công của TÔI cho HÔM NAY
+    // API: Lấy ca làm việc được phân công của TÔI cho HÔM NAY (ĐÃ GIẢ LẬP)
     const fetchTodaysAssignment = async () => {
         setLoading(true);
         try {
-            // API backend (cần tạo): /assignments/me/today
+            // --- GIẢ LẬP API ---
+            console.log("[MOCK] Đang tải ca làm việc...");
+            await new Promise(resolve => setTimeout(resolve, 800)); // Giả lập trễ mạng 0.8s
+
+            // Kiểm tra state giả lập toàn cục
+            if (!currentAssignmentState) {
+                // Giả lập 404
+                throw { response: { status: 404 } };
+            }
+
+            // Trả về data
+            const responseData = { ...currentAssignmentState };
+            setAssignment(responseData);
+            // --- KẾT THÚC GIẢ LẬP ---
+
+            /*
+            // CODE API THẬT (TẠM ẨN)
             const response = await axiosClient.get('/assignments/me/today');
             setAssignment(response.data);
+            */
+
         } catch (error) {
             if (error.response?.status === 404) {
                 // 404 nghĩa là không có ca
@@ -50,14 +128,34 @@ export function StaffAttendancePage() {
         fetchTodaysAssignment();
     }, []);
 
-    // API: Xử lý Check-in
+    // API: Xử lý Check-in (ĐÃ GIẢ LẬP VÀ SỬA LỖI)
     const handleCheckIn = async () => {
         setSubmitting(true);
         try {
-            // API backend (cần tạo): /attendance/{id}/check-in
+            // --- GIẢ LẬP API ---
+            console.log("[MOCK] Đang Check-in...");
+            await new Promise(resolve => setTimeout(resolve, 500)); // Giả lập trễ mạng 0.5s
+
+            // Cập nhật state giả lập toàn cục
+            currentAssignmentState = {
+                ...currentAssignmentState,
+                status: 'IN_PROGRESS',
+                actualCheckIn: dayjs().toISOString() // Ghi lại thời gian check-in
+            };
+
+            // Cập nhật state của component
+            const responseData = { ...currentAssignmentState };
+            setAssignment(responseData);
+            message.success('Check-in thành công!');
+            // --- KẾT THÚC GIẢ LẬP ---
+
+            /*
+            // CODE API THẬT (TẠM ẨN)
             const response = await axiosClient.post(`/attendance/${assignment.id}/check-in`);
             setAssignment(response.data); // Cập nhật state với data mới từ backend
             message.success('Check-in thành công!');
+            */
+
         } catch (error) {
             message.error("Check-in thất bại. " + (error.response?.data?.message || error.message));
         } finally {
@@ -65,14 +163,34 @@ export function StaffAttendancePage() {
         }
     };
 
-    // API: Xử lý Check-out
+    // API: Xử lý Check-out (ĐÃ GIẢ LẬP)
     const handleCheckOut = async () => {
         setSubmitting(true);
         try {
-            // API backend (cần tạo): /attendance/{id}/check-out
+            // --- GIẢ LẬP API ---
+            console.log("[MOCK] Đang Check-out...");
+            await new Promise(resolve => setTimeout(resolve, 500)); // Giả lập trễ mạng 0.5s
+
+            // Cập nhật state giả lập toàn cục
+            currentAssignmentState = {
+                ...currentAssignmentState,
+                status: 'COMPLETED',
+                actualCheckOut: dayjs().toISOString() // Ghi lại thời gian check-out
+            };
+
+            // Cập nhật state của component
+            const responseData = { ...currentAssignmentState };
+            setAssignment(responseData);
+            message.success('Check-out thành công!');
+            // --- KẾT THÚC GIẢ LẬP ---
+
+            /*
+            // CODE API THẬT (TẠM ẨN)
             const response = await axiosClient.post(`/attendance/${assignment.id}/check-out`);
             setAssignment(response.data); // Cập nhật state với data mới từ backend
             message.success('Check-out thành công!');
+            */
+
         } catch (error) {
             message.error("Check-out thất bại. " + (error.response?.data?.message || error.message));
         } finally {
@@ -86,8 +204,7 @@ export function StaffAttendancePage() {
 
         const { status, shiftStartTime } = assignment;
 
-        // Ví dụ: Chỉ cho phép check-in 15 phút trước giờ bắt đầu
-        // Chuyển shiftStartTime (vd: "06:00:00") thành đối tượng dayjs
+        // Chuyển shiftStartTime (vd: "06:00:00") thành đối tượng dayjs của ngày hôm nay
         const startTime = dayjs(`${dayjs().format('YYYY-MM-DD')}T${shiftStartTime}`);
         const canCheckIn = currentTime.isAfter(startTime.subtract(15, 'minute'));
 
@@ -110,7 +227,7 @@ export function StaffAttendancePage() {
                                 message={`Bạn chỉ có thể check-in 15 phút trước khi ca bắt đầu (từ ${startTime.subtract(15, 'minute').format('HH:mm')}).`}
                                 type="info"
                                 showIcon
-                                style={{marginTop: 16}}
+                                style={{ marginTop: 16 }}
                             />
                         }
                     </>
@@ -168,16 +285,11 @@ export function StaffAttendancePage() {
                         <Text strong>{assignment.shiftName}</Text>
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="Thời gian (Dự kiến)">
-                        <Tag icon={<ClockCircleOutlined />} color="default">
-                            {assignment.shiftStartTime} - {assignment.shiftEndTime}
-                        </Tag>
-                    </Descriptions.Item>
+                    {/* --- ĐÃ XÓA "THỜI GIAN DỰ KIẾN" TẠI ĐÂY --- */}
 
                     <Descriptions.Item label="Khu vực được phân công">
                         <Tag icon={<EnvironmentOutlined />} color={roleColor}>
                             {assignment.area}
-                            {/* Backend sẽ trả về "Dorm A" cho Bảo vệ */}
                         </Tag>
                     </Descriptions.Item>
 
