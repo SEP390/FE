@@ -55,6 +55,10 @@ const routes = [
     { path: "/booking-history", element: BookingHistoryPage },
     { path: "/vnpay", element: PaymentResult },
     { path: "/payment", element: PaymentHistoryPage },
+
+
+
+    // router dành cho guard //
     { path: "/electric-water", element: ElectricWaterBillPage },
     // { path: "/guard/electric-water", element: GuardElectricWaterPage },
 
