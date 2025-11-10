@@ -45,6 +45,7 @@ import {ResidentDetail} from "../pages/manager/Resident/ResidentDetail.jsx";
 import {GuardCreateReport} from "../pages/guard/Report/GuardCreateReport.jsx";
 import {HolidayManagePage} from "../pages/manager/Holiday/HolidayManagePage.jsx";
 import {CleanerCreateReport} from "../pages/cleaner/report/CleanerCreateReport.jsx";
+import {StaffDetailPage} from "../pages/manager/Staff/StaffDetailPage.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -86,6 +87,7 @@ const routes = [
     { path: "/manager/requests", element: ManagerRequests },
     { path: "/manager/request-detail/:requestId", element: RequestDetailPage },
     { path: "/manager/staff", element: StaffManager },
+    { path: "/manager/staff/details/:id", element: StaffDetailPage },
     { path: "/manager/schedule", element: ScheduleManager },
     { path: "/manager/shifts", element: ShiftConfigurationPage },
     { path: "/manager/attendance", element: AttendanceManagementPage },
