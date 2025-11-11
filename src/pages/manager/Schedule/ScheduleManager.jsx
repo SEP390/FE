@@ -1,122 +1,219 @@
-// File: src/pages/manager/ScheduleManager.jsx
-
-import React, { useState } from 'react';
-import { Layout, Typography, Calendar, Select, Button, Tag, Space, Modal, Form, Input, TimePicker, Row, Col, message } from 'antd';
-import { PlusOutlined, SettingOutlined, UserOutlined, ClockCircleOutlined, EnvironmentOutlined } from "@ant-design/icons";
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+    Layout, Typography, Calendar, Select, Button, Tag, Space, Modal, Form,
+    Input, Row, Col, message, Spin, DatePicker, Checkbox
+} from 'antd';
+import { PlusOutlined, UserOutlined, ClockCircleOutlined, EnvironmentOutlined } from "@ant-design/icons";
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
-import { Link } from 'react-router-dom';
+import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
+// Thêm 2 plugin này để so sánh ngày
+import isBetween from 'dayjs/plugin/isBetween';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+dayjs.extend(isBetween);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
+const CheckboxGroup = Checkbox.Group;
 
-// DỮ LIỆU MOCK CẤU HÌNH (Giữ nguyên)
-const mockStaffs = [
-    { id: 1, name: 'Nguyễn Văn A', position: 'Bảo vệ' },
-    { id: 2, name: 'Trần Thị B', position: 'Lao công' },
-    { id: 3, name: 'Lê Văn C', position: 'Bảo vệ' },
-];
-
-const mockShifts = [
-    { id: 1, name: 'Ca Sáng', time: '6h-14h', appliesTo: ['Bảo vệ', 'Lao công'] },
-    { id: 2, name: 'Ca Chiều', time: '14h-22h', appliesTo: ['Bảo vệ', 'Lao công'] },
-    { id: 3, name: 'Ca Đêm', time: '22h-6h', appliesTo: ['Bảo vệ'] },
-];
-
-const mockDorms = ['Dorm A', 'Dorm B', 'Dorm C', 'Dorm D'];
-
-// DỮ LIỆU MOCK TẦNG THEO DORM
-const mockFloorsByDorm = {
-    'Dorm A': ['Tầng 1', 'Tầng 2', 'Tầng 3', 'Tầng 4'],
-    'Dorm B': ['Tầng 1', 'Tầng 2', 'Tầng 3'],
-    'Dorm C': ['Tầng 1', 'Tầng 2', 'Tầng 3', 'Tầng 4', 'Tầng 5'],
-    'Dorm D': ['Tầng 1', 'Tầng 2'],
-    '': [],
-};
-
-// DỮ LIỆU MOCK LỊCH LÀM VIỆC (Giữ nguyên)
-const mockSchedule = {
-    '2025-10-21': [
-        { id: 1, time: 'Ca Sáng (6h-14h)', staff: 'Nguyễn Văn A', position: 'Bảo vệ', areaType: 'Dorm', areaValue: 'Dorm A', type: 'guard' },
-        { id: 2, time: 'Ca Chiều (14h-22h)', staff: 'Trần Thị B', position: 'Lao công', areaType: 'Floor', areaValue: 'Dorm A - Tầng 3', type: 'cleaner' },
-    ],
-    '2025-10-22': [
-        { id: 3, time: 'Ca Đêm (22h-6h)', staff: 'Lê Văn C', position: 'Bảo vệ', areaType: 'Dorm', areaValue: 'Dorm B', type: 'guard' },
-    ],
-};
-
-
-// RENDER NỘI DUNG TỪNG Ô NGÀY TRONG LỊCH (Giữ nguyên)
-function dateCellRender(value) {
-    const dateKey = value.format('YYYY-MM-DD');
-    const listData = mockSchedule[dateKey] || [];
-
-    return (
-        <ul className="events" style={{ listStyle: 'none', padding: 0 }}>
-            {listData.map((item) => (
-                <li key={item.id} style={{ marginBottom: 4 }}>
-                    <Tag
-                        color={item.type === 'guard' ? 'blue' : 'green'}
-                        style={{ whiteSpace: 'normal', cursor: 'pointer', maxWidth: '100%', overflow: 'hidden' }}
-                        title={`${item.staff} (${item.position}) - Khu vực: ${item.areaValue}`}
-                    >
-                        {item.time} - {item.staff.split(' ')[0]} ({item.areaValue})
-                    </Tag>
-                </li>
-            ))}
-        </ul>
-    );
-}
-
+// --- COMPONENT CHÍNH ---
 export function ScheduleManager() {
     const [collapsed] = useState(false);
     const activeKey = 'manager-schedule';
+    const [formSingle] = Form.useForm();
+    const [formRecurring] = Form.useForm();
 
-    // State quản lý Modal
-    const [isModalVisible, setIsModalVisible] = useState(false);
+    // (States giữ nguyên)
+    const [staffs, setStaffs] = useState([]);
+    const [shifts, setShifts] = useState([]);
+    const [dorms, setDorms] = useState([]);
+    const [semesters, setSemesters] = useState([]);
+    const [scheduleData, setScheduleData] = useState({});
+    const [loading, setLoading] = useState(false);
+    const [loadingDependencies, setLoadingDependencies] = useState(true);
+    const [isSingleModalVisible, setIsSingleModalVisible] = useState(false);
+    const [isRecurringModalVisible, setIsRecurringModalVisible] = useState(false);
     const [selectedDate, setSelectedDate] = useState(null);
-    const [form] = Form.useForm();
+    const [currentMonth, setCurrentMonth] = useState(dayjs());
 
-    // CẬP NHẬT STATE LỌC: Tách Tòa nhà và Tầng ra thành các state riêng
-    const [filterPosition, setFilterPosition] = useState(undefined);
-    const [filterDorm, setFilterDorm] = useState(undefined); // State cho Tòa nhà
-    const [filterFloor, setFilterFloor] = useState(undefined); // State cho Tầng
+    // --- HÀM LOAD DỮ LIỆU ---
+    const fetchDependencies = async () => {
+        setLoadingDependencies(true);
+        try {
+            const [staffRes, shiftRes, dormRes, semesterRes] = await Promise.all([
+                axiosClient.get('/employees'),
+                axiosClient.get('/shifts'),
+                axiosClient.get('/dorms'),
+                axiosClient.get('/semesters') // Đã sửa đường dẫn
+            ]);
 
-    const onSelect = (value) => {
+            setStaffs(staffRes.data || []);
+            const formattedShifts = (shiftRes.data || []).map(s => ({
+                ...s,
+                id: s.id || s.key,
+                name: `${s.name} (${s.startTime} - ${s.endTime})`
+            }));
+            setShifts(formattedShifts);
+            setDorms(dormRes.data || []);
+            setSemesters(semesterRes.data || []);
+
+        } catch (error) {
+            console.error("Lỗi khi tải dependencies:", error);
+            if (error.response?.status === 401) {
+                message.error("Lỗi xác thực. Vui lòng đăng nhập lại.");
+            } else {
+                message.error("Lỗi khi tải dữ liệu (NV, Ca, Khu, Kỳ học)!");
+            }
+        } finally {
+            setLoadingDependencies(false);
+        }
+    };
+
+    const fetchSchedule = async (date) => {
+        setLoading(true);
+        const year = date.year();
+        const month = date.month() + 1;
+
+        try {
+            const response = await axiosClient.get(`/schedules`, {
+                params: { year, month }
+            });
+
+            const dataByDate = {};
+            (response.data || []).forEach(item => {
+                const dateKey = item.workDate;
+                if (!dataByDate[dateKey]) {
+                    dataByDate[dateKey] = [];
+                }
+                dataByDate[dateKey].push(item);
+            });
+            setScheduleData(dataByDate);
+
+        } catch (error) {
+            if (error.response?.status === 401) {
+                message.error("Lỗi tải lịch (401): Chưa được cấp quyền.");
+            } else {
+                message.error("Không thể tải lịch làm việc!");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDependencies();
+        fetchSchedule(currentMonth);
+    }, [currentMonth]);
+
+    // (Hàm render lịch và các hàm mở modal giữ nguyên)
+    // ...
+    // --- HÀM RENDER LỊCH (giữ nguyên) ---
+    const cellRender = (value, info) => {
+        if (info.type !== 'date') return null;
+        const dateKey = value.format('YYYY-MM-DD');
+        const listData = scheduleData[dateKey] || [];
+        return (
+            <ul className="events" style={{ listStyle: 'none', padding: 0 }}>
+                {listData.map((item) => (
+                    <li key={item.id} style={{ marginBottom: 4 }}>
+                        <Tag color="blue" style={{ whiteSpace: 'normal', cursor: 'pointer', maxWidth: '100%' }}
+                             title={`${item.employeeName} (${item.shiftName}) - Khu vực: ${item.dormName}`}>
+                            {item.shiftName.split(' ')[0]} - {item.employeeName.split(' ')[0]} ({item.dormName})
+                        </Tag>
+                    </li>
+                ))}
+            </ul>
+        );
+    };
+    // --- HÀM XỬ LÝ MODAL (giữ nguyên) ---
+    const onSelectDate = (value) => {
         const date = value.format('YYYY-MM-DD');
         setSelectedDate(date);
-        setIsModalVisible(true);
-        form.resetFields();
+        setIsSingleModalVisible(true);
+        formSingle.resetFields();
     };
-
-    // LOGIC CHO FILTER DORM: Khi Dorm thay đổi, reset Tầng
-    const handleDormFilterChange = (value) => {
-        setFilterDorm(value);
-        setFilterFloor(undefined); // Đảm bảo reset tầng khi tòa nhà thay đổi
+    const onOpenRecurringModal = () => {
+        setIsRecurringModalVisible(true);
+        formRecurring.resetFields();
     };
+    // ...
 
-    // ... (các hàm xử lý khác như handleSaveShift, handlePositionChange giữ nguyên)
-    const handleSaveShift = (values) => {
-        let areaValue;
-        if (values.position === 'Bảo vệ') {
-            areaValue = values.dorm;
-        } else if (values.position === 'Lao công') {
-            areaValue = `${values.dormForCleaner} - ${values.floor}`;
+    // --- ĐÃ SỬA: HÀM LƯU LỊCH (handleSaveSchedule) ---
+    const handleSaveSchedule = async (values, isRecurring = false) => {
+        setLoading(true);
+        let payload = {};
+
+        if (isRecurring) {
+            // Logic tạo cả kỳ (ĐÃ CHẠY ĐÚNG)
+            const selectedSemester = semesters.find(s => s.id === values.semesterId);
+            if (!selectedSemester) {
+                message.error("Lỗi: Không tìm thấy kỳ học đã chọn.");
+                setLoading(false);
+                return;
+            }
+
+            payload = {
+                employeeId: values.employeeId,
+                shiftId: values.shiftId,
+                dormId: values.dormId,
+                semesterId: values.semesterId,
+                from: selectedSemester.startDate,
+                to: selectedSemester.endDate,
+                repeatDays: values.repeatDays,
+                note: values.note,
+            };
+        } else {
+            // === SỬA LOGIC TẠO 1 NGÀY (THÊM semesterId) ===
+            const date = dayjs(selectedDate);
+
+            // Tìm xem ngày được click thuộc kỳ học nào
+            const selectedSemester = semesters.find(s =>
+                date.isSameOrAfter(s.startDate) && date.isSameOrBefore(s.endDate)
+            );
+
+            if (!selectedSemester) {
+                message.error(`Ngày ${selectedDate} không nằm trong bất kỳ kỳ học nào.`);
+                setLoading(false);
+                return;
+            }
+
+            payload = {
+                employeeId: values.employeeId,
+                shiftId: values.shiftId,
+                dormId: values.dormId,
+                semesterId: selectedSemester.id, // <-- THÊM DÒNG NÀY
+                singleDate: selectedDate,
+                note: values.note,
+            };
+            // === KẾT THÚC SỬA ===
         }
-        console.log('Lưu lịch làm việc:', {
-            date: selectedDate,
-            ...values,
-            areaValue: areaValue
-        });
-        message.success(`Đã phân ca thành công cho ngày ${selectedDate}`);
-        setIsModalVisible(false);
+
+        try {
+            await axiosClient.post('/schedules', payload);
+            message.success('Tạo lịch làm việc thành công!');
+
+            fetchSchedule(currentMonth);
+
+            if (isRecurring) setIsRecurringModalVisible(false);
+            else setIsSingleModalVisible(false);
+
+        } catch (error) {
+            message.error(`Tạo lịch thất bại! ` + (error.response?.data?.message || error.message));
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handlePositionChange = () => {
-        form.setFieldsValue({ dorm: undefined, dormForCleaner: undefined, floor: undefined });
+    // (onPanelChange giữ nguyên)
+    const onPanelChange = (date) => {
+        setCurrentMonth(date);
     };
 
+    // === RENDER ===
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
@@ -129,166 +226,163 @@ export function ScheduleManager() {
 
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
 
-                    {/* HÀNG HÀNH ĐỘNG VÀ LỌC (PHẦN ĐÃ CẬP NHẬT) */}
-                    <Space style={{ marginBottom: 20 }}>
-                        {/* 1. LỌC THEO CHỨC VỤ */}
-                        <Select
-                            placeholder="Lọc theo Chức vụ"
-                            style={{ width: 150 }}
-                            allowClear
-                            onChange={setFilterPosition}
-                            value={filterPosition}
-                        >
-                            <Option value="Bảo vệ">Bảo vệ</Option>
-                            <Option value="Lao công">Lao công</Option>
-                        </Select>
+                    <Spin spinning={loadingDependencies}>
+                        <Space style={{ marginBottom: 20 }}>
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={onOpenRecurringModal}
+                                disabled={loadingDependencies}
+                            >
+                                Tạo lịch định kỳ
+                            </Button>
+                        </Space>
 
-                        {/* 2. LỌC THEO TÒA NHÀ (DORM) */}
-                        <Select
-                            placeholder="Lọc theo Tòa nhà"
-                            style={{ width: 150 }}
-                            allowClear
-                            onChange={handleDormFilterChange} // Sử dụng hàm reset tầng
-                            value={filterDorm}
-                        >
-                            {mockDorms.map(dorm => <Option key={dorm} value={dorm}>{dorm}</Option>)}
-                        </Select>
-
-                        {/* 3. LỌC THEO TẦNG (PHỤ THUỘC VÀO TÒA NHÀ) */}
-                        <Select
-                            placeholder="Lọc theo Tầng"
-                            style={{ width: 150 }}
-                            allowClear
-                            disabled={!filterDorm} // Vô hiệu hóa nếu chưa chọn Dorm
-                            onChange={setFilterFloor}
-                            value={filterFloor}
-                        >
-                            {(mockFloorsByDorm[filterDorm] || []).map(floor => ( // Lọc options theo Dorm
-                                <Option key={floor} value={floor}>{floor}</Option>
-                            ))}
-                        </Select>
-
-                        <Link to="/manager/shifts">
-                            <Button icon={<SettingOutlined />}>Cấu hình Ca làm việc</Button>
-                        </Link>
-
-                    </Space>
-
-                    {/* CALENDAR (Giữ nguyên) */}
-                    <Calendar
-                        dateCellRender={dateCellRender}
-                        onSelect={onSelect}
-                        style={{ border: '1px solid #f0f0f0', borderRadius: 4 }}
-                    />
+                        <Calendar
+                            cellRender={cellRender}
+                            onSelect={onSelectDate}
+                            onPanelChange={onPanelChange}
+                            style={{ border: '1px solid #f0f0f0', borderRadius: 4 }}
+                        />
+                    </Spin>
 
                 </Content>
             </Layout>
 
-            {/* MODAL THÊM CA LÀM VIỆC (Giữ nguyên logic Casading đã làm ở lần trước) */}
+            {/* (Modal 1: Thêm 1 ngày) */}
             <Modal
                 title={`Phân ca cho ngày ${selectedDate || ''}`}
-                visible={isModalVisible}
-                onOk={() => form.submit()}
-                onCancel={() => setIsModalVisible(false)}
+                open={isSingleModalVisible}
+                onOk={() => formSingle.submit()}
+                onCancel={() => setIsSingleModalVisible(false)}
                 okText="Lưu Lịch"
-                cancelText="Hủy"
+                confirmLoading={loading}
             >
-                <Form form={form} layout="vertical" onFinish={handleSaveShift}>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="staffId" label={<><UserOutlined /> Nhân viên</>} rules={[{ required: true, message: 'Chọn nhân viên!' }]}>
-                                <Select placeholder="Chọn nhân viên">
-                                    {mockStaffs.map(staff => (
-                                        <Option key={staff.id} value={staff.id}>
-                                            {staff.name} ({staff.position})
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="position" label="Chức vụ" rules={[{ required: true, message: 'Chọn chức vụ!' }]}>
-                                <Select placeholder="Chọn chức vụ" onChange={handlePositionChange}>
-                                    <Option value="Bảo vệ">Bảo vệ</Option>
-                                    <Option value="Lao công">Lao công</Option>
-                                </Select>
-                            </Form.Item>
-                        </Col>
-                    </Row>
+                <Form form={formSingle} layout="vertical" onFinish={(values) => handleSaveSchedule(values, false)}>
+                    <CommonScheduleForm staffs={staffs} shifts={shifts} dorms={dorms} form={formSingle} />
+                </Form>
+            </Modal>
 
-                    <Form.Item name="shiftId" label={<><ClockCircleOutlined /> Ca làm việc</>} rules={[{ required: true, message: 'Chọn ca làm việc!' }]}>
-                        <Select placeholder="Chọn ca làm việc">
-                            {mockShifts.map(shift => (
-                                <Option key={shift.id} value={shift.id}>
-                                    {shift.name} ({shift.time})
+            {/* (Modal 2: Tạo định kỳ) */}
+            <Modal
+                title="Tạo lịch làm việc định kỳ"
+                open={isRecurringModalVisible}
+                onOk={() => formRecurring.submit()}
+                onCancel={() => setIsRecurringModalVisible(false)}
+                okText="Lưu Lịch"
+                width={600}
+                confirmLoading={loading}
+            >
+                <Form form={formRecurring} layout="vertical" onFinish={(values) => handleSaveSchedule(values, true)}>
+                    <CommonScheduleForm staffs={staffs} shifts={shifts} dorms={dorms} form={formRecurring} />
+
+                    <Form.Item name="semesterId" label="Chọn kỳ học" rules={[{ required: true, message: 'Vui lòng chọn kỳ học!' }]}>
+                        <Select
+                            placeholder="Chọn kỳ học để áp dụng lịch"
+                            loading={loadingDependencies}
+                            showSearch
+                            filterOption={(input, option) =>
+                                (option?.children[0] ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                        >
+                            {semesters.map(s => (
+                                <Option key={s.id} value={s.id}>
+                                    {s.name} (Từ {dayjs(s.startDate).format('DD/MM/YYYY')} đến {dayjs(s.endDate).format('DD/MM/YYYY')})
                                 </Option>
                             ))}
                         </Select>
                     </Form.Item>
 
-                    <Form.Item
-                        noStyle
-                        shouldUpdate={(prevValues, currentValues) => prevValues.position !== currentValues.position}
-                    >
-                        {({ getFieldValue }) => {
-                            const position = getFieldValue('position');
-
-                            if (position === 'Bảo vệ') {
-                                return (
-                                    <Form.Item name="dorm" label={<><EnvironmentOutlined /> Tòa nhà (Dorm)</>} rules={[{ required: true, message: 'Chọn tòa nhà!' }]}>
-                                        <Select placeholder="Chọn tòa nhà">
-                                            {mockDorms.map(dorm => <Option key={dorm} value={dorm}>{dorm}</Option>)}
-                                        </Select>
-                                    </Form.Item>
-                                );
-                            }
-
-                            if (position === 'Lao công') {
-                                return (
-                                    <Row gutter={16}>
-                                        <Col span={12}>
-                                            <Form.Item name="dormForCleaner" label={<><EnvironmentOutlined /> Tòa nhà</>} rules={[{ required: true, message: 'Chọn tòa nhà!' }]}>
-                                                <Select
-                                                    placeholder="Chọn tòa nhà"
-                                                    onChange={() => form.setFieldsValue({ floor: undefined })}
-                                                >
-                                                    {mockDorms.map(dorm => <Option key={dorm} value={dorm}>{dorm}</Option>)}
-                                                </Select>
-                                            </Form.Item>
-                                        </Col>
-
-                                        <Col span={12}>
-                                            <Form.Item
-                                                noStyle
-                                                shouldUpdate={(prevValues, currentValues) => prevValues.dormForCleaner !== currentValues.dormForCleaner}
-                                            >
-                                                {({ getFieldValue }) => {
-                                                    const selectedDorm = getFieldValue('dormForCleaner');
-                                                    const availableFloors = mockFloorsByDorm[selectedDorm] || [];
-
-                                                    return (
-                                                        <Form.Item name="floor" label={<><EnvironmentOutlined /> Tầng</>} rules={[{ required: true, message: 'Chọn tầng!' }]}>
-                                                            <Select
-                                                                placeholder="Chọn tầng"
-                                                                disabled={!selectedDorm}
-                                                            >
-                                                                {availableFloors.map(floor => <Option key={floor} value={floor}>{floor}</Option>)}
-                                                            </Select>
-                                                        </Form.Item>
-                                                    );
-                                                }}
-                                            </Form.Item>
-                                        </Col>
-                                    </Row>
-                                );
-                            }
-
-                            return null;
-                        }}
+                    <Form.Item name="repeatDays" label="Lặp lại vào các ngày" rules={[{ required: true }]}>
+                        <CheckboxGroup
+                            options={[
+                                { label: 'T2', value: 'MONDAY' },
+                                { label: 'T3', value: 'TUESDAY' },
+                                { label: 'T4', value: 'WEDNESDAY' },
+                                { label: 'T5', value: 'THURSDAY' },
+                                { label: 'T6', value: 'FRIDAY' },
+                                { label: 'T7', value: 'SATURDAY' },
+                                { label: 'CN', value: 'SUNDAY' },
+                            ]}
+                        />
                     </Form.Item>
-
                 </Form>
             </Modal>
         </Layout>
     );
 }
+
+// (CommonScheduleForm giữ nguyên)
+const CommonScheduleForm = ({ staffs, shifts, dorms, form }) => {
+
+    const [selectedRole, setSelectedRole] = useState(undefined);
+
+    const handleRoleFilterChange = (value) => {
+        setSelectedRole(value);
+        if (form) {
+            form.setFieldsValue({ employeeId: undefined });
+        }
+    };
+
+    const filteredStaffs = useMemo(() => {
+        if (!selectedRole) {
+            return staffs;
+        }
+        return staffs.filter(staff => staff.role === selectedRole);
+    }, [selectedRole, staffs]);
+
+    return (
+        <>
+            <Form.Item label="Lọc theo Chức vụ">
+                <Select
+                    placeholder="Chọn chức vụ để lọc"
+                    allowClear
+                    value={selectedRole}
+                    onChange={handleRoleFilterChange}
+                >
+                    <Option value="GUARD">Bảo vệ</Option>
+                    <Option value="CLEANER">Lao công</Option>
+                </Select>
+            </Form.Item>
+
+            <Form.Item name="employeeId" label={<><UserOutlined /> Nhân viên</>} rules={[{ required: true }]}>
+                <Select
+                    placeholder="Chọn nhân viên"
+                    showSearch
+                    disabled={!staffs.length}
+                    filterOption={(input, option) =>
+                        (option?.children[0] ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                >
+                    {filteredStaffs.map(staff => (
+                        <Option key={staff.employeeId} value={staff.employeeId}>
+                            {staff.username} <Tag>{staff.role}</Tag>
+                        </Option>
+                    ))}
+                </Select>
+            </Form.Item>
+
+            <Form.Item name="shiftId" label={<><ClockCircleOutlined /> Ca làm việc</>} rules={[{ required: true }]}>
+                <Select placeholder="Chọn ca làm việc">
+                    {shifts.map(shift => (
+                        <Option key={shift.id} value={shift.id}>
+                            {shift.name}
+                        </Option>
+                    ))}
+                </Select>
+            </Form.Item>
+
+            <Form.Item name="dormId" label={<><EnvironmentOutlined /> Khu vực (Ký túc xá)</>} rules={[{ required: true }]}>
+                <Select placeholder="Chọn ký túc xá">
+                    {dorms.map(dorm => (
+                        <Option key={dorm.id} value={dorm.id}>{dorm.dormName}</Option>
+                    ))}
+                </Select>
+            </Form.Item>
+
+            <Form.Item name="note" label="Ghi chú">
+                <Input.TextArea rows={2} />
+            </Form.Item>
+        </>
+    );
+};
