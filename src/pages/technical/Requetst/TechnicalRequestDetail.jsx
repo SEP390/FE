@@ -225,6 +225,7 @@ export function TechnicalRequestDetail() {
     };
 
     const handleSubmitReport = (values) => {
+        // Tạo content như GuardCreateReport - backend sẽ tự động lấy thông tin employee từ token
         const targetLabel = values.targetType === "INDIVIDUAL" ? "Cá nhân" : "Phòng";
         const studentCodeLine = values.targetType === "INDIVIDUAL" && values.studentCode ? `\nMã sinh viên: ${values.studentCode}` : "";
         const requestLine = requestData?.requestId ? `\nRequest ID: ${requestData.requestId}` : "";

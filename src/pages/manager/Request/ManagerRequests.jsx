@@ -19,14 +19,11 @@ export function ManagerRequests() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [typeFilter, setTypeFilter] = useState("all");
     const [searchText, setSearchText] = useState("");
-    const [dateRange, setDateRange] = useState(() => {
-        const today = dayjs();
-        return [today, today];
-    });
-    const [quickDateFilter, setQuickDateFilter] = useState("today");
+    const [dateRange, setDateRange] = useState(null);
+    const [quickDateFilter, setQuickDateFilter] = useState("all");
 
     // API call for requests
-    const { get: getRequests, data: requestsData, isSuccess: isRequestsSuccess, isComplete: isRequestsComplete } = useApi();
+    const { get: getRequests, data: requestsData, isSuccess: isRequestsSuccess, isComplete: isRequestsComplete, isError: isRequestsError, error: requestsError } = useApi();
 
     // Fetch requests on mount
     useEffect(() => {
@@ -36,35 +33,26 @@ export function ManagerRequests() {
 
     // Update dataSource when requests are loaded
     useEffect(() => {
-        console.log("=== EFFECT TRIGGERED ===");
-        console.log("Requests data:", requestsData);
-        console.log("Is success:", isRequestsSuccess);
-        console.log("Is complete:", isRequestsComplete);
-
-        if (requestsData) {
-            console.log("requestsData exists!");
-            console.log("requestsData.data:", requestsData.data);
+        if (isRequestsSuccess && requestsData) {
+            console.log("=== REQUEST DATA RECEIVED ===");
+            console.log("Requests data:", requestsData);
 
             let dataArray = [];
 
+            // Handle different response structures
             if (Array.isArray(requestsData)) {
-                console.log("requestsData is array directly");
                 dataArray = requestsData;
             } else if (requestsData.data && Array.isArray(requestsData.data)) {
-                console.log("requestsData.data is array");
                 dataArray = requestsData.data;
             } else if (requestsData.data && requestsData.data.data && Array.isArray(requestsData.data.data)) {
-                console.log("requestsData.data.data is array");
                 dataArray = requestsData.data.data;
             }
 
             console.log("Data array length:", dataArray.length);
-            console.log("Data array:", dataArray);
 
             if (dataArray.length > 0) {
                 // Map dữ liệu từ backend response
                 const formattedData = dataArray.map((item) => {
-                    console.log("Mapping item:", item);
                     return {
                         key: item.requestId,
                         requestId: item.requestId,
@@ -77,18 +65,17 @@ export function ManagerRequests() {
                     };
                 });
 
-                console.log("Formatted data:", formattedData);
+                console.log("Formatted data count:", formattedData.length);
                 setDataSource(formattedData);
-                setFilteredData(formattedData);
             } else {
-                console.log("Data array is empty");
+                console.log("No requests found in response");
                 setDataSource([]);
-                setFilteredData([]);
             }
-        } else {
-            console.log("requestsData is null or undefined");
+        } else if (isRequestsError) {
+            console.error("Error fetching requests:", requestsError);
+            setDataSource([]);
         }
-    }, [isRequestsSuccess, requestsData, isRequestsComplete]);
+    }, [isRequestsSuccess, isRequestsError, requestsData, requestsError, isRequestsComplete]);
 
     // Handler cho quick date filter
     const handleQuickDateFilterChange = (value) => {
@@ -163,16 +150,17 @@ export function ManagerRequests() {
         }
 
         // Filter by date range
-        if (dateRange && dateRange.length === 2) {
+        if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
             const startDate = dayjs(dateRange[0]).startOf('day');
             const endDate = dayjs(dateRange[1]).endOf('day');
             
             filtered = filtered.filter(item => {
                 if (!item.createdDate) return false;
-                const itemDate = dayjs(item.createdDate).startOf('day');
+                const itemDate = dayjs(item.createdDate);
                 // Kiểm tra xem ngày của item có nằm trong khoảng từ startDate đến endDate không (bao gồm cả 2 đầu)
-                return (itemDate.isSame(startDate, 'day') || itemDate.isAfter(startDate, 'day')) && 
-                       (itemDate.isSame(endDate, 'day') || itemDate.isBefore(endDate, 'day'));
+                const isAfterOrSameStart = itemDate.isAfter(startDate, 'day') || itemDate.isSame(startDate, 'day');
+                const isBeforeOrSameEnd = itemDate.isBefore(endDate, 'day') || itemDate.isSame(endDate, 'day');
+                return isAfterOrSameStart && isBeforeOrSameEnd;
             });
         }
 
@@ -303,11 +291,11 @@ export function ManagerRequests() {
 
     const isLoading = !isRequestsComplete;
 
-    // Statistics - tính theo filteredData để hiển thị đúng với bộ lọc
-    const totalRequests = filteredData.length;
-    const pendingRequests = filteredData.filter(d => d.status === "PENDING" || d.status === "PROCESSING").length;
-    const approvedRequests = filteredData.filter(d => d.status === "APPROVED" || d.status === "COMPLETED" || d.status === "ACCEPTED").length;
-    const rejectedRequests = filteredData.filter(d => d.status === "REJECTED" || d.status === "CANCELLED").length;
+    // Statistics - tính theo dataSource để hiển thị tổng số requests (không bị filter)
+    const totalRequests = dataSource.length;
+    const pendingRequests = dataSource.filter(d => d.status === "PENDING" || d.status === "PROCESSING").length;
+    const approvedRequests = dataSource.filter(d => d.status === "APPROVED" || d.status === "COMPLETED" || d.status === "ACCEPTED").length;
+    const rejectedRequests = dataSource.filter(d => d.status === "REJECTED" || d.status === "CANCELLED").length;
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
