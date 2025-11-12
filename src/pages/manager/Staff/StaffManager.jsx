@@ -287,7 +287,7 @@ export function StaffManager() {
                 </Content>
             </Layout>
 
-            {/* (Modal Thêm Nhân Viên - giữ nguyên) */}
+            {/* (Modal Thêm Nhân Viên - ĐÃ SỬA) */}
             <Modal title="Thêm nhân viên mới" open={isAddModalVisible} onCancel={handleCancelAdd} footer={null} destroyOnClose>
                 <Form form={formAddStaff} layout="vertical" onFinish={handleAddStaff} name="add_staff_form">
                     <Row gutter={16}>
@@ -298,17 +298,39 @@ export function StaffManager() {
                     <Row gutter={16}><Col span={12}><Form.Item name="email" label="Email" rules={[{ required: true }, { type: 'email' }]}><Input /></Form.Item></Col><Col span={12}><Form.Item name="phoneNumber" label="SĐT" rules={[{ required: true }]}><Input /></Form.Item></Col></Row>
                     <Row gutter={16}><Col span={12}><Form.Item name="dob" label="Ngày sinh" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/></Form.Item></Col><Col span={12}><Form.Item name="gender" label="Giới tính" rules={[{ required: true }]}><Select><Option value="MALE">Nam</Option><Option value="FEMALE">Nữ</Option><Option value="OTHER">Khác</Option></Select></Form.Item></Col></Row>
                     <Form.Item name="userCode" label="Mã NV (Tùy chọn)"><Input /></Form.Item>
-                    <Form.Item name="role" label="Chức vụ" rules={[{ required: true }]}><Select><Option value="GUARD">Bảo vệ</Option><Option value="CLEANER">Lao công</Option><Option value="MANAGER">Quản lý</Option></Select></Form.Item>
+
+                    {/* --- SỬA ĐỔI Ở ĐÂY --- */}
+                    <Form.Item name="role" label="Chức vụ" rules={[{ required: true }]}>
+                        <Select>
+                            <Option value="TECHNICAL">Kỹ thuật</Option>
+                            <Option value="GUARD">Bảo vệ</Option>
+                            <Option value="CLEANER">Lao công</Option>
+                        </Select>
+                    </Form.Item>
+                    {/* --- KẾT THÚC SỬA ĐỔI --- */}
+
                     <Form.Item style={{ textAlign: 'right', marginTop: 24 }}><Space><Button onClick={handleCancelAdd}>Hủy</Button><Button type="primary" htmlType="submit" loading={isSubmittingAdd}>Thêm</Button></Space></Form.Item>
                 </Form>
             </Modal>
 
-            {/* (Modal Sửa Nhân Viên - giữ nguyên) */}
+            {/* (Modal Sửa Nhân Viên - ĐÃ SỬA) */}
             <Modal title={`Cập nhật thông tin ${editingStaff?.username || ''}`} open={isEditModalVisible} onCancel={handleCancelEdit} footer={null} destroyOnClose >
                 <Form form={formEditStaff} layout="vertical" onFinish={handleUpdateStaff} name="edit_staff_form">
                     <Form.Item name="phoneNumber" label="Số điện thoại" rules={[{ required: true }]}><Input /></Form.Item>
                     <Form.Item name="birthDate" label="Ngày sinh" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/></Form.Item>
-                    <Form.Item name="role" label="Chức vụ" rules={[{ required: true }]}><Select><Option value="GUARD">Bảo vệ</Option><Option value="CLEANER">Lao công</Option><Option value="MANAGER">Quản lý</Option></Select></Form.Item>
+
+                    {/* --- SỬA ĐỔI Ở ĐÂY --- */}
+                    {/* (Giữ lại Manager để bạn có thể sửa các quản lý viên khác) */}
+                    <Form.Item name="role" label="Chức vụ" rules={[{ required: true }]}>
+                        <Select>
+                            <Option value="TECHNICAL">Kỹ thuật</Option>
+                            <Option value="GUARD">Bảo vệ</Option>
+                            <Option value="CLEANER">Lao công</Option>
+                            <Option value="MANAGER">Quản lý</Option>
+                        </Select>
+                    </Form.Item>
+                    {/* --- KẾT THÚC SỬA ĐỔI --- */}
+
                     <Form.Item style={{ textAlign: 'right', marginTop: 24 }}><Space><Button onClick={handleCancelEdit}> Hủy </Button><Button type="primary" htmlType="submit" loading={isSubmittingEdit}> Cập nhật </Button></Space></Form.Item>
                 </Form>
             </Modal>
