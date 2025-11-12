@@ -40,6 +40,9 @@ export function ScheduleManager() {
     const [selectedDate, setSelectedDate] = useState(null);
     const [currentMonth, setCurrentMonth] = useState(dayjs());
 
+    // === STATE MỚI CHO BỘ LỌC ===
+    const [filterEmployeeId, setFilterEmployeeId] = useState(undefined); // undefined = "Tất cả"
+
     // --- HÀM LOAD DỮ LIỆU ---
     const fetchDependencies = async () => {
         setLoadingDependencies(true);
@@ -48,7 +51,7 @@ export function ScheduleManager() {
                 axiosClient.get('/employees'),
                 axiosClient.get('/shifts'),
                 axiosClient.get('/dorms'),
-                axiosClient.get('/semesters') // Đã sửa đường dẫn
+                axiosClient.get('/semesters')
             ]);
 
             setStaffs(staffRes.data || []);
@@ -79,12 +82,15 @@ export function ScheduleManager() {
         const month = date.month() + 1;
 
         try {
+            // === LƯU Ý: API NÀY PHẢI ĐƯỢC SỬA Ở BACKEND ===
+            // (Phải nhận 'year' và 'month', trả về List<...>)
             const response = await axiosClient.get(`/schedules`, {
                 params: { year, month }
             });
 
             const dataByDate = {};
             (response.data || []).forEach(item => {
+                // Backend PHẢI trả về 'employeeId' trong 'item'
                 const dateKey = item.workDate;
                 if (!dataByDate[dateKey]) {
                     dataByDate[dateKey] = [];
@@ -97,7 +103,7 @@ export function ScheduleManager() {
             if (error.response?.status === 401) {
                 message.error("Lỗi tải lịch (401): Chưa được cấp quyền.");
             } else {
-                message.error("Không thể tải lịch làm việc!");
+                message.error("Không thể tải lịch làm việc! (Hãy kiểm tra API GET /schedules)");
             }
         } finally {
             setLoading(false);
@@ -109,16 +115,24 @@ export function ScheduleManager() {
         fetchSchedule(currentMonth);
     }, [currentMonth]);
 
-    // (Hàm render lịch và các hàm mở modal giữ nguyên)
-    // ...
-    // --- HÀM RENDER LỊCH (giữ nguyên) ---
+
+    // --- HÀM RENDER LỊCH (ĐÃ SỬA) ---
     const cellRender = (value, info) => {
         if (info.type !== 'date') return null;
         const dateKey = value.format('YYYY-MM-DD');
         const listData = scheduleData[dateKey] || [];
+
+        // === THÊM LOGIC LỌC Ở ĐÂY ===
+        // Lọc dựa trên state 'filterEmployeeId'
+        const filteredListData = listData.filter(item =>
+            !filterEmployeeId || item.employeeId === filterEmployeeId
+        );
+        // === KẾT THÚC SỬA ===
+
         return (
             <ul className="events" style={{ listStyle: 'none', padding: 0 }}>
-                {listData.map((item) => (
+                {/* Dùng 'filteredListData' thay vì 'listData' */}
+                {filteredListData.map((item) => (
                     <li key={item.id} style={{ marginBottom: 4 }}>
                         <Tag color="blue" style={{ whiteSpace: 'normal', cursor: 'pointer', maxWidth: '100%' }}
                              title={`${item.employeeName} (${item.shiftName}) - Khu vực: ${item.dormName}`}>
@@ -129,6 +143,7 @@ export function ScheduleManager() {
             </ul>
         );
     };
+
     // --- HÀM XỬ LÝ MODAL (giữ nguyên) ---
     const onSelectDate = (value) => {
         const date = value.format('YYYY-MM-DD');
@@ -140,15 +155,14 @@ export function ScheduleManager() {
         setIsRecurringModalVisible(true);
         formRecurring.resetFields();
     };
-    // ...
 
-    // --- ĐÃ SỬA: HÀM LƯU LỊCH (handleSaveSchedule) ---
+    // --- HÀM LƯU LỊCH (giữ nguyên) ---
     const handleSaveSchedule = async (values, isRecurring = false) => {
         setLoading(true);
         let payload = {};
 
         if (isRecurring) {
-            // Logic tạo cả kỳ (ĐÃ CHẠY ĐÚNG)
+            // Logic tạo cả kỳ
             const selectedSemester = semesters.find(s => s.id === values.semesterId);
             if (!selectedSemester) {
                 message.error("Lỗi: Không tìm thấy kỳ học đã chọn.");
@@ -167,10 +181,8 @@ export function ScheduleManager() {
                 note: values.note,
             };
         } else {
-            // === SỬA LOGIC TẠO 1 NGÀY (THÊM semesterId) ===
+            // Logic tạo 1 ngày
             const date = dayjs(selectedDate);
-
-            // Tìm xem ngày được click thuộc kỳ học nào
             const selectedSemester = semesters.find(s =>
                 date.isSameOrAfter(s.startDate) && date.isSameOrBefore(s.endDate)
             );
@@ -185,18 +197,17 @@ export function ScheduleManager() {
                 employeeId: values.employeeId,
                 shiftId: values.shiftId,
                 dormId: values.dormId,
-                semesterId: selectedSemester.id, // <-- THÊM DÒNG NÀY
+                semesterId: selectedSemester.id,
                 singleDate: selectedDate,
                 note: values.note,
             };
-            // === KẾT THÚC SỬA ===
         }
 
         try {
             await axiosClient.post('/schedules', payload);
             message.success('Tạo lịch làm việc thành công!');
 
-            fetchSchedule(currentMonth);
+            fetchSchedule(currentMonth); // Tải lại lịch cho tháng hiện tại
 
             if (isRecurring) setIsRecurringModalVisible(false);
             else setIsSingleModalVisible(false);
@@ -213,7 +224,7 @@ export function ScheduleManager() {
         setCurrentMonth(date);
     };
 
-    // === RENDER ===
+    // === RENDER (ĐÃ SỬA) ===
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
@@ -227,16 +238,44 @@ export function ScheduleManager() {
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
 
                     <Spin spinning={loadingDependencies}>
-                        <Space style={{ marginBottom: 20 }}>
-                            <Button
-                                type="primary"
-                                icon={<PlusOutlined />}
-                                onClick={onOpenRecurringModal}
-                                disabled={loadingDependencies}
-                            >
-                                Tạo lịch định kỳ
-                            </Button>
-                        </Space>
+
+                        {/* === SỬA THANH CÔNG CỤ (THÊM BỘ LỌC) === */}
+                        <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
+                            <Col>
+                                <Space wrap>
+                                    <Button
+                                        type="primary"
+                                        icon={<PlusOutlined />}
+                                        onClick={onOpenRecurringModal}
+                                        disabled={loadingDependencies}
+                                    >
+                                        Tạo lịch định kỳ
+                                    </Button>
+
+                                    {/* === THÊM UI BỘ LỌC Ở ĐÂY === */}
+                                    <Select
+                                        placeholder="Lọc theo nhân viên"
+                                        style={{ width: 250 }}
+                                        allowClear
+                                        showSearch
+                                        value={filterEmployeeId}
+                                        onChange={(value) => setFilterEmployeeId(value)}
+                                        filterOption={(input, option) =>
+                                            (option?.children[0] ?? '').toLowerCase().includes(input.toLowerCase())
+                                        }
+                                        disabled={loadingDependencies || !staffs.length}
+                                    >
+                                        {staffs.map(staff => (
+                                            // Giả sử staffRes trả về employeeId và username
+                                            <Option key={staff.employeeId} value={staff.employeeId}>
+                                                {staff.username} <Tag>{staff.role}</Tag>
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </Space>
+                            </Col>
+                        </Row>
+                        {/* === KẾT THÚC SỬA === */}
 
                         <Calendar
                             cellRender={cellRender}
@@ -249,7 +288,7 @@ export function ScheduleManager() {
                 </Content>
             </Layout>
 
-            {/* (Modal 1: Thêm 1 ngày) */}
+            {/* (Modal 1: Thêm 1 ngày) - Giữ nguyên */}
             <Modal
                 title={`Phân ca cho ngày ${selectedDate || ''}`}
                 open={isSingleModalVisible}
@@ -263,7 +302,7 @@ export function ScheduleManager() {
                 </Form>
             </Modal>
 
-            {/* (Modal 2: Tạo định kỳ) */}
+            {/* (Modal 2: Tạo định kỳ) - Giữ nguyên */}
             <Modal
                 title="Tạo lịch làm việc định kỳ"
                 open={isRecurringModalVisible}
@@ -326,7 +365,8 @@ const CommonScheduleForm = ({ staffs, shifts, dorms, form }) => {
 
     const filteredStaffs = useMemo(() => {
         if (!selectedRole) {
-            return staffs;
+            // Lọc chỉ nhân viên GUARD và CLEANER cho việc phân lịch
+            return staffs.filter(staff => staff.role === 'GUARD' || staff.role === 'CLEANER' || staff.role === 'TECHNICAL');
         }
         return staffs.filter(staff => staff.role === selectedRole);
     }, [selectedRole, staffs]);
@@ -342,6 +382,7 @@ const CommonScheduleForm = ({ staffs, shifts, dorms, form }) => {
                 >
                     <Option value="GUARD">Bảo vệ</Option>
                     <Option value="CLEANER">Lao công</Option>
+                    <Option value="TECHNICAL">Kỹ thuật</Option>
                 </Select>
             </Form.Item>
 
