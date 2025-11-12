@@ -11,7 +11,7 @@ import {
     Progress,
     Empty,
 } from "antd";
-import { AppLayout } from "../../components/layout/AppLayout.jsx";
+import { AppLayout } from "../layout/AppLayout.jsx";
 import { surveyApi } from "../../api/surveyApi/surveyApi.js";
 import { useToken } from "../../hooks/useToken.js";
 import axios from "axios";
@@ -19,7 +19,7 @@ import axios from "axios";
 const { Title, Text } = Typography;
 const BASE_URL = "http://localhost:8080/api";
 
-export const postsurveyApi = {
+const postsurveyApi = {
     submitAnswers: (ids, token) => {
         return axios.post(
             `${BASE_URL}/survey-select`,

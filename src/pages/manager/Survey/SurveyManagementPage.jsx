@@ -1,11 +1,15 @@
-import {Layout, Typography, Table, Dropdown, Button, message, Space, Input} from "antd";
+import { Layout, Typography, Table, Dropdown, Button, message, Space, Input, Modal } from "antd";
 import {EllipsisOutlined, PlusOutlined, SearchOutlined} from "@ant-design/icons";
-import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
-import { useEffect, useState } from "react";
+import {SideBarManager} from "../../../components/layout/SideBarManger.jsx";
+import {useEffect, useState} from "react";
 import {QuestionModal} from "../../../components/Survery/QuestionModal.jsx";
+import * as XLSX from "xlsx";
+import {saveAs} from "file-saver";
 
-const { Header, Content } = Layout;
-const { Title } = Typography;
+
+const {Header, Content} = Layout;
+const {Title} = Typography;
+
 
 export function SurveyManagementPage() {
     const [collapsed] = useState(false);
@@ -14,6 +18,7 @@ export function SurveyManagementPage() {
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
     const [editID, setEditID] = useState(null);
+    const [exportModalVisible, setExportModalVisible] = useState(false);
 
 
     function removeVietnameseTones(str = "") {
@@ -43,6 +48,53 @@ export function SurveyManagementPage() {
         setFilteredQuestion(filtered);
     };
 
+    const handleExportDetailExcel = async () => {
+        const token = localStorage.getItem("token");
+        if (!questions.length) {
+            message.warning("Không có dữ liệu để xuất!");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const allDetails = [];
+
+            // Gọi API từng câu hỏi để lấy options
+            for (const q of questions) {
+                const res = await fetch(`http://localhost:8080/api/surveys/${q.id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const json = await res.json();
+
+                if (json.status === 200 && json.data) {
+                    const options = json.data.options.map(o => o.optionContent).join(", ");
+                    allDetails.push({
+                        "STT": allDetails.length + 1,
+                        "Câu hỏi": json.data.questionContent,
+                        "Các lựa chọn": options || "Không có lựa chọn",
+                    });
+                }
+            }
+
+            // Tạo sheet và file Excel
+            const ws = XLSX.utils.json_to_sheet(allDetails);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Chi tiết khảo sát");
+
+            const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+            const blob = new Blob([excelBuffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+
+            saveAs(blob, "Chi_tiet_khao_sat.xlsx");
+            message.success("Xuất file Excel thành công!");
+        } catch (error) {
+            message.error("Lỗi khi xuất file Excel!");
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -116,11 +168,11 @@ export function SurveyManagementPage() {
             render: (_, record) => (
                 <Space>
                     <Dropdown
-                        menu={{ items: getMenuItems(record) }}
+                        menu={{items: getMenuItems(record)}}
                         trigger={["click"]}
                         placement="bottomRight"
                     >
-                        <Button type="text" icon={<EllipsisOutlined />} />
+                        <Button type="text" icon={<EllipsisOutlined/>}/>
                     </Dropdown>
                 </Space>
             ),
@@ -129,8 +181,8 @@ export function SurveyManagementPage() {
     ];
 
     return (
-        <Layout style={{ minHeight: "100vh" }}>
-            <SideBarManager collapsed={collapsed} active="manager-surveys" />
+        <Layout style={{minHeight: "100vh"}}>
+            <SideBarManager collapsed={collapsed} active="manager-surveys"/>
             <Layout>
                 <Header
                     style={{
@@ -140,12 +192,12 @@ export function SurveyManagementPage() {
                         height: 80,
                     }}
                 >
-                    <Title level={2} style={{ margin: 0, lineHeight: "80px" }}>
+                    <Title level={2} style={{margin: 0, lineHeight: "80px"}}>
                         Quản lý khảo sát
                     </Title>
                 </Header>
 
-                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+                <Content style={{margin: "24px", background: "#fff", padding: 24}}>
 
                     <Space
                         style={{
@@ -157,17 +209,21 @@ export function SurveyManagementPage() {
                         <Input
                             placeholder="Tìm kiếm tin tức..."
                             allowClear
-                            prefix={<SearchOutlined />}
+                            prefix={<SearchOutlined/>}
                             onChange={(e) => handleSearch(e.target.value)}
-                            style={{ maxWidth: 400 }}
+                            style={{maxWidth: 400}}
                         />
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => handleCreate()}
-                        >
-                            Tạo câu hỏi mới
-                        </Button>
+                        <Space style={{ marginBottom: 16 }}>
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={handleCreate}
+                            >
+                                Tạo câu hỏi mới
+                            </Button>
+
+                            <Button onClick={() => setExportModalVisible(true)}>Xuất chi tiết Excel</Button>
+                        </Space>
                     </Space>
 
                     <Table
@@ -184,6 +240,17 @@ export function SurveyManagementPage() {
                     onCancel={() => setModalVisible(false)}
                     onSuccess={() => window.location.reload()}
                 />
+                <Modal
+                    title="Xác nhận xuất file"
+                    open={exportModalVisible}
+                    onOk={() => {
+                        setExportModalVisible(false);
+                        handleExportDetailExcel();
+                    }}
+                    onCancel={() => setExportModalVisible(false)}
+                >
+                    Bạn có chắc muốn xuất toàn bộ chi tiết khảo sát ra Excel không?
+                </Modal>
             </Layout>
         </Layout>
     );
