@@ -70,7 +70,7 @@ export function RequestDetailPage() {
                 // Set form values
                 form.setFieldsValue({
                     requestStatus: requestData.responseStatus || requestData.requestStatus,
-                    responseMessage: requestData.responseMessage || requestData.ResponseMessage || ""
+                    responseMessageByManager: requestData.responseMessageByManager || ""
                 });
 
             }
@@ -159,7 +159,7 @@ export function RequestDetailPage() {
 
         const updatePayload = {
             requestStatus: values.requestStatus,
-            responseMessage: values.responseMessage
+            responseMessage: values.responseMessageByManager
         };
 
         updateRequest(`/requests/${requestId}`, updatePayload);
@@ -283,7 +283,7 @@ export function RequestDetailPage() {
 
                                         <Form.Item
                                             label="Tin nhắn phản hồi"
-                                            name="responseMessage"
+                                            name="responseMessageByManager"
                                             rules={[{ required: true, message: 'Vui lòng nhập tin nhắn phản hồi!' }]}
                                         >
                                             <TextArea
@@ -318,14 +318,23 @@ export function RequestDetailPage() {
                                 </div>
                             </Card>
 
-                            {/* Response Message */}
-                            {requestData.responseMessage || requestData.ResponseMessage ? (
-                                <Card title="Tin nhắn phản hồi" className="mt-6">
+                            {/* Response Message from Employee */}
+                            {requestData.responseMessageByEmployee && (
+                                <Card title="Tin nhắn phản hồi từ nhân viên" className="mt-6">
                                     <div className="bg-blue-50 p-4 rounded-lg">
-                                        <p className="whitespace-pre-wrap">{requestData.responseMessage || requestData.ResponseMessage}</p>
+                                        <p className="whitespace-pre-wrap">{requestData.responseMessageByEmployee}</p>
                                     </div>
                                 </Card>
-                            ) : null}
+                            )}
+
+                            {/* Response Message from Manager */}
+                            {requestData.responseMessageByManager && (
+                                <Card title="Tin nhắn phản hồi từ quản lý" className="mt-6">
+                                    <div className="bg-green-50 p-4 rounded-lg">
+                                        <p className="whitespace-pre-wrap">{requestData.responseMessageByManager}</p>
+                                    </div>
+                                </Card>
+                            )}
 
                         </>
                     )}

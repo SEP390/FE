@@ -84,7 +84,7 @@ export function TechnicalRequestDetail() {
                 // Set form values
                 form.setFieldsValue({
                     requestStatus: requestData.responseStatus || requestData.requestStatus || "PENDING",
-                    responseMessage: requestData.responseMessage || requestData.ResponseMessage || ""
+                    responseMessage: requestData.responseMessageByEmployee || requestData.responseMessage || requestData.ResponseMessage || ""
                 });
             }
         }
@@ -368,10 +368,10 @@ export function TechnicalRequestDetail() {
                             </Card>
 
                             {/* Response Message */}
-                            {(requestData.responseMessage || requestData.ResponseMessage) && (
+                            {(requestData.responseMessageByEmployee || requestData.responseMessage || requestData.ResponseMessage) && (
                                 <Card title="Tin nhắn phản hồi" className="mt-6">
                                     <div className="bg-blue-50 p-4 rounded-lg">
-                                        <p className="whitespace-pre-wrap">{requestData.responseMessage || requestData.ResponseMessage}</p>
+                                        <p className="whitespace-pre-wrap">{requestData.responseMessageByEmployee || requestData.responseMessage || requestData.ResponseMessage}</p>
                                     </div>
                                 </Card>
                             )}
