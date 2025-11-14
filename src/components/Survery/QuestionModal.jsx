@@ -127,15 +127,14 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
                             });
                         }
                     } else if (a.isNew) {
-                        await fetch("http://localhost:8080/api/survey-select", {
+                        await fetch(`http://localhost:8080/api/surveys/${questionId}/options`, {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
                                 Authorization: `Bearer ${token}`,
                             },
                             body: JSON.stringify({
-                                surveyId: questionId,
-                                content: a.optionName,
+                                optionName: a.optionName,
                             }),
                         });
                     }
