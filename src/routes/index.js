@@ -41,6 +41,7 @@ import {TechnicalRequests} from "../pages/technical/Requetst/TechnicalRequests.j
 import {TechnicalRequestDetail} from "../pages/technical/Requetst/TechnicalRequestDetail.jsx";
 import {TeachnicalCreateReport} from "../pages/technical/report/TeachnicalCreateReport.jsx";
 import {WarehouseManagement} from "../pages/technical/warehouse/WarehouseManagement.jsx";
+import {WarehouseHistory} from "../pages/technical/warehouse/WarehouseHistory.jsx";
 import {ResidentDetail} from "../pages/manager/Resident/ResidentDetail.jsx";
 import {GuardCreateReport} from "../pages/guard/Report/GuardCreateReport.jsx";
 import {HolidayManagePage} from "../pages/manager/Holiday/HolidayManagePage.jsx";
@@ -107,6 +108,7 @@ const routes = [
     { path: "/technical/request-detail/:requestId", element: TechnicalRequestDetail },
     { path: "/technical/reports/create", element: TeachnicalCreateReport },
     { path: "/technical/inventory", element: WarehouseManagement },
+    { path: "/technical/inventory/history", element: WarehouseHistory },
 
 ];
 

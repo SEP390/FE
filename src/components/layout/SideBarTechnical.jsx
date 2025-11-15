@@ -1,4 +1,4 @@
-import { FileTextOutlined, DatabaseOutlined, FormOutlined } from "@ant-design/icons";
+import { FileTextOutlined, DatabaseOutlined, FormOutlined, HistoryOutlined } from "@ant-design/icons";
 import { Layout, Menu } from "antd";
 import { Link } from "react-router-dom";
 import { Bed } from "lucide-react";
@@ -20,6 +20,11 @@ const technicalItems = [
         label: <Link to={"/technical/inventory"}>Quản lý kho</Link>,
         icon: <DatabaseOutlined/>,
         key: "technical-inventory",
+    },
+    {
+        label: <Link to={"/technical/inventory/history"}>Lịch sử kho</Link>,
+        icon: <HistoryOutlined/>,
+        key: "technical-inventory-history",
     },
 ];
 
