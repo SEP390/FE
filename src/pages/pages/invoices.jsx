@@ -8,7 +8,7 @@ import {formatPrice} from "../../util/formatPrice.js";
 const useStore = create(set => ({
     data: null,
     fetchData: async ({page}) => {
-        const res = await axiosClient("/invoices", {
+        const res = await axiosClient("/user/invoices", {
             params: {
                 page
             }
