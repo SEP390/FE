@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {Layout, Typography, Table, Button, Tag, message} from "antd";
 import { EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
 import axios from "axios";
 import {AppHeader} from "../../../components/layout/AppHeader.jsx";
+import {SideBarCleaner} from "../../../components/layout/SideBarCleaner.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-export function GuardViewReport() {
+export function CleanerViewReport() {
     const [collapsed, setCollapsed] = useState(false);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -83,7 +83,7 @@ export function GuardViewReport() {
                     type="text"
                     icon={<EditOutlined />}
                     disabled={record.reportStatus !== "PENDING"}
-                    onClick={() => window.location.href = `/guard/reports/edit/${record.reportId}`}
+                    onClick={() => window.location.href = `/cleaner/reports/edit/${record.reportId}`}
                 />
             ),
         },
@@ -91,7 +91,7 @@ export function GuardViewReport() {
 
     return (
         <Layout className="!h-screen">
-            <GuardSidebar collapsed={collapsed} active="guard-reports" />
+            <SideBarCleaner collapsed={collapsed} active="cleaner-reports"/>
             <Layout>
                 <AppHeader/>
 
@@ -100,7 +100,7 @@ export function GuardViewReport() {
                         style={{marginBottom:"10px"}}
                         type="primary"
                         icon={<PlusOutlined />}
-                        onClick={() => (window.location.href = "/guard/reports/create")}
+                        onClick={() => (window.location.href = "/cleaner/reports/create")}
                     >
                         Tạo báo cáo
                     </Button>

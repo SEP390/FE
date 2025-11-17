@@ -48,6 +48,7 @@ import {HolidayManagePage} from "../pages/manager/Holiday/HolidayManagePage.jsx"
 import {CleanerCreateReport} from "../pages/cleaner/report/CleanerCreateReport.jsx";
 import {StaffDetailPage} from "../pages/manager/Staff/StaffDetailPage.jsx";
 import {GuardViewReport} from "../pages/guard/Report/GuardViewReport.jsx";
+import {CleanerViewReport} from "../pages/cleaner/report/CleanerViewReport.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -104,7 +105,8 @@ const routes = [
     // --- ROUTES DÀNH CHO CLEANER ---
     { path: "/cleaner/schedule", element: CleanerSchedule },
     { path: "/cleaner/supplies", element: CleanerSupplies },
-    { path: "/cleaner/reports", element: CleanerCreateReport },
+    { path: "/cleaner/reports/create", element: CleanerCreateReport },
+    { path: "/cleaner/reports", element: CleanerViewReport },
 
     // --- ROUTES DÀNH CHO TECHNICAL ---
     { path: "/technical/requests", element: TechnicalRequests },
