@@ -42,6 +42,11 @@ const managerItems = [
         key: "manager-requests",
     },
     {
+        label: <Link to={"/pages/manager/checkout"}>Quản lí checkout</Link>,
+        icon: <ContainerOutlined/>,
+        key: "manager-checkout",
+    },
+    {
         label: <Link to={"/manager/rooms"}>Thông tin phòng</Link>,
         icon: <InfoCircleOutlined/>,
         key: "manager-rooms",
