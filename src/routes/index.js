@@ -47,6 +47,7 @@ import {GuardCreateReport} from "../pages/guard/Report/GuardCreateReport.jsx";
 import {HolidayManagePage} from "../pages/manager/Holiday/HolidayManagePage.jsx";
 import {CleanerCreateReport} from "../pages/cleaner/report/CleanerCreateReport.jsx";
 import {StaffDetailPage} from "../pages/manager/Staff/StaffDetailPage.jsx";
+import {GuardViewReport} from "../pages/guard/Report/GuardViewReport.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -63,6 +64,7 @@ const routes = [
     // router dành cho guard //
     { path: "/electric-water", element: ElectricWaterBillPage },
     // { path: "/guard/electric-water", element: GuardElectricWaterPage },
+    { path: "/guard/reports", element: GuardViewReport },
 
     // === THAY ĐỔI ĐƯỜNG DẪN TẠI ĐÂY ===
     // { path: "/guard/schedule", element: GuardSchedule }, // Đường dẫn cũ
@@ -71,7 +73,8 @@ const routes = [
 
     { path: "/guard/requests", element: GuardViewRequest },
     { path: "/guard/request-detail/:requestId", element: GuardViewRequestDetail },
-    { path: "/guard/reports", element: GuardCreateReport },
+    { path: "/guard/reports/create", element: GuardCreateReport },
+
 
     // --- ROUTES DÀNH CHO CƯ DÂN (RESIDENT) ---
     { path: "/student-info", element: StudentInformationPage },
