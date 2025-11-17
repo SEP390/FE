@@ -21,8 +21,15 @@ const useStore = create(set => ({
 }))
 
 function PaymentAction({invoiceId}) {
-
-    return <Button onClick={(e) => e.preventDefault()} type={"link"}>Thanh toán</Button>
+    const onClick = async () => {
+        const res = await axiosClient({
+            url: "/payment/" + invoiceId,
+            method: "GET",
+        })
+        const paymentUrl = res.data;
+        window.open(paymentUrl, '_blank').focus();
+    }
+    return <Button onClick={onClick} type={"link"}>Thanh toán</Button>
 }
 
 function InvoiceDetailModal() {
