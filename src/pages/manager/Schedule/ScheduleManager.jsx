@@ -81,7 +81,7 @@ export function ScheduleManager() {
             }));
             setShifts(formattedShifts);
             setDorms(dormRes.data || []);
-            setSemesters(semesterRes.data || []);
+            setSemesters(semesterRes?.content?.data || []);
         } catch (error) {
             console.error("Lỗi dependencies:", error);
             message.error("Không thể tải dữ liệu hệ thống.");
