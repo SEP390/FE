@@ -45,7 +45,7 @@ const useSemesterStore = create((set, get) => ({
     fetchSemesters: async () => {
         const page = get().page;
         const data = await fetchData(set, "GET", "/semesters", {
-            page
+            page, size: 5
         })
         set({semesters: data.content || [], total: data.page?.totalElements})
     },
@@ -332,7 +332,7 @@ const SemesterPage = () => {
                             current: page + 1,
                             total: total,
                             onChange: onChange,
-                            pageSize: 10,
+                            pageSize: 5,
                         }}
                     />
                 </Form>

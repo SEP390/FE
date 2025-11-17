@@ -3,10 +3,10 @@ import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import dormIcon from "../../assets/images/dormimg1.png"
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-import {MapContainer, Marker, TileLayer, useMap} from 'react-leaflet';
+import {MapContainer, Marker, Popup, TileLayer, useMap} from 'react-leaflet';
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import {Card} from "antd";
-import {useEffect, useRef} from "react";
+import {useEffect, useRef, useState} from "react";
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import {create} from 'zustand'
@@ -68,9 +68,33 @@ let DormIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+function CurrentLocationMarker() {
+    const setStartPoint = useWaypointsStore(state => state.setStartPoint);
+    const map = useMap();
+    const [position, setPosition] = useState(null);
+
+    useEffect(() => {
+        map.locate().on("locationfound", function (e) {
+            const {lat, lng} = e.latlng;
+            setPosition(e.latlng);
+            setStartPoint([lat, lng]);
+            map.flyTo(e.latlng, map.getZoom());
+        });
+    }, [map]);
+
+    return position === null ? null : (
+        <Marker position={position} icon={DefaultIcon}>
+            <Popup>
+                You are here. <br/>
+            </Popup>
+        </Marker>
+    );
+}
+
 function RoutingMachine() {
     const startPoint = useWaypointsStore(state => state.startPoint);
     const endPoint = useWaypointsStore(state => state.endPoint);
+    const setStartPoint = useWaypointsStore(state => state.setStartPoint);
     const map = useMap();
     const controlRef = useRef();
     useEffect(() => {
@@ -97,7 +121,7 @@ function RoutingMachine() {
                 draggableWaypoints: false // Don't let users drag the markers
             }).addTo(map);
         }
-    }, [map, startPoint, endPoint, controlRef]);
+    }, [map, startPoint, endPoint, controlRef, setStartPoint]);
     return null;
 }
 
@@ -126,7 +150,8 @@ function OpenStreetMap() {
         >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
             {dorms.map(({title, position}) => <DormMarker key={title} position={position} title={title}/>)}
-            <RoutingMachine />
+            <RoutingMachine/>
+            <CurrentLocationMarker />
         </MapContainer>
     );
 }

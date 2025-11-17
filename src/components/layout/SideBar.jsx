@@ -27,7 +27,7 @@ const items = [
         key: "news",
     },
     {
-        label: <Link to={"/booking"}>Đặt phòng</Link>,
+        label: <Link to={"/pages/booking"}>Đặt phòng</Link>,
         icon: <CalendarOutlined />,
         key: "booking",
     },
@@ -37,7 +37,7 @@ const items = [
         key: "map",
     },
     {
-        label: <Link to={"/booking-history"}>Lịch sử đặt phòng</Link>,
+        label: <Link to={"/pages/booking/history"}>Lịch sử đặt phòng</Link>,
         icon: <HistoryOutlined />,
         key: "booking-history",
     },
