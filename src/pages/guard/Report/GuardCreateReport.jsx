@@ -1,4 +1,4 @@
-import {Layout, Form, Input, Button, message} from "antd";
+import {Layout, Form, Input, Button, message, Select} from "antd";
 import {GuardSidebar} from "../../../components/layout/GuardSidebar.jsx";
 import {AppHeader} from "../../../components/layout/AppHeader.jsx";
 import React, {useState} from "react";
@@ -20,7 +20,8 @@ export function GuardCreateReport() {
                 "http://localhost:8080/api/reports",
                 {
                     content: values.content,
-                    createAt: new Date().toISOString()
+                    createAt: new Date().toISOString(),
+                    reportType: values.reportType
                 },
                 {
                     headers: {
@@ -52,6 +53,17 @@ export function GuardCreateReport() {
                         onFinish={onFinish}
                         style={{maxWidth: 600, margin: "0 auto"}}
                     >
+                        <Form.Item
+                            label="Loại báo cáo"
+                            name="reportType"
+                            rules={[{required: true, message: "Vui lòng chọn loại báo cáo"}]}
+                        >
+                            <Select placeholder="Chọn loại báo cáo">
+                                <Select.Option value="VIOLATION">Vi phạm nội quy</Select.Option>
+                                <Select.Option value="MAINTENANCE_REQUEST">Yêu cầu bảo trì</Select.Option>
+                                <Select.Option value="SECURITY_ISSUE">Vấn đề an ninh</Select.Option>
+                            </Select>
+                        </Form.Item>
                         <Form.Item
                             label="Nội dung báo cáo"
                             name="content"
