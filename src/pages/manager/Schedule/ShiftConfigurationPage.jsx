@@ -1,10 +1,14 @@
 // File: src/pages/manager/ShiftConfigurationPage.jsx
 
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Table, Button, Space, Modal, Form, Input, TimePicker, message } from 'antd'; // <- Đã xóa Popconfirm
-import { PlusOutlined, EditOutlined } from "@ant-design/icons"; // <- Đã xóa DeleteOutlined
+import { Layout, Typography, Table, Button, Space, Modal, Form, Input, TimePicker, message } from 'antd';
+// 1. Import thêm ArrowLeftOutlined
+import { PlusOutlined, EditOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 import dayjs from 'dayjs';
+
+// 2. Import useNavigate
+import { useNavigate } from 'react-router-dom';
 
 // Import các plugin
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -19,7 +23,11 @@ const { Title } = Typography;
 
 export function ShiftConfigurationPage() {
     const [collapsed] = useState(false);
-    const activeKey = 'manager-schedule';
+    const activeKey = 'manager-schedule'; // Giữ activeKey để sidebar hiển thị đúng
+
+    // 3. Khởi tạo navigate
+    const navigate = useNavigate();
+
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingShift, setEditingShift] = useState(null);
     const [form] = Form.useForm();
@@ -28,7 +36,7 @@ export function ShiftConfigurationPage() {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    // (Hàm fetchShifts - Giữ nguyên, đã đúng)
+    // --- LOAD DATA ---
     const fetchShifts = async () => {
         setLoading(true);
         try {
@@ -36,7 +44,6 @@ export function ShiftConfigurationPage() {
 
             if (response && response.data) {
                 const formattedData = response.data.map(shift => {
-                    // Backend (GetAllShiftResponse) trả về LocalTime (ví dụ: "09:00:00")
                     const validStartTime = dayjs(`2000-01-01T${shift.startTime}`);
                     const validEndTime = dayjs(`2000-01-01T${shift.endTime}`);
 
@@ -55,7 +62,7 @@ export function ShiftConfigurationPage() {
             if (error.response?.status === 401) {
                 message.error('Phiên đăng nhập đã hết hạn. Vui lòng F5 và đăng nhập lại!');
             } else {
-                message.error("Không thể tải danh sách ca. Vui lòng thêm API GET /api/shifts.");
+                message.error("Không thể tải danh sách ca.");
             }
             setShifts([]);
         } finally {
@@ -67,7 +74,7 @@ export function ShiftConfigurationPage() {
         fetchShifts();
     }, []);
 
-    // (Hàm handleOpenModal - Giữ nguyên, đã đúng)
+    // --- HANDLERS ---
     const handleOpenModal = (record = null) => {
         setEditingShift(record);
         setIsModalVisible(true);
@@ -87,55 +94,37 @@ export function ShiftConfigurationPage() {
         }
     };
 
-    // === SỬA HÀM NÀY ĐỂ GỬI ĐÚNG PAYLOAD (LOCAL TIME) ===
     const handleSaveShift = async (values) => {
         setSubmitting(true);
         const [startTime, endTime] = values.timeRange;
-
-        // Backend DTO (Create/Update) chỉ nhận LocalTime.
-        // Format về "HH:mm:ss" để Spring Boot hiểu.
         const formatString = "HH:mm:ss";
 
         const payload = {
             name: values.name,
-            startTime: startTime.format(formatString), // Ví dụ: "09:00:00"
-            endTime: endTime.format(formatString),     // Ví dụ: "17:00:00"
+            startTime: startTime.format(formatString),
+            endTime: endTime.format(formatString),
         };
-
-        // Ghi chú: Nếu ca qua đêm (VD: 22:00 - 06:00),
-        // logic kiểm tra và xử lý phải nằm ở backend (ShiftService).
 
         try {
             if (editingShift) {
-                // (Cần API PUT /shifts/{id} ở backend)
                 await axiosClient.put(`/shifts/${editingShift.key}`, payload);
                 message.success('Cập nhật ca làm việc thành công!');
             } else {
-                // (API POST /shifts)
                 await axiosClient.post('/shifts', payload);
                 message.success('Thêm ca làm việc mới thành công!');
             }
 
             setIsModalVisible(false);
-            fetchShifts(); // Tải lại danh sách
+            fetchShifts();
 
         } catch (error) {
             console.error("Lỗi khi lưu ca:", error);
-            if (error.response?.status === 401) {
-                message.error('Phiên đăng nhập đã hết hạn. Vui lòng F5 và đăng nhập lại!');
-            } else {
-                message.error(`Lưu ca thất bại! ` + (error.response?.data?.message || error.message));
-            }
+            message.error(`Lưu ca thất bại! ` + (error.response?.data?.message || error.message));
         } finally {
             setSubmitting(false);
         }
     };
-    // === KẾT THÚC SỬA ===
 
-
-    // (Hàm handleDelete đã bị xóa vì không dùng)
-
-    // === SỬA COLUMNS (XÓA NÚT DELETE) ===
     const columns = [
         { title: 'Tên Ca', dataIndex: 'name', key: 'name' },
         { title: 'Bắt đầu', dataIndex: 'startTime', key: 'startTime' },
@@ -150,7 +139,6 @@ export function ShiftConfigurationPage() {
             ),
         },
     ];
-    // === KẾT THÚC SỬA COLUMNS ===
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
@@ -163,14 +151,26 @@ export function ShiftConfigurationPage() {
                 </Header>
 
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => handleOpenModal()}
-                        style={{ marginBottom: 20 }}
-                    >
-                        Thêm Ca làm việc mới
-                    </Button>
+
+                    {/* --- THANH CÔNG CỤ (CÓ NÚT BACK) --- */}
+                    <Space style={{ marginBottom: 20 }}>
+                        {/* Nút Quay Lại */}
+                        <Button
+                            icon={<ArrowLeftOutlined />}
+                            onClick={() => navigate(-1)} // Quay lại trang trước đó
+                        >
+                            Quay lại
+                        </Button>
+
+                        {/* Nút Thêm Mới */}
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => handleOpenModal()}
+                        >
+                            Thêm Ca làm việc mới
+                        </Button>
+                    </Space>
 
                     <Table
                         columns={columns}
@@ -182,7 +182,7 @@ export function ShiftConfigurationPage() {
                 </Content>
             </Layout>
 
-            {/* MODAL (Không thay đổi) */}
+            {/* MODAL */}
             <Modal
                 title={editingShift ? "Chỉnh sửa Ca làm việc" : "Thêm Ca làm việc mới"}
                 open={isModalVisible}

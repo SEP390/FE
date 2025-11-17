@@ -41,10 +41,12 @@ import {TechnicalRequests} from "../pages/technical/Requetst/TechnicalRequests.j
 import {TechnicalRequestDetail} from "../pages/technical/Requetst/TechnicalRequestDetail.jsx";
 import {TeachnicalCreateReport} from "../pages/technical/report/TeachnicalCreateReport.jsx";
 import {WarehouseManagement} from "../pages/technical/warehouse/WarehouseManagement.jsx";
+import {WarehouseHistory} from "../pages/technical/warehouse/WarehouseHistory.jsx";
 import {ResidentDetail} from "../pages/manager/Resident/ResidentDetail.jsx";
 import {GuardCreateReport} from "../pages/guard/Report/GuardCreateReport.jsx";
 import {HolidayManagePage} from "../pages/manager/Holiday/HolidayManagePage.jsx";
 import {CleanerCreateReport} from "../pages/cleaner/report/CleanerCreateReport.jsx";
+import {StaffDetailPage} from "../pages/manager/Staff/StaffDetailPage.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -55,6 +57,10 @@ const routes = [
     { path: "/booking-history", element: BookingHistoryPage },
     { path: "/vnpay", element: PaymentResult },
     { path: "/payment", element: PaymentHistoryPage },
+
+
+
+    // router dành cho guard //
     { path: "/electric-water", element: ElectricWaterBillPage },
     // { path: "/guard/electric-water", element: GuardElectricWaterPage },
 
@@ -82,6 +88,7 @@ const routes = [
     { path: "/manager/requests", element: ManagerRequests },
     { path: "/manager/request-detail/:requestId", element: RequestDetailPage },
     { path: "/manager/staff", element: StaffManager },
+    { path: "/manager/staff/details/:id", element: StaffDetailPage },
     { path: "/manager/schedule", element: ScheduleManager },
     { path: "/manager/shifts", element: ShiftConfigurationPage },
     { path: "/manager/attendance", element: AttendanceManagementPage },
@@ -101,6 +108,7 @@ const routes = [
     { path: "/technical/request-detail/:requestId", element: TechnicalRequestDetail },
     { path: "/technical/reports/create", element: TeachnicalCreateReport },
     { path: "/technical/inventory", element: WarehouseManagement },
+    { path: "/technical/inventory/history", element: WarehouseHistory },
 
 ];
 

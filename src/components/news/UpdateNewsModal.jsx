@@ -1,14 +1,18 @@
-import { Modal, Form, Input, Select, message } from "antd";
-import { useEffect } from "react";
+import { Modal, Form, Input, Select, message, Divider } from "antd";
+import { useEffect, useState } from "react";
 
 const { TextArea } = Input;
 
 export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
     const [form] = Form.useForm();
     const token = localStorage.getItem("token");
+    const [htmlPreview, setHtmlPreview] = useState("");
 
     useEffect(() => {
-        if (news) form.setFieldsValue(news);
+        if (news) {
+            form.setFieldsValue(news);
+            setHtmlPreview(news.content || "");
+        }
     }, [news, form]);
 
     const handleSubmit = async () => {
@@ -22,6 +26,7 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
                 },
                 body: JSON.stringify(values),
             });
+
             if (!res.ok) throw new Error("Update failed");
             const data = await res.json();
             message.success("Cập nhật tin tức thành công");
@@ -40,8 +45,15 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
             onOk={handleSubmit}
             okText="Lưu thay đổi"
             cancelText="Hủy"
+            width={800}
         >
-            <Form form={form} layout="vertical">
+            <Form
+                form={form}
+                layout="vertical"
+                onValuesChange={(changed) => {
+                    if (changed.content) setHtmlPreview(changed.content);
+                }}
+            >
                 <Form.Item
                     label="Tiêu đề"
                     name="title"
@@ -49,13 +61,15 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
                 >
                     <Input />
                 </Form.Item>
+
                 <Form.Item
-                    label="Nội dung"
+                    label="Nội dung (HTML)"
                     name="content"
                     rules={[{ required: true, message: "Vui lòng nhập nội dung" }]}
                 >
-                    <TextArea rows={5} />
+                    <TextArea rows={6} placeholder="Nhập hoặc dán nội dung HTML..." />
                 </Form.Item>
+
                 <Form.Item label="Trạng thái" name="status">
                     <Select
                         options={[
@@ -65,6 +79,21 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
                     />
                 </Form.Item>
             </Form>
+
+            <Divider orientation="left">Xem trước nội dung</Divider>
+            <div
+                style={{
+                    border: "1px solid #d9d9d9",
+                    borderRadius: 8,
+                    padding: 12,
+                    minHeight: 120,
+                    background: "#fff",
+                    overflowY: "auto",
+                    maxHeight: 400,
+                }}
+                dangerouslySetInnerHTML={{ __html: htmlPreview }}
+            />
         </Modal>
     );
 }
+

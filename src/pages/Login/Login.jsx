@@ -24,26 +24,38 @@ const Login = () => {
       password: values.password,
     };
 
-    const res = await authApi(payload);
+    try {
+      const res = await authApi(payload);
 
-    if (res.ok) {
-      console.log(res.data);
-      message.success('Đăng nhập thành công!');
-      // res.data giả sử { token, fullName }
+      if (res.ok) {
+        console.log(res.data);
+        message.success('Đăng nhập thành công!');
+        // res.data giả sử { token, fullName }
 
-      const token = res.data?.data.token || null;
-      setToken(token);
-      localStorage.setItem('fullName', res.data?.data.fullName || '');
+        const token = res.data?.data.token || null;
+        setToken(token);
+        localStorage.setItem('fullName', res.data?.data.fullName || '');
 
-      const role = getRoleFromToken(token);
-      const redirect = getRedirectPathForRole(role);
-      navigate(redirect);
-    } else {
+        const role = getRoleFromToken(token);
+        const redirect = getRedirectPathForRole(role);
+        navigate(redirect);
+      } else {
+        const errorMessage = res.message || 'Tên đăng nhập hoặc mật khẩu không đúng!';
+        setAlert({
+          show: true,
+          message: errorMessage,
+          type: 'error',
+        });
+        message.error(errorMessage);
+      }
+    } catch (error) {
+      const errorMessage = 'Tên đăng nhập hoặc mật khẩu không đúng!';
       setAlert({
         show: true,
-        message: res.message || 'Đăng nhập thất bại!',
+        message: errorMessage,
         type: 'error',
       });
+      message.error(errorMessage);
     }
 
     setLoading(false);
