@@ -32,6 +32,11 @@ const items = [
         key: "guard-requests",
     },
     {
+        label: <Link to={"/pages/guard/checkin"}>Checkin sinh viên</Link>,
+        icon: <FileTextOutlined />,
+        key: "guard-checkin",
+    },
+    {
         key: "electric-water",
         icon: <ThunderboltOutlined />,
         label: <Link to={"/pages/guard/electric-water"}>Điện nước</Link>,

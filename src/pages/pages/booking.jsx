@@ -96,6 +96,8 @@ function CurrentSlot() {
                 dataIndex: ["status"],
                 render: (val) => {
                     if (val === "LOCK") return <Tag>Chưa thanh toán</Tag>
+                    if (val === "CHECKIN") return <Tag>Chờ checkin</Tag>
+                    if (val === "UNAVAILABLE") return <Tag>Đã checkin</Tag>
                 }
             },
             {
