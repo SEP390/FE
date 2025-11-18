@@ -1,8 +1,10 @@
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import {useEffect, useState} from "react";
 import {useApi} from "../../../hooks/useApi.js";
-import {Table, Tag} from "antd";
+import {App, Button, Input, Select, Table, Tag} from "antd";
 import {formatPrice} from "../../../util/formatPrice.js";
+import {Plus} from "lucide-react";
+import {useNavigate} from "react-router-dom";
 
 function InvoiceCountLabel({label, count}) {
     return <div
@@ -28,12 +30,43 @@ function InvoiceCount() {
     </>
 }
 
+function InvoiceFilter() {
+    const navigate = useNavigate();
+    return <>
+        <div className={"rounded-lg p-5 bg-white border border-gray-200"}>
+            <div className={"font-medium mb-3"}>Bộ lọc</div>
+            <div className={"flex gap-3 flex-wrap"}>
+                <Input className={"!w-30"} placeholder={"Mã sinh viên"}/>
+                <Select placeholder={"Loại hóa đơn"} options={[
+                    {
+                        label: "Đặt phòng",
+                        value: "BOOKING",
+                    },
+                    {
+                        label: "Điện nước",
+                        value: "EW",
+                    },
+                    {
+                        label: "Khác",
+                        value: "OTHER",
+                    },
+                ]}/>
+                <div className={"ml-auto flex gap-3"}>
+                    <Button onClick={() => navigate("/pages/manager/invoice/create")} icon={<Plus size={14}/>}>Tạo hóa đơn</Button>
+                    <Button type={"primary"} icon={<Plus size={14}/>}>Tạo hóa đơn điện nước</Button>
+                </div>
+            </div>
+        </div>
+    </>
+}
+
 function InvoiceTable() {
     const [page, setPage] = useState(0);
     const {get, data, error} = useApi();
+    const {notification} = App.useApp();
 
     useEffect(() => {
-        get("/invoices", { page });
+        get("/invoices", {page});
     }, [get, page]);
 
     return <Table bordered dataSource={data ? data.content : []} columns={[
@@ -67,7 +100,8 @@ function InvoiceTable() {
             }
         },
     ]} pagination={{
-        current: page + 1
+        current: data?.page?.page,
+        total: data?.page?.totalElements
     }}/>
 
 }
@@ -77,7 +111,8 @@ export default function ManageInvoicePage() {
     return <LayoutManager>
         <div className={"rounded-lg h-full flex flex-col gap-3"}>
             <InvoiceCount/>
-            <div className={"bg-white rounded-lg p-3 border border-gray-200 flex-grow"}>
+            <InvoiceFilter/>
+            <div className={"bg-white rounded-lg p-5 border border-gray-200 flex-grow"}>
                 <InvoiceTable/>
             </div>
         </div>

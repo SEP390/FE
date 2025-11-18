@@ -105,7 +105,7 @@ export function SideBarManager({ collapsed, active }) {
             collapsible
             collapsed={collapsed}
             theme="light"
-            className={"bg-white border-r border-gray-200"}
+            className={"bg-white border-r border-gray-200 overflow-auto scrollbar-*"}
         >
             {/* Logo/Brand Area */}
             <div className="flex items-center justify-center py-4">
