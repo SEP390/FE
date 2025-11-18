@@ -114,13 +114,7 @@ const Survey = () => {
 
     return (
         <AppLayout activeSidebar="survey">
-            <div
-                style={{
-                    minHeight: "100vh",
-                    background: "linear-gradient(180deg, #F7F9FC 0%, #FFFFFF 60%)",
-                    padding: "40px 24px",
-                }}
-            >
+            <div>
                 <div style={{ maxWidth: 960, margin: "0 auto" }}>
                     {!started ? (
                         // MÀN HÌNH HƯỚNG DẪN

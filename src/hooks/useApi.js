@@ -37,10 +37,11 @@ export function useApi() {
                 return;
             }
             setState("error");
-            setError(err?.response?.data?.message || err.message);
-            setErrorData(err?.response?.data);
-            console.log(err)
-
+            const errorCode = err?.response?.data?.message || err.message
+            const errorData = err?.response?.data
+            setError(errorCode);
+            if (errorData) setErrorData(errorData)
+            console.log(errorCode, errorData)
         }).finally(() => {
             // finish request, clear abort controller
             abortController.current = null;

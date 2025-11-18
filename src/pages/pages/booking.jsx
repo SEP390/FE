@@ -1,13 +1,13 @@
 import {useEffect, useState} from "react";
 import axiosClient from "../../api/axiosClient/axiosClient.js";
-import {App, Button, Card, Descriptions, Divider, Table, Tag} from "antd";
+import {Alert, App, Button, Card, Descriptions, Divider, Skeleton, Table, Tag} from "antd";
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import {create} from 'zustand'
 import {formatPrice} from "../../util/formatPrice.js";
 import {cn} from "../../util/cn.js";
 import {Bed} from "lucide-react";
 import {formatDate} from "../../util/formatTime.js";
-import {PaymentHistoryPage} from "../booking/PaymentHistoryPage.jsx";
+import {WarningOutlined} from "@ant-design/icons";
 
 const useStore = create(set => ({
     currentSlot: null,
@@ -45,6 +45,7 @@ const useStore = create(set => ({
         set({matchingRooms: res.data})
     },
 }))
+
 function PaymentAction({slotId}) {
     const {fetchCurrentSlot} = useStore();
     const onClick = async () => {
@@ -64,6 +65,7 @@ function PaymentAction({slotId}) {
     }
     return <Button onClick={onClick} type="link">Thanh toán</Button>
 }
+
 function CurrentSlot() {
     const {currentSlot} = useStore();
 
@@ -103,7 +105,7 @@ function CurrentSlot() {
             {
                 title: "Hành động",
                 render: (val, row) => {
-                    if (row.status === "LOCK") return <PaymentAction slotId={row.id} />
+                    if (row.status === "LOCK") return <PaymentAction slotId={row.id}/>
                 }
             },
         ]} pagination={false}/>
@@ -163,7 +165,7 @@ function ConfirmSelect() {
             ]}/>
         </Card>
         <div className={"mt-5"}>
-            <PaymentButton />
+            <PaymentButton/>
         </div>
     </div>
 }
@@ -221,7 +223,9 @@ function MatchingRoom({data}) {
                 }, "hover:cursor-pointer hover:shadow-lg transition-all w-full border rounded-lg border-gray-200 p-5 relative")}>
         <div className={"absolute top-3 right-3"}>
             <div
-                className={"rounded-full text-sx text-gray-500 border border-gray-300 bg-gray-50 w-12 h-12 flex items-center justify-center"}>{matching.toFixed(1)}%
+                className={cn({
+                    "!border-blue-200 !bg-blue-100": selectedRoom && selectedRoom.id === data.id
+                }, "rounded-full text-sx text-gray-500 border border-gray-300 bg-gray-50 w-12 h-12 flex items-center justify-center")}>{matching.toFixed(1)}%
             </div>
         </div>
         <div className={"font-medium mb-3"}>{dormName} - {roomNumber}</div>
@@ -231,25 +235,41 @@ function MatchingRoom({data}) {
 }
 
 function CreateBooking() {
+    const [loading, setLoading] = useState(true);
+    const [isNoSurvey, setIsNoSurvey] = useState(false);
     const {matchingRooms, fetchMatchingRooms, fetchNextSemester, fetchEWPrice, selectedRoom, selectedSlot} = useStore();
 
     const {notification} = App.useApp();
 
     useEffect(() => {
         fetchMatchingRooms().catch((err) => {
-            notification.error({message: "Lỗi", description: err.data?.message || err.message});
-        })
+            const errCode = err.response?.data?.message || err.message;
+            if (errCode === 'NO_SURVEY') {
+                setIsNoSurvey(true)
+                return;
+            }
+            notification.error({message: "Lỗi", description: errCode});
+        }).finally(() => setLoading(false))
         fetchNextSemester();
     }, [fetchEWPrice, fetchMatchingRooms, fetchNextSemester, notification]);
 
     return <>
         <div>
-            <div className={"font-medium mb-3"}>Top 5 phòng phù hợp nhất</div>
-            <div className={"grid lg:grid-cols-3 gap-5"}>
-                {matchingRooms.map(data => <MatchingRoom data={data}/>)}
-            </div>
-            {selectedRoom && <SelectSlot/>}
-            {selectedRoom && selectedSlot && <ConfirmSelect/>}
+            {loading && <>
+                <Skeleton active={loading} />
+            </>}
+            {!loading && isNoSurvey && <>
+                <Alert type={"error"} message={"Lỗi"} closable={true}
+                       description={"Bạn không thể đặt phòng nếu chưa hoàn thành khảo sát"}/>
+            </>}
+            {!loading && !isNoSurvey && <>
+                <div className={"font-medium mb-3"}>Top 5 phòng phù hợp nhất</div>
+                <div className={"grid lg:grid-cols-3 gap-5"}>
+                    {matchingRooms.map(data => <MatchingRoom key={data.id} data={data}/>)}
+                </div>
+                {selectedRoom && <SelectSlot/>}
+                {selectedRoom && selectedSlot && <ConfirmSelect/>}
+            </>}
         </div>
     </>
 }
@@ -263,8 +283,8 @@ export default function BookingPage() {
         })
     }, [fetchCurrentSlot]);
 
-    return <AppLayout>
-        <Card title={"Đặt phòng"} className={"h-full overflow-auto"}>
+    return <AppLayout activeSidebar={"booking"}>
+        <Card title={"Đặt phòng"} className={"flex-grow"}>
             {!loading && !currentSlot && <CreateBooking/>}
             {!loading && currentSlot && <CurrentSlot/>}
         </Card>
