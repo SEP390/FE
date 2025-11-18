@@ -1,18 +1,32 @@
-import React, { useState, useEffect } from "react";
-import { SideBarTechnical } from "../../../components/layout/SideBarTechnical.jsx";
-import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Select, Input, InputNumber, message, Modal } from "antd";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
-import { useApi } from "../../../hooks/useApi.js";
+import React, {useEffect, useState} from "react";
+import {SideBarTechnical} from "../../../components/layout/SideBarTechnical.jsx";
+import {AppHeader} from "../../../components/layout/AppHeader.jsx";
+import {
+    App,
+    Button,
+    Card,
+    Descriptions,
+    Form,
+    Input,
+    InputNumber,
+    Layout,
+    Modal,
+    Select,
+    Spin,
+    Tag,
+    Typography
+} from "antd";
+import {useNavigate, useParams} from "react-router-dom";
+import {ArrowLeftOutlined, SaveOutlined} from "@ant-design/icons";
+import {useApi} from "../../../hooks/useApi.js";
 
-const { Content } = Layout;
-const { Title } = Typography;
-const { TextArea } = Input;
-const { Option } = Select;
+const {Content} = Layout;
+const {Title} = Typography;
+const {TextArea} = Input;
+const {Option} = Select;
 
 export function TechnicalRequestDetail() {
-    const { requestId } = useParams();
+    const {requestId} = useParams();
     const navigate = useNavigate();
     const [collapsed, setCollapsed] = useState(false);
     const [requestData, setRequestData] = useState(null);
@@ -25,11 +39,12 @@ export function TechnicalRequestDetail() {
     const [invoiceForm] = Form.useForm();
     const activeKey = 'technical-requests';
     const inventoryItems = [
-        { value: "Fan", label: "Quạt điện" },
-        { value: "LightBulb", label: "Bóng đèn" },
-        { value: "PowerCable", label: "Dây nguồn" }
+        {value: "Fan", label: "Quạt điện"},
+        {value: "LightBulb", label: "Bóng đèn"},
+        {value: "PowerCable", label: "Dây nguồn"}
     ];
     const isAcceptedStatus = (requestData?.responseStatus || requestData?.requestStatus) === "ACCEPTED";
+    const {notification} = App.useApp();
 
     // API hooks
     const {
@@ -125,20 +140,20 @@ export function TechnicalRequestDetail() {
     // Handle update response
     useEffect(() => {
         if (isUpdateSuccess && updateResponse) {
-            message.success("Cập nhật trạng thái request thành công!");
+            notification.success({message: "Cập nhật trạng thái request thành công!"});
             setIsUpdating(false);
             // Refresh request data
             getRequest(`/requests/${requestId}`);
         }
-    }, [isUpdateSuccess, updateResponse, requestId, getRequest]);
+    }, [isUpdateSuccess, updateResponse, requestId, getRequest, notification]);
 
     // Handle update error
     useEffect(() => {
         if (isUpdateComplete && !isUpdateSuccess) {
-            message.error("Có lỗi xảy ra khi cập nhật request!");
+            notification.error({message: "Có lỗi xảy ra khi cập nhật request!"});
             setIsUpdating(false);
         }
-    }, [isUpdateComplete, isUpdateSuccess]);
+    }, [isUpdateComplete, isUpdateSuccess, notification]);
 
     // Status color mapping
     const statusColor = (status) => {
@@ -210,23 +225,23 @@ export function TechnicalRequestDetail() {
     // Handle create report response
     useEffect(() => {
         if (isReportCreateSuccess && reportCreateResponse) {
-            message.success("Tạo report thành công!");
+            notification.success({message: "Tạo report thành công!"});
             setReportVisible(false);
             reportForm.resetFields();
         }
-    }, [isReportCreateSuccess, reportCreateResponse, reportForm]);
+    }, [isReportCreateSuccess, notification, reportCreateResponse, reportForm]);
 
     useEffect(() => {
         if (isReportCreateComplete && !isReportCreateSuccess) {
-            message.error("Tạo report thất bại, vui lòng thử lại!");
+            notification.error({message: "Tạo report thất bại, vui lòng thử lại!"});
         }
-    }, [isReportCreateComplete, isReportCreateSuccess]);
+    }, [isReportCreateComplete, isReportCreateSuccess, notification]);
 
     const handleOpenReport = () => {
         setReportVisible(true);
         // preset room name when opening
         if (requestData?.roomName) {
-            reportForm.setFieldsValue({ roomName: requestData.roomName });
+            reportForm.setFieldsValue({roomName: requestData.roomName});
         }
     };
 
@@ -240,7 +255,7 @@ export function TechnicalRequestDetail() {
 
     const handleSubmitInvoice = (values) => {
         console.log("Tạo hóa đơn xuất kho:", values);
-        message.success("Tạo hóa đơn xuất kho thành công (tạm thời)!");
+        notification.success({message: "Tạo hóa đơn xuất kho thành công (tạm thời)!"});
         setInvoiceVisible(false);
     };
 
@@ -250,31 +265,31 @@ export function TechnicalRequestDetail() {
         const requestLine = requestData?.requestId ? `\nRequest ID: ${requestData.requestId}` : "";
         const content = `Report từ kỹ thuật\nPhòng: ${requestData?.roomName || values.roomName || "N/A"}\nĐối tượng: ${targetLabel}${requestLine}\n\nGhi chú:\n${values.note || ""}`;
 
-        createReport(`/reports`, { content });
+        createReport(`/reports`, {content, type: "MAINTENANCE_REQUEST"});
     };
 
     return (
-        <Layout style={{ minHeight: "100vh" }}>
-            <SideBarTechnical active={activeKey} collapsed={collapsed} />
+        <Layout style={{minHeight: "100vh"}}>
+            <SideBarTechnical active={activeKey} collapsed={collapsed}/>
             <Layout>
-                <AppHeader toggleSideBar={toggleSideBar} />
-                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-                    <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: "16px" }}>
+                <AppHeader toggleSideBar={toggleSideBar}/>
+                <Content style={{margin: "24px", background: "#fff", padding: 24}}>
+                    <div style={{marginBottom: 24, display: "flex", alignItems: "center", gap: "16px"}}>
                         <Button
-                            icon={<ArrowLeftOutlined />}
+                            icon={<ArrowLeftOutlined/>}
                             onClick={() => navigate("/technical/requests")}
                         >
                             Quay lại
                         </Button>
-                        <Title level={2} style={{ margin: 0 }}>
+                        <Title level={2} style={{margin: 0}}>
                             {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
                         </Title>
-                        <div style={{ marginLeft: "auto" }}>
+                        <div style={{marginLeft: "auto"}}>
                             <Button type="primary" onClick={handleOpenReport}>
                                 Tạo report
                             </Button>
                             {isAcceptedStatus && (
-                                <Button style={{ marginLeft: 8 }} onClick={handleOpenInvoice}>
+                                <Button style={{marginLeft: 8}} onClick={handleOpenInvoice}>
                                     Tạo hóa đơn xuất kho
                                 </Button>
                             )}
@@ -282,14 +297,14 @@ export function TechnicalRequestDetail() {
                     </div>
 
                     {isRequestLoading && (
-                        <div style={{ textAlign: "center", padding: "60px 0" }}>
-                            <Spin size="large" />
-                            <p style={{ marginTop: 16 }}>Đang tải thông tin request...</p>
+                        <div style={{textAlign: "center", padding: "60px 0"}}>
+                            <Spin size="large"/>
+                            <p style={{marginTop: 16}}>Đang tải thông tin request...</p>
                         </div>
                     )}
 
                     {!isRequestLoading && !requestData && (
-                        <div style={{ textAlign: "center", padding: "60px 0" }}>
+                        <div style={{textAlign: "center", padding: "60px 0"}}>
                             <h2>Không tìm thấy request</h2>
                             <Button type="primary" onClick={() => navigate("/technical/requests")}>
                                 Quay lại danh sách
@@ -310,7 +325,8 @@ export function TechnicalRequestDetail() {
                                             {formatRequestType(requestData.requestType)}
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Trạng thái">
-                                            <Tag color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
+                                            <Tag
+                                                color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
                                                 {formatStatus(requestData.responseStatus || requestData.requestStatus)}
                                             </Tag>
                                         </Descriptions.Item>
@@ -348,7 +364,7 @@ export function TechnicalRequestDetail() {
                                         <Form.Item
                                             label="Trạng thái mới"
                                             name="requestStatus"
-                                            rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
+                                            rules={[{required: true, message: 'Vui lòng chọn trạng thái!'}]}
                                         >
                                             <Select placeholder="Chọn trạng thái">
 
@@ -360,7 +376,7 @@ export function TechnicalRequestDetail() {
                                         <Form.Item
                                             label="Tin nhắn phản hồi"
                                             name="responseMessage"
-                                            rules={[{ required: true, message: 'Vui lòng nhập tin nhắn phản hồi!' }]}
+                                            rules={[{required: true, message: 'Vui lòng nhập tin nhắn phản hồi!'}]}
                                         >
                                             <TextArea
                                                 rows={4}
@@ -372,10 +388,10 @@ export function TechnicalRequestDetail() {
                                             <Button
                                                 type="primary"
                                                 htmlType="submit"
-                                                icon={<SaveOutlined />}
+                                                icon={<SaveOutlined/>}
                                                 loading={isUpdateLoading}
                                                 block
-                                                style={{ backgroundColor: "#1890ff", borderColor: "#1890ff" }}
+                                                style={{backgroundColor: "#1890ff", borderColor: "#1890ff"}}
                                             >
                                                 Cập nhật trạng thái
                                             </Button>
@@ -413,19 +429,19 @@ export function TechnicalRequestDetail() {
                         <Form
                             layout="vertical"
                             form={reportForm}
-                            initialValues={{ roomName: requestData?.roomName }}
+                            initialValues={{roomName: requestData?.roomName}}
                             onFinish={handleSubmitReport}
                         >
                             <Form.Item label="Phòng" name="roomName">
-                                <Input placeholder="Tên phòng" disabled value={requestData?.roomName} />
+                                <Input placeholder="Tên phòng" disabled value={requestData?.roomName}/>
                             </Form.Item>
 
                             <Form.Item
                                 label="Ghi chú"
                                 name="note"
-                                rules={[{ required: true, message: "Vui lòng nhập nội dung ghi chú" }]}
+                                rules={[{required: true, message: "Vui lòng nhập nội dung báo cáo"}]}
                             >
-                                <TextArea rows={5} placeholder="Nhập nội dung ghi chú" />
+                                <TextArea rows={5} placeholder="Nhập nội dung báo cáo"/>
                             </Form.Item>
 
                             <Form.Item>
@@ -451,17 +467,17 @@ export function TechnicalRequestDetail() {
                             <Form.Item
                                 label="Tên đồ"
                                 name="itemName"
-                                rules={[{ required: true, message: "Vui lòng chọn tên đồ" }]}
+                                rules={[{required: true, message: "Vui lòng chọn tên đồ"}]}
                             >
-                                <Select options={inventoryItems} placeholder="Chọn đồ xuất kho" />
+                                <Select options={inventoryItems} placeholder="Chọn đồ xuất kho"/>
                             </Form.Item>
 
                             <Form.Item
                                 label="Số lượng"
                                 name="quantity"
-                                rules={[{ required: true, message: "Vui lòng nhập số lượng" }]}
+                                rules={[{required: true, message: "Vui lòng nhập số lượng"}]}
                             >
-                                <InputNumber min={1} style={{ width: "100%" }} />
+                                <InputNumber min={1} style={{width: "100%"}}/>
                             </Form.Item>
 
                             <Form.Item>

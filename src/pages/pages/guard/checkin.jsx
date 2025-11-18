@@ -4,10 +4,10 @@ import {useCallback, useEffect, useState} from "react";
 import {useApi} from "../../../hooks/useApi.js";
 
 function CheckinButton({slotId, fetchSlots}) {
-    const {post, data, error, isLoading} = useApi();
+    const {post, error, isLoading} = useApi();
     const {notification} = App.useApp();
     useEffect(() => {
-        if (error) notification.error({message: error})
+        if (error) notification.error({message: String(error)})
     }, [error, notification]);
 
     const onConfirm = () => {
@@ -40,6 +40,10 @@ export default function GuardCheckinPage() {
     useEffect(() => {
         fetchSlots()
     }, [fetchSlots]);
+
+    useEffect(() => {
+        if (error) notification.error({message: String(error)})
+    }, [error, notification]);
 
     return <LayoutGuard active={"guard-checkin"}>
         <Card title={"Danh sách chờ checkin"} className={"h-full overflow-auto"}>

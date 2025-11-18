@@ -37,7 +37,7 @@ export function useApi() {
                 return;
             }
             setState("error");
-            const errorCode = err?.response?.data?.message || err.message
+            const errorCode = err?.response?.data?.message || err?.response?.data || err.message
             const errorData = err?.response?.data
             setError(errorCode);
             if (errorData) setErrorData(errorData)
