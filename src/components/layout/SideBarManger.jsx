@@ -90,6 +90,11 @@ const managerItems = [
         label: <Link to={"/manager/holidays"}>Quản lí kỳ nghỉ</Link>,
         icon: <CoffeeOutlined/>,
         key: "holiday"
+    },
+    {
+        label: <Link to={'/manager/invoices'}>Quản lí hóa đơn</Link>,
+        icon: <ThunderboltOutlined/>,
+        key: 'manager-invoices'
     }
 ];
 

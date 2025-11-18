@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { SideBarTechnical } from "../../../components/layout/SideBarTechnical.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Select, Input, message, Modal } from "antd";
+import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Select, Input, InputNumber, message, Modal } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
@@ -20,9 +20,16 @@ export function TechnicalRequestDetail() {
     const [form] = Form.useForm();
     const [isUpdating, setIsUpdating] = useState(false);
     const [reportVisible, setReportVisible] = useState(false);
-    const [reportTarget, setReportTarget] = useState("ROOM");
+    const [invoiceVisible, setInvoiceVisible] = useState(false);
     const [reportForm] = Form.useForm();
+    const [invoiceForm] = Form.useForm();
     const activeKey = 'technical-requests';
+    const inventoryItems = [
+        { value: "Fan", label: "Quạt điện" },
+        { value: "LightBulb", label: "Bóng đèn" },
+        { value: "PowerCable", label: "Dây nguồn" }
+    ];
+    const isAcceptedStatus = (requestData?.responseStatus || requestData?.requestStatus) === "ACCEPTED";
 
     // API hooks
     const {
@@ -206,7 +213,6 @@ export function TechnicalRequestDetail() {
             message.success("Tạo report thành công!");
             setReportVisible(false);
             reportForm.resetFields();
-            setReportTarget("ROOM");
         }
     }, [isReportCreateSuccess, reportCreateResponse, reportForm]);
 
@@ -224,12 +230,25 @@ export function TechnicalRequestDetail() {
         }
     };
 
+    const handleOpenInvoice = () => {
+        setInvoiceVisible(true);
+        invoiceForm.setFieldsValue({
+            itemName: inventoryItems[0]?.value,
+            quantity: 1
+        });
+    };
+
+    const handleSubmitInvoice = (values) => {
+        console.log("Tạo hóa đơn xuất kho:", values);
+        message.success("Tạo hóa đơn xuất kho thành công (tạm thời)!");
+        setInvoiceVisible(false);
+    };
+
     const handleSubmitReport = (values) => {
         // Tạo content như GuardCreateReport - backend sẽ tự động lấy thông tin employee từ token
-        const targetLabel = values.targetType === "INDIVIDUAL" ? "Cá nhân" : "Phòng";
-        const studentCodeLine = values.targetType === "INDIVIDUAL" && values.studentCode ? `\nMã sinh viên: ${values.studentCode}` : "";
+        const targetLabel = "Phòng";
         const requestLine = requestData?.requestId ? `\nRequest ID: ${requestData.requestId}` : "";
-        const content = `Report từ kỹ thuật\nPhòng: ${requestData?.roomName || values.roomName || "N/A"}\nĐối tượng: ${targetLabel}${studentCodeLine}${requestLine}\n\nGhi chú:\n${values.note || ""}`;
+        const content = `Report từ kỹ thuật\nPhòng: ${requestData?.roomName || values.roomName || "N/A"}\nĐối tượng: ${targetLabel}${requestLine}\n\nGhi chú:\n${values.note || ""}`;
 
         createReport(`/reports`, { content });
     };
@@ -254,6 +273,11 @@ export function TechnicalRequestDetail() {
                             <Button type="primary" onClick={handleOpenReport}>
                                 Tạo report
                             </Button>
+                            {isAcceptedStatus && (
+                                <Button style={{ marginLeft: 8 }} onClick={handleOpenInvoice}>
+                                    Tạo hóa đơn xuất kho
+                                </Button>
+                            )}
                         </div>
                     </div>
 
@@ -389,36 +413,12 @@ export function TechnicalRequestDetail() {
                         <Form
                             layout="vertical"
                             form={reportForm}
-                            initialValues={{ targetType: reportTarget, roomName: requestData?.roomName }}
+                            initialValues={{ roomName: requestData?.roomName }}
                             onFinish={handleSubmitReport}
                         >
                             <Form.Item label="Phòng" name="roomName">
                                 <Input placeholder="Tên phòng" disabled value={requestData?.roomName} />
                             </Form.Item>
-
-                            <Form.Item
-                                label="Đối tượng"
-                                name="targetType"
-                                rules={[{ required: true, message: "Vui lòng chọn đối tượng" }]}
-                            >
-                                <Select
-                                    onChange={(val) => setReportTarget(val)}
-                                    options={[
-                                        { value: "ROOM", label: "Phòng" },
-                                        { value: "INDIVIDUAL", label: "Cá nhân" }
-                                    ]}
-                                />
-                            </Form.Item>
-
-                            {reportTarget === "INDIVIDUAL" && (
-                                <Form.Item
-                                    label="Mã sinh viên"
-                                    name="studentCode"
-                                    rules={[{ required: true, message: "Vui lòng nhập mã sinh viên" }]}
-                                >
-                                    <Input placeholder="Nhập mã sinh viên" />
-                                </Form.Item>
-                            )}
 
                             <Form.Item
                                 label="Ghi chú"
@@ -431,6 +431,42 @@ export function TechnicalRequestDetail() {
                             <Form.Item>
                                 <Button type="primary" htmlType="submit" loading={isReportCreateLoading} block>
                                     Tạo report
+                                </Button>
+                            </Form.Item>
+                        </Form>
+                    </Modal>
+
+                    <Modal
+                        title="Tạo hóa đơn xuất kho"
+                        open={invoiceVisible}
+                        onCancel={() => setInvoiceVisible(false)}
+                        footer={null}
+                        destroyOnClose
+                    >
+                        <Form
+                            layout="vertical"
+                            form={invoiceForm}
+                            onFinish={handleSubmitInvoice}
+                        >
+                            <Form.Item
+                                label="Tên đồ"
+                                name="itemName"
+                                rules={[{ required: true, message: "Vui lòng chọn tên đồ" }]}
+                            >
+                                <Select options={inventoryItems} placeholder="Chọn đồ xuất kho" />
+                            </Form.Item>
+
+                            <Form.Item
+                                label="Số lượng"
+                                name="quantity"
+                                rules={[{ required: true, message: "Vui lòng nhập số lượng" }]}
+                            >
+                                <InputNumber min={1} style={{ width: "100%" }} />
+                            </Form.Item>
+
+                            <Form.Item>
+                                <Button type="primary" htmlType="submit" block>
+                                    Cập nhật
                                 </Button>
                             </Form.Item>
                         </Form>
