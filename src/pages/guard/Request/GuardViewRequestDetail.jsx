@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Input, message } from "antd";
+import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Input, message, Select } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
@@ -9,6 +9,7 @@ import { useApi } from "../../../hooks/useApi.js";
 const { Content } = Layout;
 const { Title } = Typography;
 const { TextArea } = Input;
+const { Option } = Select;
 
 export function GuardViewRequestDetail() {
     const { requestId } = useParams();
@@ -69,6 +70,7 @@ export function GuardViewRequestDetail() {
                 setRequestData(requestData);
                 // Set form values
                 form.setFieldsValue({
+                    requestStatus: requestData.requestStatus || requestData.responseStatus || "PENDING",
                     responseMessage: requestData.responseMessageByEmployee || requestData.responseMessage || requestData.ResponseMessage || ""
                 });
             }
@@ -173,7 +175,7 @@ export function GuardViewRequestDetail() {
         console.log("Updating request with values:", values);
 
         const updatePayload = {
-            requestStatus: "CHECKED",
+            requestStatus: values.requestStatus || "CHECKED",
             responseMessage: values.responseMessage
         };
 
@@ -269,12 +271,12 @@ export function GuardViewRequestDetail() {
                                         <Form.Item
                                             label="Trạng thái mới"
                                             name="requestStatus"
+                                            rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
                                         >
-                                            <div className="p-2 bg-green-50 border border-green-200 rounded">
-                                                <Tag color="green" className="text-sm">
-                                                    Đã kiểm tra (CHECKED)
-                                                </Tag>
-                                            </div>
+                                            <Select placeholder="Chọn trạng thái cập nhật">
+                                                <Option value="PENDING">Đang xử lý (PENDING)</Option>
+                                                <Option value="CHECKED">Đã kiểm tra (CHECKED)</Option>
+                                            </Select>
                                         </Form.Item>
 
                                         <Form.Item

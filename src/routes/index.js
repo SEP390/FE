@@ -35,6 +35,9 @@ import {SurveyManagementPage} from "../pages/manager/Survey/SurveyManagementPage
 import {ScheduleManager} from "../pages/manager/Schedule/ScheduleManager.jsx";
 import {ShiftConfigurationPage} from "../pages/manager/Schedule/ShiftConfigurationPage.jsx";
 import {AttendanceManagementPage} from "../pages/manager/Schedule/AttendanceManagementPage.jsx";
+import { InvoiceManager } from "../pages/manager/Invoice/InvoiceManager.jsx";
+import { ElectricInvoiceAuto } from "../pages/manager/Invoice/ElectricInvoiceAuto.jsx";
+import { ViolationInvoiceCreate } from "../pages/manager/Invoice/ViolationInvoiceCreate.jsx";
 import {CleanerSchedule} from "../pages/cleaner/CleanerSchedule.jsx";
 import {CleanerSupplies} from "../pages/cleaner/CleanerSupplies.jsx";
 import {TechnicalRequests} from "../pages/technical/Requetst/TechnicalRequests.jsx";
@@ -95,6 +98,10 @@ const routes = [
     { path: "/manager/resident-detail/:residentId", element: ResidentDetail },
     {path: "/manager/reports", element: ReportManagePage},
     {path: "/manager/holidays", element: HolidayManagePage},
+    { path: "/manager/invoices", element: InvoiceManager },
+    { path: "/manager/invoices/electric", element: ElectricInvoiceAuto },
+    { path: "/manager/invoices/violation", element: ViolationInvoiceCreate },
+
 
     // --- ROUTES DÀNH CHO CLEANER ---
     { path: "/cleaner/schedule", element: CleanerSchedule },
