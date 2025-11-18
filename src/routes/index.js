@@ -52,6 +52,7 @@ import {CleanerCreateReport} from "../pages/cleaner/report/CleanerCreateReport.j
 import {StaffDetailPage} from "../pages/manager/Staff/StaffDetailPage.jsx";
 import {GuardViewReport} from "../pages/guard/Report/GuardViewReport.jsx";
 import {CleanerViewReport} from "../pages/cleaner/report/CleanerViewReport.jsx";
+import {TechnicianViewReport} from "../pages/technical/report/TechnicianViewReport.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -121,6 +122,7 @@ const routes = [
     { path: "/technical/reports/create", element: TeachnicalCreateReport },
     { path: "/technical/inventory", element: WarehouseManagement },
     { path: "/technical/inventory/history", element: WarehouseHistory },
+    { path: "/technical/reports", element: TechnicianViewReport },
 
 ];
 

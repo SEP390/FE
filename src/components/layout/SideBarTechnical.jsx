@@ -12,7 +12,7 @@ const technicalItems = [
         key: "technical-requests",
     },
     {
-        label: <Link to={"/technical/reports/create"}>Tạo báo cáo</Link>,
+        label: <Link to={"/technical/reports"}>Tạo báo cáo</Link>,
         icon: <FormOutlined/>,
         key: "technical-create-report",
     },
