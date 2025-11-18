@@ -32,7 +32,7 @@ export function MyRequest() {
 
     // Check resident status on mount
     useEffect(() => {
-        axiosClient.get("/booking/current")
+        axiosClient.get("/slots/current")
             .then(data => {
                 setCurrentSlotData(data);
                 if (data && data.data && data.data.status === "UNAVAILABLE") {

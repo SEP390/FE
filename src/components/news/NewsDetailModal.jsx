@@ -1,6 +1,6 @@
 import { Typography } from "antd";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export function NewsDetailModal({ news }) {
     if (!news) return null;
@@ -10,17 +10,16 @@ export function NewsDetailModal({ news }) {
             <Text type="secondary" style={{ fontSize: 10 }}>
                 {new Date(news.date).toLocaleString()}
             </Text>
+
             <div
                 style={{
                     border: "1px solid #ffa940",
                     borderRadius: 8,
                     padding: 16,
-                    marginTop: 16
-                    //background: "#fffbe6"
+                    marginTop: 16,
                 }}
-            >
-                <Paragraph style={{ margin: 0 }}>{news.content}</Paragraph>
-            </div>
+                dangerouslySetInnerHTML={{ __html: news.content }}
+            />
         </div>
     );
 }

@@ -1,322 +1,142 @@
-import React, {useEffect, useRef, useState} from "react";
-import {useApi} from "../../../hooks/useApi.js";
-import {Alert, App, Button, Card, message, Modal, notification, Skeleton, Tour} from "antd";
 import {AppLayout} from "../../../components/layout/AppLayout.jsx";
-import {useNavigate} from "react-router-dom";
+import {App, Button, Card, Modal} from "antd";
 import {create} from 'zustand'
-import {Bed, MapPin, TrendingUp} from "lucide-react";
+import {useEffect, useRef} from "react";
+import axiosClient from "../../../api/axiosClient/axiosClient.js";
 import {formatPrice} from "../../../util/formatPrice.js";
-import {cn} from "../../../util/cn.js";
+import {Bed} from "lucide-react";
+import {useProfile} from "../../../hooks/useProfile.js";
 
-const useTourStore = create(set => ({
-    isOpen: true,
-    steps: null,
-    setSteps: (steps) => set({ steps }),
-    setIsOpen: (isOpen) => set({ isOpen }),
-}))
+const useStore = create(set => ({
+    recentRoom: null,
+    selectedRoom: null,
+    selectedSlot: null,
+    nextSemester: null,
+    ewPrice: {
+        electricPrice: null,
+        waterPrice: null,
+    },
+    fetchEWPrice: async () => {
+        const res = await axiosClient("/electric-water-pricing")
+        set({ewPrice: res.data})
+    },
+    fetchNextSemester: async () => {
+        const res = await axiosClient("/semesters/next");
+        set({nextSemester: res.data})
+    },
+    setSelectedRoom: (selectedRoom) => set({selectedRoom}),
+    setSelectedSlot: (selectedSlot) => set({selectedSlot}),
+    fetchRecentRoom: async () => {
 
-const useModalStore = create(set => ({
-    isOpen: true,
-    close: () => set({ isOpen: false }),
-    open: () => set({ isOpen: true }),
-}))
-
-const useRoomStore = create(set => ({
-    room: null,
-    setRoom: (room) => set({ room }),
-    rooms: null,
-    setRooms: (rooms) => set({ rooms }),
-}))
-
-const useSlotStore = create(set => ({
-    slot: null,
-    setSlot: (slot) => set({ slot }),
-}))
-
-function SlotCard({ data }) {
-    const setSlot = useSlotStore(state => state.setSlot)
-    const slot = useSlotStore(state => state.slot)
-
-    const selected = data.id === slot?.id;
-
-    const onClick = () => {
-        if (data.status !== "AVAILABLE") return;
-        setSlot(data);
+    },
+    matchingRooms: [],
+    fetchMatchingRooms: async () => {
+        const res = await axiosClient("/rooms-matching", {})
+        console.log(res.data)
+        set({matchingRooms: res.data})
     }
+}))
 
-    return <>
-        <Card onClick={onClick} hoverable={!selected && data.status === "AVAILABLE"} className={cn({
-            "!bg-blue-50 !text-blue-600 !border-blue-50": selected,
-            "cursor-pointer": !selected && data.status === "AVAILABLE",
-            "!bg-gray-100 border !border-gray-200": data.status !== "AVAILABLE",
-        }, "transition-all")}>
-            <Bed/>
-            <span>{data.slotName}</span>
-        </Card>
-    </>
+function formatMatching(val) {
+    return val.toFixed(2) + "%";
 }
 
-function RoomConfirmModal() {
-    const [tourOpen, setTourOpen] = useState(true);
-    const room = useRoomStore(state => state.room);
-    const isOpen = useModalStore(state => state.isOpen)
-    const closeModal = useModalStore(state => state.close)
-    const { post, data, isLoading } = useApi();
-    const slot = useSlotStore(state => state.slot);
-    const setSlot = useSlotStore(state => state.setSlot);
+function ConfirmModal() {
 
-    const slotRef = useRef();
-    const paymentRef = useRef();
+    const {profile} = useProfile();
 
-    const onPayment = () => {
-        if (isLoading) return;
-        if (!slot) {
-            return;
+    const {selectedRoom, setSelectedRoom, setSelectedSlot, selectedSlot, nextSemester} = useStore();
+
+    const ref = useRef(null);
+
+    useEffect(() => {
+        if (selectedSlot) {
+            ref.current.scrollIntoView();
         }
-        post("/booking/create", {
-            slotId: slot.id
-        });
-    }
-
-    useEffect(() => {
-        if (!data) return;
-        window.location.href = data.paymentUrl;
-    }, [data]);
-
-    const onClose = () => {
-        closeModal();
-        setSlot(null);
-    }
-
-    if (!room) return <></>;
+    }, [selectedSlot]);
 
     return <>
-        <Modal
-            width={"1000px"}
-            title="Xác nhận"
-            closable={{'aria-label': 'Custom Close Button'}}
-            open={isOpen}
-            onOk={onClose}
-            onCancel={onClose}
-            footer={[
-                <Button key="back" onClick={onClose}>Hủy</Button>,
-                <Button ref={paymentRef} loading={isLoading} type={"primary"} key="payment" onClick={onPayment}>Thanh toán</Button>
-            ]}>
-            <div className={"grid grid-cols-2 gap-3"}>
-                <Card title={"Thông tin"}>
-                    <div className={"flex flex-col gap-4"}>
-                        <div className={"grid grid-cols-3"}>
-                            <div>
-                                <div className={"font-medium"}>Phòng</div>
-                                <div>{room.roomNumber}</div>
+        {selectedRoom !== null && selectedSlot !== null && <>
+            <div ref={ref}>
+                <div className={"border border-gray-200 mb-3"}>
+                    <div className={"p-2 bg-gray-100"}>Thông tin sinh viên</div>
+                    <div className={"p-2 grid grid-cols-3"}>
+                        <div>Mã sinh viên:</div>
+                        <div className={"col-span-2"}>{profile.studentId}</div>
+                    </div>
+                </div>
+                <div className={"border border-gray-200  grid grid-cols-3"}>
+                    <div className={"col-span-2 border-r border-gray-200"}>
+                        <div className={"p-2 bg-gray-100"}>Thông tin dịch vụ</div>
+                        <div>
+                            <div className={"p-2 grid grid-cols-3 gap-3"}>
+                                <div>Phòng:</div>
+                                <div className={"col-span-2"}>{selectedRoom.roomNumber}</div>
                             </div>
-                            <div>
-                                <div className={"font-medium"}>Tòa</div>
-                                <div className={"flex items-center gap-1 text-sm text-gray-600 mb-2"}>
-                                    {room.dorm.dormName}
-                                </div>
+                            <div className={"p-2 grid grid-cols-3 gap-3"}>
+                                <div>Dorm:</div>
+                                <div className={"col-span-2"}>{selectedRoom.dorm.dormName}</div>
                             </div>
-                            <div>
-                                <div className={"font-medium"}>Tầng</div>
-                                <div>{room.floor}</div>
+                            <div className={"p-2 grid grid-cols-3 gap-3"}>
+                                <div>Slot:</div>
+                                <div className={"col-span-2"}>{selectedSlot.slotName}</div>
                             </div>
-                        </div>
-                        <div className={"flex flex-col gap-2"}>
-                            <div className={"font-medium"}>Chọn slot</div>
-                            <div ref={slotRef} className={"flex flex-wrap gap-2"}>
-                                {room.slots.sort((a, b) => a.slotName.localeCompare(b.slotName))
-                                    .map(s => <SlotCard
-                                        setSelected={setSlot}
-                                        selected={s.id === slot?.id}
-                                        key={s.id} data={s}/>)}
+                            <div className={"p-2 grid grid-cols-3 gap-3"}>
+                                <div>Loại phòng:</div>
+                                <div className={"col-span-2"}>Phòng {selectedRoom.slots.length} giường</div>
+                            </div>
+                            <div className={"p-2 grid grid-cols-3 gap-3"}>
+                                <div>Kỳ:</div>
+                                <div className={"col-span-2"}>{nextSemester.name}</div>
+                            </div>
+                            <div className={"p-2 grid grid-cols-3 gap-3"}>
+                                <div>Ngày bắt đầu:</div>
+                                <div className={"col-span-2"}>{nextSemester.startDate}</div>
+                            </div>
+                            <div className={"p-2 grid grid-cols-3 gap-3"}>
+                                <div>Ngày kết thúc:</div>
+                                <div className={"col-span-2"}>{nextSemester.endDate}</div>
+                            </div>
+                            <div className={"p-2 grid grid-cols-3 gap-3"}>
+                                <div>Giá:</div>
+                                <div className={"col-span-2"}>{formatPrice(selectedRoom.pricing.price)}</div>
                             </div>
                         </div>
                     </div>
-                </Card>
-                <Card title={"Giá"}>
-                    <div className={"flex gap-1 items-center"}>
-                        <div className={"text-2xl font-medium"}>{formatPrice(room.pricing.price)}</div>
-                        <div>/ tháng</div>
+                    <div className={"flex flex-col"}>
+                        <div className={"p-2 bg-gray-100"}>Thành tiền</div>
+                        <div className={"mt-auto p-2"}>
+                            <div className={""}>Giá điện: {}</div>
+                            <div className={""}>Giá nước: {}</div>
+                            <div
+                                className={"text-xl font-medium text-right"}>{formatPrice(selectedRoom.pricing.price)}</div>
+                        </div>
                     </div>
-                </Card>
+                </div>
             </div>
-        </Modal>
-        <Tour open={tourOpen} onClose={() => setTourOpen(false)} steps={[
-            {
-                title: "Chọn slot",
-                description: "Chọn slot cần đăt",
-                target: () => slotRef.current,
-            },
-            {
-                title: "Thanh toán",
-                description: "Thanh toán slot đã chọn",
-                target: () => paymentRef.current,
-            }
-        ]} />
-    </>;
+        </>}
+    </>
 }
 
-function AuthorizationLayer() {
-    const {get, data, error, isSuccess} = useApi();
-    const navigate = useNavigate();
-    useEffect(() => {
-        if(error) navigate("/");
-    }, [error]);
-    useEffect(() => {
-        get("/booking/current")
-    }, [get]);
-
-    useEffect(() => {
-        if (!isSuccess) return;
-        if (data && data.status === 'UNAVAILABLE') navigate("/booking");
-        if (data && data.status === 'LOCK') navigate("/booking");
-    }, [isSuccess, data, navigate]);
-    
-    if (!isSuccess) return <></>;
-    
-    return <BookingYear1 />
-}
-
-const getMatchingColor = (matching) => {
-    if (matching >= 90) return 'text-green-600';
-    if (matching >= 85) return 'text-blue-600';
-    return 'text-amber-600';
-};
-
-function RoomItem({ data, refs }) {
-    const setRoom = useRoomStore(state => state.setRoom);
-    const openModal = useModalStore(state => state.open);
-
-    const onClick = () => {
-        setRoom(data);
-        openModal();
+function RoomModal() {
+    const {selectedRoom, setSelectedRoom, selectedSlot, setSelectedSlot} = useStore();
+    const onCancel = () => {
+        setSelectedRoom(null);
     }
+    const slots = selectedRoom?.slots;
+    const roomNumber = selectedRoom?.roomNumber;
+    const dormName = selectedRoom?.dorm?.dormName;
 
     return <>
-        <div ref={refs?.allRef} className={"bg-gray-50 rounded-lg p-4 flex flex-col gap-3"}>
-            <div ref={refs?.locationRef}>
-                <div className={"font-medium text-xl"}>{data.roomNumber}</div>
-                <div className={"flex gap-1 items-center text-gray-600"}>
-                    <MapPin size={16}/>
-                    <span>{data.dorm.dormName}, Tầng {data.floor}</span>
-                </div>
+        {selectedRoom !== null && <>
+            <div className={"mb-3 font-medium"}>{dormName} - {roomNumber}</div>
+            <div className={"flex gap-3 flex-wrap"}>
+                {slots.map(s => <div key={s.id}>
+                    <div onClick={() => setSelectedSlot(s)}
+                         className={"rounded-lg flex p-2 border border-gray-200 hover:cursor-pointer hover:shadow-lg transition-all items-center gap-2"}>
+                        <Bed/>{s.slotName}</div>
+                </div>)}
             </div>
-            <div className={"grid grid-cols-2 gap-3"}>
-                <div ref={refs?.priceRef} className={"bg-white rounded-lg p-3"}>
-                    <div>Giá</div>
-                    <div className={"text-xl font-bold"}>{formatPrice(data.pricing.price)}</div>
-                </div>
-                <div ref={refs?.matchingRef} className={"bg-white rounded-lg p-3"}>
-                    <div>Độ phù hợp</div>
-                    <div className={cn("font-bold text-xl", getMatchingColor(data.matching))}>{Math.round((data.matching * 100) / 100).toFixed(2)}%</div>
-                </div>
-                <div className={"bg-white rounded-lg p-3"}>
-                    <div>Số slot còn lại</div>
-                    <div className={"text-xl font-bold"}>{data.slots.filter(slot => slot.status === 'AVAILABLE').length}</div>
-                </div>
-                <div className={"bg-white rounded-lg p-3"}>
-                    <div>Tổng số slot</div>
-                    <div className={"text-xl font-bold"}>{data.totalSlot}</div>
-                </div>
-            </div>
-            <div>
-                <Button onClick={onClick} ref={refs?.detailRef}>Chi tiết</Button>
-            </div>
-        </div>
+        </>}
     </>
-}
-
-function RoomList() {
-    const rooms = useRoomStore(state => state.rooms);
-
-    const setTourOpen = useTourStore(state => state.setIsOpen)
-    const isTourOpen = useTourStore(state => state.isOpen)
-    
-    const allRef = useRef();
-    const detailRef = useRef();
-    const locationRef = useRef();
-    const priceRef = useRef();
-    const matchingRef = useRef();
-
-    if(rooms == null) return <></>;
-
-    if (rooms.length === 0) return <>
-        <Alert message={"Không còn phòng phù hợp với bạn"} />
-    </>;
-
-    return <>
-        <div className={"flex flex-col gap-3"}>
-            <div className={"flex items-center gap-2 p-4 rounded-lg bg-orange-600 text-white"}>
-                <TrendingUp />
-                <div>
-                    <div className={"text-xl"}>Top 5 phòng phù hợp nhất với bạn</div>
-                    <div>Dựa trên khảo sát tính cách</div>
-                </div>
-            </div>
-            <div className={"grid grid-cols-2 gap-3"}>
-                {rooms.map((room, index) => {
-                    if (index === 0) return <RoomItem refs={{
-                        allRef, detailRef, locationRef, priceRef, matchingRef
-                    }} key={room.id} data={room} />
-                    return <RoomItem key={room.id} data={room} />
-                })}
-            </div>
-            <Tour open={isTourOpen} onClose={() => setTourOpen(false)} steps={[
-                {
-                    title: "Phòng",
-                    description: "Thông tin phòng",
-                    target: () => allRef.current,
-                },
-                {
-                    title: "Vị trí phòng",
-                    description: "Vị trí của phòng",
-                    target: () => locationRef.current,
-                },
-                {
-                    title: "Giá phòng",
-                    description: "Giá của phòng",
-                    target: () => priceRef.current,
-                },
-                {
-                    title: "Độ phù hợp",
-                    description: "Độ phù hợp dựa trên khảo sát",
-                    target: () => matchingRef.current,
-                },
-                {
-                    title: "Chi tiết phòng",
-                    description: "Nhấn để xem chi tiết",
-                    target: () => detailRef.current,
-                },
-            ]} />
-        </div>
-    </>
-}
-
-function BookingYear1() {
-    const {get, data, error} = useApi();
-    const setRooms = useRoomStore(state => state.setRooms);
-    const {notification} = App.useApp();
-    useEffect(() => {
-        if(error) notification.error({ message: "Lỗi", description: error.toString() });
-    }, [error, notification]);
-    useEffect(() => {
-        get("/rooms-matching")
-    }, [get]);
-    useEffect(() => {
-        setRooms(data)
-    }, [data, setRooms]);
-    return <>
-        <AppLayout activeSidebar={"booking"}>
-            <Card title={"Đặt phòng"} className={"h-full overflow-auto"}>
-                <div className={"flex flex-col gap-3"}>
-                    <RoomList />
-                    <RoomConfirmModal />
-                </div>
-            </Card>
-        </AppLayout>
-    </>
-}
-
-export default function BookingYear1Page() {
-    return <AuthorizationLayer />
 }

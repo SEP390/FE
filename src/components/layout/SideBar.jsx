@@ -27,7 +27,7 @@ const items = [
         key: "news",
     },
     {
-        label: <Link to={"/booking"}>Đặt phòng</Link>,
+        label: <Link to={"/pages/booking"}>Đặt phòng</Link>,
         icon: <CalendarOutlined />,
         key: "booking",
     },
@@ -37,7 +37,7 @@ const items = [
         key: "map",
     },
     {
-        label: <Link to={"/booking-history"}>Lịch sử đặt phòng</Link>,
+        label: <Link to={"/pages/booking/history"}>Lịch sử đặt phòng</Link>,
         icon: <HistoryOutlined />,
         key: "booking-history",
     },
@@ -47,14 +47,14 @@ const items = [
         key: "survey",
     },
     {
-        label: <Link to={"/payment"}>Lịch sử thanh toán</Link>,
+        label: <Link to={"/pages/invoices"}>Hóa đơn</Link>,
         icon: <DollarOutlined />,
-        key: "payment",
+        key: "invoices",
     },
     {
-        label: <Link to={"/electric-water"}>Hóa đơn điện nước</Link>,
+        label: <Link to={"/pages/ew"}>Hóa đơn điện nước</Link>,
         icon: <ThunderboltOutlined />,
-        key: "electric-water",
+        key: "ew",
     },
     {
         label: <Link to={"/student-info"}>Thông tin sinh viên</Link>,
