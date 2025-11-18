@@ -275,7 +275,7 @@ export function TechnicalRequestDetail() {
                             </Button>
                             {isAcceptedStatus && (
                                 <Button style={{ marginLeft: 8 }} onClick={handleOpenInvoice}>
-                                    Tạo hóa đơn xuất kho
+                                    Tạo  đơn xuất kho
                                 </Button>
                             )}
                         </div>
