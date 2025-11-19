@@ -92,7 +92,7 @@ const managerItems = [
         key: "holiday"
     },
     {
-        label: <Link to={'/manager/invoices'}>Quản lí hóa đơn</Link>,
+        label: <Link to={'/pages/manager/invoice'}>Quản lí hóa đơn</Link>,
         icon: <ThunderboltOutlined/>,
         key: 'manager-invoices'
     }
