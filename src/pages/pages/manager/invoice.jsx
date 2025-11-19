@@ -1,10 +1,27 @@
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useApi} from "../../../hooks/useApi.js";
 import {App, Button, Input, Select, Table, Tag} from "antd";
 import {formatPrice} from "../../../util/formatPrice.js";
 import {Plus} from "lucide-react";
 import {useNavigate} from "react-router-dom";
+import useErrorNotification from "../../../hooks/useErrorNotification.js";
+
+function CancelAction({invoice, fetchInvoices}) {
+    const {post, data, error} = useApi();
+
+    const onClick = () => {
+        post("/invoices/" + invoice.id, {
+            status: "CANCEL"
+        })
+    }
+
+    useEffect(() => {
+        if(data) fetchInvoices()
+    }, [data]);
+
+    return <Button onClick={onClick} type="link">Hủy</Button>
+}
 
 function InvoiceCountLabel({label, count}) {
     return <div
@@ -63,11 +80,16 @@ function InvoiceFilter() {
 function InvoiceTable() {
     const [page, setPage] = useState(0);
     const {get, data, error} = useApi();
-    const {notification} = App.useApp();
+
+    const fetchInvoices = useCallback(() => {
+        get("/invoices", {page});
+    }, [get, page])
+
+    useErrorNotification(error)
 
     useEffect(() => {
-        get("/invoices", {page});
-    }, [get, page]);
+        fetchInvoices()
+    }, [fetchInvoices]);
 
     return <Table bordered dataSource={data ? data.content : []} columns={[
         {
@@ -97,6 +119,12 @@ function InvoiceTable() {
                 if (val === "PENDING") return <Tag>Chưa thanh toán</Tag>
                 if (val === "SUCCESS") return <Tag color={"green"}>Đã thanh toán</Tag>
                 if (val === "CANCEL") return <Tag color={"red"}>Hủy thanh toán</Tag>
+            }
+        },
+        {
+            title: "Action",
+            render: (val, row) => {
+                if (row.status === "PENDING") return <CancelAction invoice={row} fetchInvoices={fetchInvoices} />
             }
         },
     ]} pagination={{

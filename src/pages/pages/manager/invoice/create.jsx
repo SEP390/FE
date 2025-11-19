@@ -12,7 +12,7 @@ function BackButton() {
         lại</Button>
 }
 
-function UserCodeSelect() {
+function UserSelect({value, onChange}) {
     const {get, data} = useApi();
     const [search, setSearch] = useState("");
 
@@ -22,13 +22,12 @@ function UserCodeSelect() {
         })
     }, [get, search]);
 
-    const onChange = (value) => {
-        console.log(value)
-    }
-    return <Select options={data ? data.content.map(item => ({
+    const options = data ? data.content.map(item => ({
         label: `${item.userCode} - ${item.fullName}`,
         value: item.id,
-    })) : []} showSearch onSearch={setSearch} placeholder={"Chọn sinh viên"} onChange={onChange}/>
+    })) : null
+    return <Select value={value} allowClear filterOption={false} options={options} showSearch onSearch={setSearch}
+                   placeholder={"Chọn sinh viên"} onChange={onChange}/>
 }
 
 export default function ManagerCreateInvoice() {
@@ -36,6 +35,12 @@ export default function ManagerCreateInvoice() {
     const onFinish = (value) => {
         post("/invoices", value)
     }
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (data) navigate("/pages/manager/invoice")
+    }, [data, navigate]);
+
     useErrorNotification(error)
     const [form] = Form.useForm()
     return <LayoutManager>
@@ -51,15 +56,13 @@ export default function ManagerCreateInvoice() {
                     labelCol={{span: 5}}
                     className={"w-130"}
                     onFinish={onFinish}
-                    onFinishFailed={null}
-                    autoComplete="off"
                 >
                     <Form.Item
                         label="Sinh viên"
-                        name="userCode"
+                        name="userId"
                         rules={[{required: true, message: 'Bạn phải chọn sinh viên'}]}
                     >
-                        <UserCodeSelect/>
+                        <UserSelect/>
                     </Form.Item>
                     <Form.Item
                         label="Nội dung"
