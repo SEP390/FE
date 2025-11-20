@@ -104,6 +104,7 @@ const routes = [
     {path: "/manager/residents", element: ResidentManagerPage},
     { path: "/manager/resident-detail/:residentId", element: ResidentDetail },
     {path: "/manager/reports", element: ReportManagePage},
+    { path: "/manager/rooms", element: RoomInfoManager },
     {path: "/manager/holidays", element: HolidayManagePage},
     { path: "/manager/invoices", element: InvoiceManager },
     { path: "/manager/invoices/electric", element: ElectricInvoiceAuto },
