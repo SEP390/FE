@@ -2,7 +2,7 @@ import {LayoutGuard} from "../../../components/layout/LayoutGuard.jsx";
 import {App, Button, Card, Input, Popconfirm, Table} from "antd";
 import {useCallback, useEffect, useState} from "react";
 import {useApi} from "../../../hooks/useApi.js";
-import ResidentSelect from "../../../components/ResidentSelect.jsx";
+import {ResidentSelect} from "../../../components/ResidentSelect.jsx";
 
 function CheckinButton({slotId, fetchSlots}) {
     const {post, error, isLoading} = useApi();
