@@ -29,18 +29,26 @@ export function useApi() {
             timeout: 3000,
             signal: abortController.current.signal
         }).then(res => {
-            setState("success");
-            setData(res.data);
-            console.log(res.data)
+            if (res.status === 200) {
+                setState("success");
+                setData(res.data);
+                console.log(res)
+            } else {
+                setState("error");
+                setError(res.message)
+                setErrorData(res.data)
+                console.log(res)
+            }
         }).catch(err => {
             if (err.code === "ERR_CANCELED") {
                 return;
             }
             setState("error");
-            setError(err?.response?.data?.message || err.message);
-            setErrorData(err?.response?.data);
-            console.log(err)
-
+            const errorCode = err?.response?.data?.message || err?.response?.data || err.message
+            const errorData = err?.response?.data
+            setError(errorCode);
+            if (errorData) setErrorData(errorData)
+            console.log(errorCode, errorData)
         }).finally(() => {
             // finish request, clear abort controller
             abortController.current = null;

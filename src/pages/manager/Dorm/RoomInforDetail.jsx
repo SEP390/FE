@@ -1,89 +1,77 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, List, Card, Space, Tag, Divider, Row, Col, Button, Spin, Alert } from 'antd';
+import { Layout, Typography, Card, Row, Col, Spin, Divider } from 'antd';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeftOutlined, UserOutlined } from "@ant-design/icons";
-import { SideBarManager } from '../../../components/layout/SideBarManger.jsx'; // Đảm bảo đường dẫn đúng
-import axiosClient from '../../../api/axiosClient/axiosClient.js'; // Đảm bảo đường dẫn đúng
-import dayjs from 'dayjs'; // Import dayjs
+import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
+import axiosClient from '../../../api/axiosClient/axiosClient.js';
+import dayjs from 'dayjs';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-// === HÀM HỖ TRỢ (đặt bên ngoài component) ===
-// Dịch GenderEnum sang tiếng Việt
+// === HÀM HỖ TRỢ ===
 const translateGender = (gender) => {
     if (gender === 'MALE') return 'Nam';
     if (gender === 'FEMALE') return 'Nữ';
     return 'Khác';
 };
 
-
 // --- COMPONENT CHÍNH ---
 export function RoomInforDetail() {
-    // Lấy roomId từ URL
     const { roomId } = useParams();
-
-    // State cho sidebar
     const activeKey = 'manager-rooms';
     const [collapsed, setCollapsed] = useState(false);
 
-    // State cho dữ liệu và loading/error
+    // State dữ liệu
     const [roomDetails, setRoomDetails] = useState(null);
     const [occupants, setOccupants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // useEffect để gọi API
+    // useEffect gọi API
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             setError(null);
             try {
-                // Gọi API 1: Lấy chi tiết phòng
                 const roomResponsePromise = axiosClient.get(`/rooms/${roomId}`);
-                // Gọi API 2: Lấy danh sách sinh viên
                 const usersResponsePromise = axiosClient.get(`/rooms/${roomId}/users`);
 
-                // Chờ cả hai API hoàn thành
                 const [roomResponse, usersResponse] = await Promise.all([roomResponsePromise, usersResponsePromise]);
 
-
+                // Set Room Info
                 if (roomResponse && roomResponse.data) {
                     setRoomDetails(roomResponse.data);
                 } else {
-                    console.warn("API room details response missing data:", roomResponse);
                     throw new Error("Không tìm thấy thông tin phòng.");
                 }
 
-                if (usersResponse && usersResponse.data) {
-                    if (Array.isArray(usersResponse.data)) {
-                        setOccupants(usersResponse.data);
-                    } else {
-                        console.warn("API users response data is not an array:", usersResponse.data);
-                        setOccupants([]);
-                    }
+                // --- SỬA LỖI ĐẾM SAI TẠI ĐÂY ---
+                // Backend có thể trả về [null], ta cần lọc sạch trước khi set state
+                if (usersResponse && usersResponse.data && Array.isArray(usersResponse.data)) {
+                    // Chỉ giữ lại những user có id hợp lệ
+                    const validUsers = usersResponse.data.filter(u => u && u.id);
+                    setOccupants(validUsers);
                 } else {
                     setOccupants([]);
                 }
 
             } catch (err) {
-                console.error("Lỗi khi tải dữ liệu chi tiết phòng:", err);
-                setError(err.response?.data?.message || err.message || "Đã có lỗi xảy ra khi tải dữ liệu.");
+                console.error("Lỗi tải dữ liệu:", err);
+                setError(err.response?.data?.message || "Đã có lỗi xảy ra khi tải dữ liệu.");
             } finally {
                 setLoading(false);
             }
         };
 
-        if (roomId) {
-            fetchData();
-        } else {
+        if (roomId) fetchData();
+        else {
             setError("ID phòng không hợp lệ.");
             setLoading(false);
         }
-
     }, [roomId]);
 
-    // --- HIỂN THỊ LOADING HOẶC LỖI ---
+    // --- RENDER LOADING ---
     if (loading) {
         return (
             <Layout style={{ minHeight: '100vh' }}>
@@ -101,16 +89,24 @@ export function RoomInforDetail() {
         );
     }
 
+    // --- RENDER ERROR ---
     if (error) {
-        // ... (phần hiển thị lỗi giữ nguyên) ...
         return (
             <Layout style={{ minHeight: '100vh' }}>
-                {/* ... */}
+                <SideBarManager collapsed={collapsed} active={activeKey} />
+                <Layout>
+                    <Header style={{ background: '#fff', padding: '0 24px', height: 80 }}>
+                        <Link to="/manager/rooms"><ArrowLeftOutlined /> Quay lại</Link>
+                    </Header>
+                    <Content style={{ padding: 24 }}>
+                        <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>
+                    </Content>
+                </Layout>
             </Layout>
         );
     }
 
-    // --- HIỂN THỊ DỮ LIỆU ---
+    // --- RENDER MAIN CONTENT ---
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
@@ -127,7 +123,7 @@ export function RoomInforDetail() {
 
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
 
-                    {/* Hiển thị thông tin phòng từ API */}
+                    {/* 1. THÔNG TIN PHÒNG */}
                     <Card title="Thông tin chung" style={{ marginBottom: 20 }}>
                         <Row gutter={24}>
                             <Col xs={24} sm={8}><Text strong>Tòa nhà:</Text> {roomDetails?.dorm?.dormName || 'N/A'}</Col>
@@ -136,7 +132,7 @@ export function RoomInforDetail() {
                         </Row>
                     </Card>
 
-                    {/* Hiển thị danh sách sinh viên từ API */}
+                    {/* 2. DANH SÁCH SINH VIÊN */}
                     <Title level={4} style={{ marginTop: 30 }}>
                         <UserOutlined style={{ marginRight: 8 }} />
                         Danh sách sinh viên đang ở ({occupants.length} người)
@@ -144,29 +140,27 @@ export function RoomInforDetail() {
                     <Divider />
 
                     <Row gutter={[24, 24]}>
-                        {/* === SỬA LẠI PHẦN HIỂN THỊ SINH VIÊN === */}
-                        {occupants.map(student => (
-                            <Col xs={24} sm={12} md={8} lg={6} key={student.id}> {/* Dùng student.id làm key */}
+                        {occupants.map((student, index) => (
+                            <Col xs={24} sm={12} md={8} lg={6} key={student?.id || index}>
                                 <Card
-                                    // Ưu tiên fullName, nếu không có thì dùng username
-                                    title={<Text strong>{student.fullName || student.username || 'N/A'}</Text>}
+                                    title={<Text strong>{student?.fullName || student?.username || 'N/A'}</Text>}
                                     hoverable
                                 >
-                                    <p>Mã SV: <Text copyable>{student.userCode || 'N/A'}</Text></p>
-                                    <p>Email: <Text>{student.email || 'N/A'}</Text></p>
-                                    <p>SĐT: <Text>{student.phoneNumber || 'N/A'}</Text></p> {/* Thêm Số điện thoại */}
-                                    <p>Giới tính: <Text>{translateGender(student.gender)}</Text></p>
-                                    {/* Hiển thị Ngày sinh (đã dùng dayjs) */}
-                                    <p>Ngày sinh: <Text>{student.dob ? dayjs(student.dob).format('DD/MM/YYYY') : 'N/A'}</Text></p>
-                                    {/* <p>Vai trò: <Tag>{student.role || 'N/A'}</Tag></p> */} {/* Hiển thị Role nếu cần */}
+                                    <p>Mã SV: <Text copyable>{student?.userCode || 'N/A'}</Text></p>
+                                    <p>Email: <Text>{student?.email || 'N/A'}</Text></p>
+                                    <p>SĐT: <Text>{student?.phoneNumber || 'N/A'}</Text></p>
+                                    <p>Giới tính: <Text>{translateGender(student?.gender)}</Text></p>
+                                    <p>Ngày sinh: <Text>{student?.dob ? dayjs(student.dob).format('DD/MM/YYYY') : 'N/A'}</Text></p>
                                 </Card>
                             </Col>
                         ))}
-                        {/* === KẾT THÚC SỬA ĐỔI === */}
                     </Row>
 
+                    {/* Thông báo nếu phòng trống */}
                     {occupants.length === 0 && (
-                        <Text type="secondary">Phòng {roomDetails?.roomNumber || 'này'} hiện chưa có sinh viên.</Text>
+                        <div style={{ textAlign: 'center', marginTop: 20, color: '#999' }}>
+                            Phòng này hiện chưa có sinh viên nào.
+                        </div>
                     )}
                 </Content>
             </Layout>

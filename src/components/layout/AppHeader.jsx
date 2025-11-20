@@ -6,7 +6,7 @@ import {useToken} from "../../hooks/useToken.js";
 
 const {Header} = Layout;
 
-export function AppHeader({ toggleSideBar }) {
+export function AppHeader({ toggleSideBar, header }) {
     const navigate = useNavigate();
     const {setToken} = useToken();
 
@@ -17,7 +17,8 @@ export function AppHeader({ toggleSideBar }) {
 
     return <>
         <Header className={"!bg-white p-2"}>
-            <MenuOutlined onClick={toggleSideBar} className={"text-lg cursor-pointer mr-2"}/>
+            <MenuOutlined onClick={toggleSideBar} className={"text-lg cursor-pointer pr-5"}/>
+            {header}
             <div className={"float-right"}>
                 <Popconfirm onConfirm={onLogout} title={"Do you want to logout?"} icon={<LogoutOutlined />}>
                     <Button>Logout</Button>

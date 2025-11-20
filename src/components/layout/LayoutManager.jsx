@@ -5,14 +5,14 @@ import {AppHeader} from "./AppHeader.jsx";
 
 const {Content, Header} = Layout;
 
-export function LayoutManager({active, children}) {
+export function LayoutManager({active, children, header}) {
     const [collapsed, setCollapsed] = useState(false);
 
     return <Layout className={"!h-screen"}>
         <SideBarManager active={active} collapsed={collapsed}/>
         <Layout>
-            <AppHeader toggleSideBar={() => setCollapsed(!collapsed)}/>
-            <Content className={"!overflow-auto h-full p-5 flex flex-col"}>
+            <AppHeader header={header} toggleSideBar={() => setCollapsed(!collapsed)}/>
+            <Content className={"!overflow-auto h-full p-5 flex flex-col *:flex-grow"}>
                 {children}
             </Content>
         </Layout>
