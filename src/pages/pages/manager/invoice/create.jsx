@@ -66,7 +66,7 @@ function InvoiceFormUsers(props) {
 export default function ManagerCreateInvoice() {
     const {post, data, error, isLoading} = useApi()
     const onFinish = (value) => {
-        console.log(value);
+        post("/invoices", value)
     }
     const navigate = useNavigate();
 
@@ -139,7 +139,7 @@ export default function ManagerCreateInvoice() {
                                 <>
                                     <Form.Item label={"Sinh viên"}
                                                rules={[{required: true, message: 'Chưa chọn sinh viên'}]}>
-                                        <Form.List name={"users"}>
+                                        <Form.List initialValue={[undefined]} name={"users"}>
                                             {(fields, {add, remove}) => (
                                                 <>
                                                     {fields.map(({key, name}) => (
