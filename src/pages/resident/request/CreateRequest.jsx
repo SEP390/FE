@@ -137,6 +137,8 @@ export function CreateRequest() {
                                                 <Option value="SECURITY_INCIDENT">Sự cố an ninh</Option>
                                                 <Option value="TECHNICAL_ISSUE">Sự cố kỹ thuật</Option>
                                                 <Option value="POLICY_VIOLATION_REPORT">Báo cáo vi phạm quy định</Option>
+                                                <Option value="CHANGEROOM">Đổi phòng</Option>
+                                                <Option value="ANONYMOUSE">Báo cáo ẩn danh</Option>
                                                 <Option value="OTHER">Khác</Option>
                                             </Select>
                                         </Form.Item>
