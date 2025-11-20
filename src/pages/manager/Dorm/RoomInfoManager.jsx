@@ -4,13 +4,14 @@ import {
     Modal, Form, message, InputNumber
 } from 'antd';
 import {
-    SearchOutlined, EditOutlined, PlusOutlined, DollarCircleOutlined
+    SearchOutlined, EditOutlined, PlusOutlined, DollarCircleOutlined,
+    EyeOutlined // <-- Đã thêm Icon xem chi tiết
 } from "@ant-design/icons";
 import { Link } from 'react-router-dom';
 
 // Import SideBarManager
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
-// Import Component quản lý giá mới (Nhớ chỉnh đường dẫn cho đúng vị trí file bạn tạo ở trên)
+// Import Component quản lý giá mới
 import { RoomPricingModal } from './RoomPricingModal.jsx';
 
 // Import axiosClient
@@ -38,12 +39,8 @@ const roomColumns = [
         title: 'Số phòng',
         dataIndex: 'roomNumber',
         key: 'roomNumber',
-        render: (text, record) => (
-            record?.id ?
-                <Link to={`/manager/room-detail/${record.id}`} style={{ fontWeight: 'bold', color: '#1890ff' }}>
-                    {text || 'N/A'}
-                </Link> : (text || 'N/A')
-        ),
+        // --- ĐÃ BỎ LINK VÀ CHỈ HIỂN THỊ SỐ PHÒNG BÌNH THƯỜNG ---
+        render: (text) => <span style={{ fontWeight: 'bold' }}>{text || 'N/A'}</span>,
     },
     {
         title: 'Số người (Hiện tại/Tối đa)',
@@ -69,8 +66,7 @@ const roomColumns = [
     {
         title: 'Hành động',
         key: 'action',
-        // Render sẽ được gán đè ở logic bên dưới
-        render: () => null,
+        // Sẽ được render động trong finalRoomColumns
     },
 ];
 
@@ -90,7 +86,7 @@ export function RoomInfoManager() {
     const activeKey = 'manager-rooms';
     const [buildings, setBuildings] = useState([]);
     const [roomData, setRoomData] = useState([]);
-    const [pricings, setPricings] = useState([]); // Vẫn cần state này để hiển thị Dropdown chọn giá
+    const [pricings, setPricings] = useState([]);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
 
     // (State Filter)
@@ -107,7 +103,7 @@ export function RoomInfoManager() {
 
     // (State Modal)
     const [isAddBuildingModalVisible, setIsAddBuildingModalVisible] = useState(false);
-    const [isPricingModalVisible, setIsPricingModalVisible] = useState(false); // Chỉ cần toggle modal này
+    const [isPricingModalVisible, setIsPricingModalVisible] = useState(false);
     const [isEditRoomModalVisible, setIsEditRoomModalVisible] = useState(false);
     const [isAddSingleRoomModalVisible, setIsAddSingleRoomModalVisible] = useState(false);
 
@@ -122,7 +118,6 @@ export function RoomInfoManager() {
 
     // --- API CALLS ---
     const fetchPricings = async () => {
-        // Hàm này vẫn cần để lấy data nạp vào <Select> khi Sửa phòng/Thêm phòng
         try { const response = await axiosClient.get('/pricing'); if (response && response.data) setPricings(response.data); }
         catch (error) { console.error("Lỗi tải giá:", error); }
     };
@@ -161,14 +156,21 @@ export function RoomInfoManager() {
             setIsCreatingBuilding(true);
             await axiosClient.post('/dorms', { dormName: values.dormName, totalFloor: values.totalFloor });
             message.success(`Đã tạo tòa nhà "${values.dormName}"!`);
-            setIsAddBuildingModalVisible(false); formBuilding.resetFields(); fetchBuildings();
-        } catch (error) { message.error("Tạo tòa nhà thất bại!"); } finally { setIsCreatingBuilding(false); }
+            setIsAddBuildingModalVisible(false);
+            formBuilding.resetFields();
+            fetchBuildings();
+        } catch (error) {
+            console.error(error);
+            message.error("Tạo tòa nhà thất bại!");
+        } finally {
+            setIsCreatingBuilding(false);
+        }
     };
 
     // Modal SỬA PHÒNG
     const handleShowEditRoomModal = (roomRecord) => {
         setEditingRoom(roomRecord);
-        const currentTotalSlot = roomRecord?.totalSlot ?? record?.pricing?.totalSlot;
+        const currentTotalSlot = roomRecord?.totalSlot ?? roomRecord?.pricing?.totalSlot;
         formEditRoom.setFieldsValue({ totalSlot: currentTotalSlot });
         setIsEditRoomModalVisible(true);
     };
@@ -202,10 +204,30 @@ export function RoomInfoManager() {
         } catch (error) { message.error("Thêm phòng thất bại!"); } finally { setIsAddingSingleRoom(false); }
     };
 
-    // Cột động
+    // Cột động (ĐÃ CẬP NHẬT: Thay chữ Xem chi tiết bằng Icon EyeOutlined)
     const finalRoomColumns = roomColumns.map(col => {
         if (col.key === 'dormName') return { ...col, filters: buildings.map(b => ({ text: b.dormName, value: b.id })) };
-        if (col.key === 'action') return { ...col, render: (text, record) => ( <Space size="middle"> <Button icon={<EditOutlined />} title="Chỉnh sửa phòng" onClick={() => handleShowEditRoomModal(record)} /> </Space> ) };
+        if (col.key === 'action') return {
+            ...col,
+            render: (text, record) => (
+                <Space size="middle">
+                    {/* NÚT XEM CHI TIẾT DẠNG ICON */}
+                    <Link to={`/manager/room-detail/${record.id}`}>
+                        <Button
+                            icon={<EyeOutlined />}
+                            title="Xem chi tiết phòng"
+                            type="text" // Sử dụng type="text" để loại bỏ màu nền và chỉ hiển thị icon
+                        />
+                    </Link>
+                    {/* Nút chỉnh sửa phòng */}
+                    <Button
+                        icon={<EditOutlined />}
+                        title="Chỉnh sửa phòng"
+                        onClick={() => handleShowEditRoomModal(record)}
+                    />
+                </Space>
+            )
+        };
         return col;
     });
 
@@ -229,12 +251,29 @@ export function RoomInfoManager() {
                         <Col><Space>
                             <Button icon={<DollarCircleOutlined />} onClick={() => setIsPricingModalVisible(true)}>Quản lý giá phòng</Button>
                             <Button icon={<PlusOutlined />} onClick={() => setIsAddSingleRoomModalVisible(true)}>Thêm phòng lẻ</Button>
-                            <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddBuildingModalVisible(true)}>Thêm tòa nhà</Button>
+                            {/* === NÚT THÊM TÒA NHÀ === */}
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={() => {
+                                    formBuilding.resetFields();
+                                    setIsAddBuildingModalVisible(true);
+                                }}
+                            >
+                                Thêm tòa nhà
+                            </Button>
                         </Space></Col>
                     </Row>
 
                     {/* MAIN TABLE */}
-                    <Table loading={isGettingRooms} columns={finalRoomColumns} dataSource={roomData} onChange={handleTableChange} pagination={{...pagination, showSizeChanger: true}} bordered />
+                    <Table
+                        loading={isGettingRooms}
+                        columns={finalRoomColumns}
+                        dataSource={roomData}
+                        onChange={handleTableChange}
+                        pagination={{...pagination, showSizeChanger: true}}
+                        bordered
+                    />
                 </Content>
             </Layout>
 
@@ -242,18 +281,36 @@ export function RoomInfoManager() {
             <RoomPricingModal
                 open={isPricingModalVisible}
                 onCancel={() => setIsPricingModalVisible(false)}
-                onDataChange={() => fetchPricings()} // Khi modal thay đổi giá, load lại list pricings cho các Select bên dưới
+                onDataChange={() => fetchPricings()}
             />
 
-            {/* Modal 2: Thêm Tòa Nhà (Giữ nguyên) */}
-            <Modal title="Thêm tòa nhà mới" open={isAddBuildingModalVisible} onOk={handleOkBuilding} onCancel={() => setIsAddBuildingModalVisible(false)} confirmLoading={isCreatingBuilding} destroyOnClose>
+            {/* === MODAL 2: THÊM TÒA NHÀ === */}
+            <Modal
+                title="Thêm tòa nhà mới"
+                open={isAddBuildingModalVisible}
+                onOk={handleOkBuilding}
+                onCancel={() => setIsAddBuildingModalVisible(false)}
+                confirmLoading={isCreatingBuilding}
+            >
                 <Form form={formBuilding} layout="vertical">
-                    <Form.Item name="dormName" label="Tên tòa nhà" rules={[{ required: true }]}> <Input placeholder="Ví dụ: A5..." /> </Form.Item>
-                    <Form.Item name="totalFloor" label="Tổng số tầng" rules={[{ required: true }, { type: 'number', min: 1 }]}> <InputNumber min={1} style={{ width: '100%' }} /> </Form.Item>
+                    <Form.Item
+                        name="dormName"
+                        label="Tên tòa nhà"
+                        rules={[{ required: true, message: 'Vui lòng nhập tên tòa nhà!' }]}
+                    >
+                        <Input placeholder="Ví dụ: A5..." />
+                    </Form.Item>
+                    <Form.Item
+                        name="totalFloor"
+                        label="Tổng số tầng"
+                        rules={[{ required: true, message: 'Vui lòng nhập số tầng!' }, { type: 'number', min: 1, message: 'Phải lớn hơn 0' }]}
+                    >
+                        <InputNumber min={1} style={{ width: '100%' }} />
+                    </Form.Item>
                 </Form>
             </Modal>
 
-            {/* Modal 3: Sửa Phòng (Giữ nguyên) */}
+            {/* Modal 3: Sửa Phòng */}
             <Modal title={`Chỉnh sửa phòng ${editingRoom?.roomNumber || ''}`} open={isEditRoomModalVisible} onOk={handleOkEditRoom} onCancel={() => setIsEditRoomModalVisible(false)} confirmLoading={isUpdatingRoom} destroyOnClose>
                 <Form form={formEditRoom} layout="vertical">
                     <Form.Item name="totalSlot" label="Loại phòng (Số giường tối đa)" rules={[{ required: true }]}>
@@ -264,7 +321,7 @@ export function RoomInfoManager() {
                 </Form>
             </Modal>
 
-            {/* Modal 4: Thêm Phòng Lẻ (Giữ nguyên) */}
+            {/* Modal 4: Thêm Phòng Lẻ */}
             <Modal title="Thêm phòng lẻ" open={isAddSingleRoomModalVisible} onCancel={() => setIsAddSingleRoomModalVisible(false)} footer={null} destroyOnClose >
                 <Form form={formAddSingleRoom} layout="vertical" onFinish={handleAddSingleRoom}>
                     <Form.Item name="dormId" label="Tòa nhà" rules={[{ required: true }]} >
