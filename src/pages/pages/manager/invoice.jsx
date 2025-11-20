@@ -1,16 +1,16 @@
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import {useCallback, useEffect, useState} from "react";
 import {useApi} from "../../../hooks/useApi.js";
-import {App, Button, Input, Select, Table, Tag} from "antd";
+import {Button, Table, Tag} from "antd";
 import {formatPrice} from "../../../util/formatPrice.js";
 import {Plus} from "lucide-react";
 import {useNavigate} from "react-router-dom";
 import useErrorNotification from "../../../hooks/useErrorNotification.js";
-import ResidentSelect from "../../../components/ResidentSelect.jsx";
-import InvoiceTypeSelect from "../../../components/InvoiceTypeSelect.jsx";
-import InvoiceStatusSelect from "../../../components/InvoiceStatusSelect.jsx";
+import {ResidentFilter} from "../../../components/ResidentSelect.jsx";
+import {InvoiceTypeFilter} from "../../../components/InvoiceTypeSelect.jsx";
+import {InvoiceStatusFilter} from "../../../components/InvoiceStatusSelect.jsx";
 import {create} from "zustand";
-import DateRangeSelect from "../../../components/DateRangeSelect.jsx";
+import {DateRangeFilter} from "../../../components/DateRangeSelect.jsx";
 import {formatTime} from "../../../util/formatTime.js";
 
 function CancelAction({invoice, fetchInvoices}) {
@@ -23,7 +23,7 @@ function CancelAction({invoice, fetchInvoices}) {
     }
 
     useEffect(() => {
-        if(data) fetchInvoices()
+        if (data) fetchInvoices()
     }, [data]);
 
     return <Button onClick={onClick} type="link">Hủy</Button>
@@ -70,14 +70,15 @@ function InvoiceFilter() {
             <div>
                 <div className={"font-medium mb-3 text-lg"}>Bộ lọc</div>
                 <div className={"flex gap-3 flex-wrap"}>
-                    <ResidentSelect onChange={setUserId} />
-                    <InvoiceTypeSelect onChange={setType}/>
-                    <InvoiceStatusSelect onChange={setStatus} />
-                    <DateRangeSelect />
+                    <ResidentFilter onChange={setUserId}/>
+                    <InvoiceTypeFilter onChange={setType}/>
+                    <InvoiceStatusFilter onChange={setStatus}/>
+                    <DateRangeFilter/>
                 </div>
             </div>
             <div className={"ml-auto flex gap-3 items-end"}>
-                <Button onClick={() => navigate("/pages/manager/invoice/create")} icon={<Plus size={14}/>}>Tạo hóa đơn</Button>
+                <Button onClick={() => navigate("/pages/manager/invoice/create")} icon={<Plus size={14}/>}>Tạo hóa
+                    đơn</Button>
                 <Button type={"primary"} icon={<Plus size={14}/>}>Tạo hóa đơn điện nước</Button>
             </div>
         </div>
@@ -140,7 +141,7 @@ function InvoiceTable() {
         {
             title: "Action",
             render: (val, row) => {
-                if (row.status === "PENDING") return <CancelAction invoice={row} fetchInvoices={fetchInvoices} />
+                if (row.status === "PENDING") return <CancelAction invoice={row} fetchInvoices={fetchInvoices}/>
             }
         },
     ]} pagination={{

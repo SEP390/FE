@@ -1,10 +1,12 @@
 import {LayoutManager} from "../../../../components/layout/LayoutManager.jsx";
-import {Button, Form, Input, InputNumber, Select} from "antd";
+import {Button, Form, Input, Select} from "antd";
 import {ChevronLeft, Minus, Plus} from "lucide-react";
 import {useNavigate} from "react-router-dom";
 import {useApi} from "../../../../hooks/useApi.js";
 import {useEffect, useState} from "react";
 import useErrorNotification from "../../../../hooks/useErrorNotification.js";
+import PriceInput from "../../../../components/PriceInput.jsx";
+import {RoomSelect} from "../../../../components/RoomSelect.jsx";
 
 function BackButton() {
     const navigate = useNavigate();
@@ -30,10 +32,41 @@ function UserSelect({value, onChange}) {
                    placeholder={"Chọn sinh viên"} onChange={onChange}/>
 }
 
+function InvoiceFormUsers(props) {
+    return <Form.List {...props} name={"users"}>
+        {(fields, {add, remove}) => (
+            <>
+                {fields.map(({key, name, ...restField}) => (
+                    <>
+                        <div className={"flex gap-3"}>
+                            <Form.Item
+                                key={key}
+                                {...restField}
+                                name={[name, 'userId']}
+                                rules={[{
+                                    required: true,
+                                    message: 'Chưa chọn sinh viên'
+                                }]}
+                                className={"flex-grow"}
+                            >
+                                <UserSelect/>
+                            </Form.Item>
+                            <Button onClick={() => remove(name)} type={"dashed"}
+                                    icon={<Minus size={14}/>}></ Button>
+                        </div>
+                    </>
+                ))}
+                <Form.Item><Button onClick={() => add()} type={"dashed"}
+                                   icon={<Plus size={14}/>}>Thêm sinh viên</Button></Form.Item>
+            </>
+        )}
+    </Form.List>
+}
+
 export default function ManagerCreateInvoice() {
     const {post, data, error, isLoading} = useApi()
     const onFinish = (value) => {
-        post("/invoices", value)
+        console.log(value);
     }
     const navigate = useNavigate();
 
@@ -42,7 +75,7 @@ export default function ManagerCreateInvoice() {
     }, [data, navigate]);
 
     useErrorNotification(error)
-    return <LayoutManager>
+    return <LayoutManager header={<span className={"font-medium text-lg"}>Tạo hóa đơn</span>}>
         <div className={"rounded-lg h-full flex flex-col gap-3"}>
             <div className={"p-5 bg-white rounded-lg border border-gray-200 flex gap-3 items-center flex-wrap"}>
                 <BackButton/>
@@ -55,11 +88,33 @@ export default function ManagerCreateInvoice() {
                     className={"w-130"}
                     onFinish={onFinish}
                     initialValues={{
-                        subject: "USER"
+                        subject: "USER",
+                        type: "OTHER"
                     }}
                 >
                     {(fields) => (
                         <>
+                            <Form.Item name={"type"} label={"Loại hóa đơn"}>
+                                <Select allowClear placeholder={"Loại hóa đơn"} options={[
+                                    {
+                                        label: "Điện nước",
+                                        value: "EW",
+                                    },
+                                    {
+                                        label: "Vi phạm",
+                                        value: "VIOLATION",
+                                    },
+                                    {
+                                        label: "Khác",
+                                        value: "OTHER",
+                                    },
+                                ]}/>
+                            </Form.Item>
+                            {fields.type === "EW" && (
+                                <>
+                                    <div className={"mb-3 text-center"}>Tạo hóa điện nước tự động (nếu có)</div>
+                                </>
+                            )}
                             <Form.Item
                                 label="Chủ thể"
                                 name="subject"
@@ -74,6 +129,10 @@ export default function ManagerCreateInvoice() {
                                         label: "Phòng",
                                         value: "ROOM"
                                     },
+                                    {
+                                        label: "Tất cả sinh viên",
+                                        value: "ALL"
+                                    },
                                 ]}/>
                             </Form.Item>
                             {fields.subject === "USER" && (
@@ -83,12 +142,11 @@ export default function ManagerCreateInvoice() {
                                         <Form.List name={"users"}>
                                             {(fields, {add, remove}) => (
                                                 <>
-                                                    {fields.map(({key, name, ...restField}) => (
+                                                    {fields.map(({key, name}) => (
                                                         <>
                                                             <div className={"flex gap-3"}>
                                                                 <Form.Item
                                                                     key={key}
-                                                                    {...restField}
                                                                     name={[name, 'userId']}
                                                                     rules={[{
                                                                         required: true,
@@ -113,29 +171,33 @@ export default function ManagerCreateInvoice() {
                             )}
                             {fields.subject === "ROOM" && (
                                 <>
-                                    <Form.Item label={"Phòng"}
+                                    <Form.Item name={"roomId"} label={"Phòng"}
                                                rules={[{
                                                    required: true,
                                                    message: 'Chưa chọn phòng'
                                                }]}>
-                                        <Input/>
+                                        <RoomSelect/>
                                     </Form.Item>
                                 </>
                             )}
-                            <Form.Item
-                                label="Nội dung"
-                                name="reason"
-                                rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
-                            >
-                                <Input.TextArea placeholder={"Nhập nội dung"}/>
-                            </Form.Item>
-                            <Form.Item
-                                label="Giá tiền"
-                                name="price"
-                                rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
-                            >
-                                <InputNumber className={"!w-full"} placeholder={"Nhập giá tiền"}/>
-                            </Form.Item>
+                            {fields.type !== "EW" && (
+                                <>
+                                    <Form.Item
+                                        label="Nội dung"
+                                        name="reason"
+                                        rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
+                                    >
+                                        <Input.TextArea placeholder={"Nhập nội dung"}/>
+                                    </Form.Item>
+                                    <Form.Item
+                                        label="Giá tiền"
+                                        name="price"
+                                        rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
+                                    >
+                                        <PriceInput/>
+                                    </Form.Item>
+                                </>
+                            )}
                             <Form.Item label={null}>
                                 <Button type="primary" htmlType="submit">
                                     Tạo
