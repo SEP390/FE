@@ -2,6 +2,7 @@ import {LayoutGuard} from "../../../components/layout/LayoutGuard.jsx";
 import {App, Button, Card, Input, Popconfirm, Table} from "antd";
 import {useCallback, useEffect, useState} from "react";
 import {useApi} from "../../../hooks/useApi.js";
+import ResidentSelect from "../../../components/ResidentSelect.jsx";
 
 function CheckinButton({slotId, fetchSlots}) {
     const {post, error, isLoading} = useApi();
@@ -52,8 +53,7 @@ export default function GuardCheckinPage() {
                     <div className={"font-medium mb-3"}>Bộ lọc</div>
                     <div className={"flex gap-3"}>
                         <div>
-                            <Input placeholder={"Mã sinh viên"} onChange={(e) => setUserCode(e.target.value)}
-                                   value={userCode}/>
+                            <ResidentSelect />
                         </div>
                         <div>
                             <Input placeholder={"Phòng"}/>

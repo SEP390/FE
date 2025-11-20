@@ -1,6 +1,6 @@
 import {LayoutManager} from "../../../../components/layout/LayoutManager.jsx";
 import {Button, Form, Input, InputNumber, Select} from "antd";
-import {ChevronLeft} from "lucide-react";
+import {ChevronLeft, Minus, Plus} from "lucide-react";
 import {useNavigate} from "react-router-dom";
 import {useApi} from "../../../../hooks/useApi.js";
 import {useEffect, useState} from "react";
@@ -42,7 +42,6 @@ export default function ManagerCreateInvoice() {
     }, [data, navigate]);
 
     useErrorNotification(error)
-    const [form] = Form.useForm()
     return <LayoutManager>
         <div className={"rounded-lg h-full flex flex-col gap-3"}>
             <div className={"p-5 bg-white rounded-lg border border-gray-200 flex gap-3 items-center flex-wrap"}>
@@ -51,38 +50,99 @@ export default function ManagerCreateInvoice() {
             </div>
             <div className={"p-5 bg-white rounded-lg border border-gray-200 flex gap-3 items-center flex-wrap"}>
                 <Form
-                    form={form}
                     name="basic"
                     labelCol={{span: 5}}
                     className={"w-130"}
                     onFinish={onFinish}
+                    initialValues={{
+                        subject: "USER"
+                    }}
                 >
-                    <Form.Item
-                        label="Sinh viên"
-                        name="userId"
-                        rules={[{required: true, message: 'Bạn phải chọn sinh viên'}]}
-                    >
-                        <UserSelect/>
-                    </Form.Item>
-                    <Form.Item
-                        label="Nội dung"
-                        name="reason"
-                        rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
-                    >
-                        <Input.TextArea placeholder={"Nhập nội dung"}/>
-                    </Form.Item>
-                    <Form.Item
-                        label="Giá tiền"
-                        name="price"
-                        rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
-                    >
-                        <InputNumber className={"!w-full"} placeholder={"Nhập giá tiền"}/>
-                    </Form.Item>
-                    <Form.Item label={null}>
-                        <Button type="primary" htmlType="submit">
-                            Tạo
-                        </Button>
-                    </Form.Item>
+                    {(fields) => (
+                        <>
+                            <Form.Item
+                                label="Chủ thể"
+                                name="subject"
+                                rules={[{required: true, message: 'Bạn phải chọn sinh viên'}]}
+                            >
+                                <Select options={[
+                                    {
+                                        label: "Sinh viên",
+                                        value: "USER"
+                                    },
+                                    {
+                                        label: "Phòng",
+                                        value: "ROOM"
+                                    },
+                                ]}/>
+                            </Form.Item>
+                            {fields.subject === "USER" && (
+                                <>
+                                    <Form.Item label={"Sinh viên"}
+                                               rules={[{required: true, message: 'Chưa chọn sinh viên'}]}>
+                                        <Form.List name={"users"}>
+                                            {(fields, {add, remove}) => (
+                                                <>
+                                                    {fields.map(({key, name, ...restField}) => (
+                                                        <>
+                                                            <div className={"flex gap-3"}>
+                                                                <Form.Item
+                                                                    key={key}
+                                                                    {...restField}
+                                                                    name={[name, 'userId']}
+                                                                    rules={[{
+                                                                        required: true,
+                                                                        message: 'Chưa chọn sinh viên'
+                                                                    }]}
+                                                                    className={"flex-grow"}
+                                                                >
+                                                                    <UserSelect/>
+                                                                </Form.Item>
+                                                                <Button onClick={() => remove(name)} type={"dashed"}
+                                                                        icon={<Minus size={14}/>}></ Button>
+                                                            </div>
+                                                        </>
+                                                    ))}
+                                                    <Form.Item><Button onClick={() => add()} type={"dashed"}
+                                                                       icon={<Plus size={14}/>}>Thêm sinh viên</Button></Form.Item>
+                                                </>
+                                            )}
+                                        </Form.List>
+                                    </Form.Item>
+                                </>
+                            )}
+                            {fields.subject === "ROOM" && (
+                                <>
+                                    <Form.Item label={"Phòng"}
+                                               rules={[{
+                                                   required: true,
+                                                   message: 'Chưa chọn phòng'
+                                               }]}>
+                                        <Input/>
+                                    </Form.Item>
+                                </>
+                            )}
+                            <Form.Item
+                                label="Nội dung"
+                                name="reason"
+                                rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
+                            >
+                                <Input.TextArea placeholder={"Nhập nội dung"}/>
+                            </Form.Item>
+                            <Form.Item
+                                label="Giá tiền"
+                                name="price"
+                                rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
+                            >
+                                <InputNumber className={"!w-full"} placeholder={"Nhập giá tiền"}/>
+                            </Form.Item>
+                            <Form.Item label={null}>
+                                <Button type="primary" htmlType="submit">
+                                    Tạo
+                                </Button>
+                            </Form.Item>
+                        </>
+                    )}
                 </Form>
             </div>
         </div>

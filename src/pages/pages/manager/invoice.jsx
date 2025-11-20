@@ -6,6 +6,12 @@ import {formatPrice} from "../../../util/formatPrice.js";
 import {Plus} from "lucide-react";
 import {useNavigate} from "react-router-dom";
 import useErrorNotification from "../../../hooks/useErrorNotification.js";
+import ResidentSelect from "../../../components/ResidentSelect.jsx";
+import InvoiceTypeSelect from "../../../components/InvoiceTypeSelect.jsx";
+import InvoiceStatusSelect from "../../../components/InvoiceStatusSelect.jsx";
+import {create} from "zustand";
+import DateRangeSelect from "../../../components/DateRangeSelect.jsx";
+import {formatTime} from "../../../util/formatTime.js";
 
 function CancelAction({invoice, fetchInvoices}) {
     const {post, data, error} = useApi();
@@ -47,31 +53,32 @@ function InvoiceCount() {
     </>
 }
 
+const useFilterStore = create(set => ({
+    userId: null,
+    type: null,
+    status: null,
+    setUserId: (userId) => set({userId}),
+    setType: (type) => set({type}),
+    setStatus: (status) => set({status})
+}))
+
 function InvoiceFilter() {
     const navigate = useNavigate();
+    const {setUserId, setStatus, setType} = useFilterStore()
     return <>
-        <div className={"rounded-lg p-5 bg-white border border-gray-200"}>
-            <div className={"font-medium mb-3"}>Bộ lọc</div>
-            <div className={"flex gap-3 flex-wrap"}>
-                <Input className={"!w-30"} placeholder={"Mã sinh viên"}/>
-                <Select placeholder={"Loại hóa đơn"} options={[
-                    {
-                        label: "Đặt phòng",
-                        value: "BOOKING",
-                    },
-                    {
-                        label: "Điện nước",
-                        value: "EW",
-                    },
-                    {
-                        label: "Khác",
-                        value: "OTHER",
-                    },
-                ]}/>
-                <div className={"ml-auto flex gap-3"}>
-                    <Button onClick={() => navigate("/pages/manager/invoice/create")} icon={<Plus size={14}/>}>Tạo hóa đơn</Button>
-                    <Button type={"primary"} icon={<Plus size={14}/>}>Tạo hóa đơn điện nước</Button>
+        <div className={"rounded-lg p-5 bg-white border border-gray-200 flex flex-wrap gap-5"}>
+            <div>
+                <div className={"font-medium mb-3 text-lg"}>Bộ lọc</div>
+                <div className={"flex gap-3 flex-wrap"}>
+                    <ResidentSelect onChange={setUserId} />
+                    <InvoiceTypeSelect onChange={setType}/>
+                    <InvoiceStatusSelect onChange={setStatus} />
+                    <DateRangeSelect />
                 </div>
+            </div>
+            <div className={"ml-auto flex gap-3 items-end"}>
+                <Button onClick={() => navigate("/pages/manager/invoice/create")} icon={<Plus size={14}/>}>Tạo hóa đơn</Button>
+                <Button type={"primary"} icon={<Plus size={14}/>}>Tạo hóa đơn điện nước</Button>
             </div>
         </div>
     </>
@@ -91,10 +98,14 @@ function InvoiceTable() {
         fetchInvoices()
     }, [fetchInvoices]);
 
-    return <Table bordered dataSource={data ? data.content : []} columns={[
+    return <Table className={"overflow-auto"} bordered dataSource={data ? data.content : []} columns={[
         {
             title: "Mã sinh viên",
             dataIndex: ["user", "userCode"],
+        },
+        {
+            title: "Tên sinh viên",
+            dataIndex: ["user", "fullName"],
         },
         {
             title: "Giá",
@@ -104,6 +115,11 @@ function InvoiceTable() {
         {
             title: "Nội dung",
             dataIndex: "reason",
+        },
+        {
+            title: "  Ngày tạo",
+            dataIndex: "createTime",
+            render: (val) => formatTime(val),
         },
         {
             title: "Loại",
@@ -136,7 +152,9 @@ function InvoiceTable() {
 
 export default function ManageInvoicePage() {
 
-    return <LayoutManager>
+    return <LayoutManager header={<>
+        <span className={"font-medium text-lg"}>Quản lý hóa đơn</span>
+    </>}>
         <div className={"rounded-lg h-full flex flex-col gap-3"}>
             <InvoiceCount/>
             <InvoiceFilter/>
