@@ -1,23 +1,24 @@
 import {
-    HomeOutlined,
-    UserOutlined,
-    ThunderboltOutlined,
+    CheckSquareOutlined,
+    CoffeeOutlined,
     ContainerOutlined,
+    FileSearchOutlined,
+    HomeOutlined,
     InfoCircleOutlined,
     ReadOutlined,
-    ScheduleOutlined, // ICON cho Quản lí lịch làm việc
+    ScheduleOutlined,
     TeamOutlined,
+    ThunderboltOutlined,
+    UserOutlined,
     WarningOutlined,
-    FileSearchOutlined,
-    CheckSquareOutlined, CoffeeOutlined,
 } from "@ant-design/icons";
 // CHUẨN HÓA IMPORTS: Import Layout và Menu từ 'antd'
-import { Layout, Menu } from "antd";
-import { Link } from "react-router-dom";
-import { Bed } from "lucide-react";
+import {Layout, Menu} from "antd";
+import {Link} from "react-router-dom";
+import {Bed} from "lucide-react";
 
 // Lấy Sider từ Layout đã import
-const { Sider } = Layout;
+const {Sider} = Layout;
 
 
 const managerItems = [
@@ -98,24 +99,22 @@ const managerItems = [
     }
 ];
 
-export function SideBarManager({ collapsed, active }) {
+export function SideBarManager({collapsed, active}) {
     return (
         <Sider
             trigger={null}
             collapsible
             collapsed={collapsed}
             theme="light"
-            className={"bg-white border-r border-gray-200 overflow-auto scrollbar-*"}
+            className={"relative bg-white border-r border-gray-200 scrollbar-* flex flex-col overflow-auto"}
         >
-            {/* Logo/Brand Area */}
-            <div className="flex items-center justify-center py-4">
-                <Bed size={32} />
+            <div className="sticky bg-white border-b border-r border-gray-100 top-0 py-4 z-99 flex items-center justify-center">
+                <Bed size={32}/>
             </div>
-
             <Menu
                 mode="inline"
                 selectedKeys={[active]}
-                className={"!border-0"}
+                className={"border-0 !z-0"}
                 items={managerItems}
             />
         </Sider>

@@ -13,7 +13,7 @@ export function AppLayout({children, activeSidebar}) {
     }
 
     return <Layout className={"!h-screen"}>
-        <SideBar active={activeSidebar} collapsed={collapsed} />
+        <SideBar active={activeSidebar} collapsed={collapsed} setCollapsed={setCollapsed} />
         <Layout>
             <AppHeader toggleSideBar={toggleSideBar} />
             <Content className={"!overflow-auto h-full p-5 flex flex-col"}>

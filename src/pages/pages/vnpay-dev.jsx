@@ -14,9 +14,9 @@ export default function VNPayDev() {
     const updateStatus = (id, status) => {
         axiosClient({
             method: "POST",
-            url: "/vnpay-dev",
-            params: {
-                id, status
+            url: "/invoices/" + id,
+            data: {
+                status
             }
         }).then(res => {
             get("/invoices")

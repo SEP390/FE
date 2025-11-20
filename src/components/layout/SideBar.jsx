@@ -68,12 +68,14 @@ const items = [
     },
 ];
 
-export function SideBar({ collapsed, active }) {
+export function SideBar({ collapsed, active, setCollapsed }) {
     return (
         <>
             <Sider
                 trigger={null}
                 collapsible
+                breakpoint={"md"}
+                onBreakpoint={(broken) => {console.log("break");setCollapsed(broken)}}
                 collapsed={collapsed}
                 theme="light"
                 className={"bg-white border-r border-gray-200"}

@@ -16,6 +16,9 @@ export default function ResidentSelect({value, onChange}) {
         label: `${item.userCode} - ${item.fullName}`,
         value: item.id,
     })) : null
-    return <Select value={value} allowClear filterOption={false} options={options} showSearch onSearch={setSearch}
-                   placeholder={"Chọn sinh viên"} onChange={onChange}/>
+    return <div className={"flex flex-col gap-2"}>
+        <div className={"text-sm font-medium"}>Sinh viên</div>
+        <Select value={value} onChange={onChange} className={"w-45"} allowClear filterOption={false} options={options} showSearch onSearch={setSearch}
+                        placeholder={"Chọn sinh viên"} />
+    </div>
 }

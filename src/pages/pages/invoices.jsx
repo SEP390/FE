@@ -1,24 +1,31 @@
 import {useEffect} from "react";
-import {Button, Card, Table, Tag} from "antd";
+import {Button, Card, Modal, Table, Tag} from "antd";
 import {create} from 'zustand'
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import axiosClient from "../../api/axiosClient/axiosClient.js";
 import {formatPrice} from "../../util/formatPrice.js";
+import {formatTime} from "../../util/formatTime.js";
+import {useApi} from "../../hooks/useApi.js";
+import useErrorNotification from "../../hooks/useErrorNotification.js";
 
-const useStore = create(set => ({
-    data: null,
-    fetchData: async ({page}) => {
-        const res = await axiosClient("/user/invoices", {
-            params: {
-                page
-            }
-        })
-        console.log(res.data)
-        set({ data: res.data })
-    },
-    page: 0,
-    setPage: (page) => set({page})
+const useInvoiceModalStore = create(set => ({
+    invoice: null,
+    open: (invoice) => set({invoice, isOpen: true}),
+    isOpen: false,
+    close: () => set({invoice: null, isOpen: false}),
 }))
+
+function DetailAction({invoice}) {
+    const {open} = useInvoiceModalStore();
+    return <Button onClick={() => open(invoice)} type={"link"}>Chi tiết</Button>
+}
+
+function InvoiceModal() {
+    const {isOpen, close} = useInvoiceModalStore();
+    return <Modal open={isOpen} onCancel={close} onOk={close}>
+        hello
+    </Modal>
+}
 
 function PaymentAction({invoiceId}) {
     const onClick = async () => {
@@ -36,15 +43,31 @@ function InvoiceDetailModal() {
 
 }
 
+const usePageStore = create(set => ({
+    page: 0,
+    setPage: (page) => set({page}),
+}))
+
 export default function InvoicesPage() {
-    const {data, fetchData, page, setPage} = useStore()
+    const {get, data, error} = useApi();
+
+    const {page, setPage} = usePageStore()
+
     useEffect(() => {
-        fetchData({page,})
-    }, [fetchData, page,]);
+        get("/user/invoices")
+    }, [get]);
+
+    useErrorNotification(error);
 
     return <AppLayout activeSidebar={"invoices"}>
-        <Card title={"Danh sách hóa đơn"} className={"h-full overflow-auto"}>
-            <Table bordered dataSource={data ? data.content : []} columns={[
+        <InvoiceModal />
+        <Card title={"Danh sách hóa đơn"}>
+            <Table className={"overflow-auto"} bordered dataSource={data ? data.content : []} columns={[
+                {
+                    title: "Ngày tạo",
+                    dataIndex: ["createTime"],
+                    render: (val) => formatTime(val),
+                },
                 {
                     title: "Giá",
                     dataIndex: ["price"],
@@ -73,7 +96,9 @@ export default function InvoicesPage() {
                 {
                     title: "Hành động",
                     render: (val, row) => {
-                        if (row.status === "PENDING") return <PaymentAction invoiceId={row.id}/>
+                        const btns = [<DetailAction invoice={row}/>]
+                        if (row.status === "PENDING") btns.push(<PaymentAction invoiceId={row.id}/>)
+                        return btns;
                     }
                 }
             ]} pagination={{
