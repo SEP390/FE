@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
-import { Layout, Typography, Card, Table, Button, Tag, Select, Input, Space, DatePicker } from "antd";
+import { Layout, Typography, Card, Table, Button, Tag,Alert, Select, Input, Space, DatePicker } from "antd";
 import { useNavigate } from "react-router-dom";
 import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
@@ -21,15 +21,23 @@ export function ManagerRequests() {
     const [searchText, setSearchText] = useState("");
     const [dateRange, setDateRange] = useState(null);
     const [quickDateFilter, setQuickDateFilter] = useState("all");
+    const [showAnonymous, setShowAnonymous] = useState(false);
 
     // API call for requests
     const { get: getRequests, data: requestsData, isSuccess: isRequestsSuccess, isComplete: isRequestsComplete, isError: isRequestsError, error: requestsError } = useApi();
 
-    // Fetch requests on mount
+    // Fetch requests based on filter
     useEffect(() => {
-        console.log("Fetching all requests...");
-        getRequests("/requests");
-    }, []);
+        if (typeFilter === 'ANONYMOUS') {
+            console.log("Fetching anonymous requests...");
+            getRequests("/requests/anonymous");
+            setShowAnonymous(true);
+        } else {
+            console.log("Fetching all requests...");
+            getRequests("/requests");
+            setShowAnonymous(false);
+        }
+    }, [typeFilter]);
 
     // Update dataSource when requests are loaded
     useEffect(() => {
@@ -53,15 +61,30 @@ export function ManagerRequests() {
             if (dataArray.length > 0) {
                 // Map dữ liệu từ backend response
                 const formattedData = dataArray.map((item) => {
+                    // For anonymous requests, the structure might be different
+                    if (showAnonymous) {
+                        return {
+                            key: item.requestId || item.id,
+                            requestId: item.requestId || item.id,
+                            requestType: item.requestType || 'ANONYMOUS',
+                            content: item.content,
+                            createdDate: item.createTime || item.createdAt,
+                            status: item.responseStatus || item.status,
+                            isAnonymous: true
+                        };
+                    }
+
+                    // For regular requests
                     return {
                         key: item.requestId,
                         requestId: item.requestId,
                         requestType: item.requestType,
-                        userName: item.userName,
+                        userName: item.residentName,
                         roomName: item.roomName,
                         semester: item.semesterName,
                         createdDate: item.createTime,
                         status: item.responseStatus,
+                        isAnonymous: false
                     };
                 });
 
@@ -80,7 +103,7 @@ export function ManagerRequests() {
     // Handler cho quick date filter
     const handleQuickDateFilterChange = (value) => {
         setQuickDateFilter(value);
-        
+
         if (value === "all") {
             setDateRange(null);
         } else if (value === "today") {
@@ -114,7 +137,7 @@ export function ManagerRequests() {
             const weekAgo = today.subtract(7, 'day');
             const monthAgo = today.subtract(1, 'month');
             const threeMonthsAgo = today.subtract(3, 'month');
-            
+
             if (startDate.isSame(today, 'day') && endDate.isSame(today, 'day')) {
                 setQuickDateFilter("today");
             } else if (startDate.isSame(weekAgo, 'day') && endDate.isSame(today, 'day')) {
@@ -132,28 +155,40 @@ export function ManagerRequests() {
     useEffect(() => {
         let filtered = [...dataSource];
 
-        // Filter by status
-        if (statusFilter !== "all") {
-            filtered = filtered.filter(item => item.status === statusFilter);
-        }
+        // No need to filter by type if we're showing anonymous requests
+        // as we're already getting only anonymous requests from the API
+        if (!showAnonymous) {
+            // Filter by status
+            if (statusFilter !== "all") {
+                filtered = filtered.filter(item => item.status === statusFilter);
+            }
 
-        // Filter by type
-        if (typeFilter !== "all") {
-            filtered = filtered.filter(item => item.requestType === typeFilter);
-        }
+            // Filter by type (only if not showing anonymous requests)
+            if (typeFilter !== "all") {
+                filtered = filtered.filter(item => item.requestType === typeFilter);
+            }
 
-        // Filter by search text (user name)
-        if (searchText) {
-            filtered = filtered.filter(item =>
-                item.userName.toLowerCase().includes(searchText.toLowerCase())
-            );
+            // Filter by search text (user name)
+            if (searchText) {
+                filtered = filtered.filter(item =>
+                    item.userName && item.userName.toLowerCase().includes(searchText.toLowerCase())
+                );
+            }
+        } else {
+            // For anonymous requests, only filter by search text if needed
+            if (searchText) {
+                filtered = filtered.filter(item =>
+                    (item.content && item.content.toLowerCase().includes(searchText.toLowerCase())) ||
+                    (item.requestType && item.requestType.toLowerCase().includes(searchText.toLowerCase()))
+                );
+            }
         }
 
         // Filter by date range
         if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
             const startDate = dayjs(dateRange[0]).startOf('day');
             const endDate = dayjs(dateRange[1]).endOf('day');
-            
+
             filtered = filtered.filter(item => {
                 if (!item.createdDate) return false;
                 const itemDate = dayjs(item.createdDate);
@@ -165,7 +200,7 @@ export function ManagerRequests() {
         }
 
         setFilteredData(filtered);
-    }, [dataSource, statusFilter, typeFilter, searchText, dateRange]);
+    }, [dataSource, statusFilter, typeFilter, searchText, dateRange, showAnonymous]);
 
     // Màu cho trạng thái
     const statusColor = (status) => {
@@ -192,11 +227,13 @@ export function ManagerRequests() {
     // Format request type
     const formatRequestType = (type) => {
         const typeMap = {
-            CHECKOUT: "Trả phòng",
+            CHECKOUT: "Yêu cầu trả phòng",
+            METER_READING_DISCREPANCY: "Kiểm tra sai số điện/nước",
             SECURITY_INCIDENT: "Sự cố an ninh",
-            METER_READING_DISCREPANCY: "Chênh lệch đồng hồ",
-            MAINTENANCE: "Bảo trì",
-            COMPLAINT: "Khiếu nại",
+            TECHNICAL_ISSUE: "Sự cố kỹ thuật",
+            POLICY_VIOLATION_REPORT: "Báo cáo vi phạm quy định",
+            CHANGEROOM: "Yêu cầu đổi phòng",
+            ANONYMOUS: "Yêu cầu ẩn danh",
             OTHER: "Khác"
         };
         return typeMap[type] || type;
@@ -207,87 +244,135 @@ export function ManagerRequests() {
     const uniqueTypes = [...new Set(dataSource.map(item => item.requestType))];
 
     // Cấu hình bảng
-    const columns = [
-        {
-            title: "Student Name",
-            dataIndex: "userName",
-            key: "userName",
-            width: 200,
-            sorter: (a, b) => a.userName.localeCompare(b.userName),
-        },
-        {
-            title: "Room Name",
-            dataIndex: "roomName",
-            key: "roomName",
-            width: 150,
-        },
-        {
-            title: "Request Type",
-            dataIndex: "requestType",
-            key: "requestType",
-            width: 180,
-            render: (type) => formatRequestType(type),
-            filters: uniqueTypes.map(type => ({
-                text: formatRequestType(type),
-                value: type,
-            })),
-            onFilter: (value, record) => record.requestType === value,
-        },
-        {
-            title: "Semester",
-            dataIndex: "semester",
-            key: "semester",
-            width: 150,
-        },
-        {
-            title: "Created Date",
-            dataIndex: "createdDate",
-            key: "createdDate",
-            width: 180,
-            render: (date) => {
-                if (!date) return "N/A";
-                const d = new Date(date);
-                return d.toLocaleString('vi-VN', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+    const getTableColumns = () => {
+        if (showAnonymous) {
+            return [
+                {
+                    title: "Loại yêu cầu",
+                    dataIndex: "requestType",
+                    key: "requestType",
+                    width: 180,
+                    render: (type) => formatRequestType(type),
+                },
+                {
+                    title: "Ngày tạo",
+                    dataIndex: "createdDate",
+                    key: "createdDate",
+                    width: 180,
+                    render: (date) => {
+                        if (!date) return "N/A";
+                        const d = new Date(date);
+                        return d.toLocaleString('vi-VN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    },
+                    sorter: (a, b) => new Date(a.createdDate) - new Date(b.createdDate),
+                },
+                {
+                    title: "Thao tác",
+                    key: "action",
+                    width: 130,
+                    render: (_, record) => (
+                        <Button
+                            type="link"
+                            icon={<EyeOutlined />}
+                            onClick={() => navigate(`/manager/request-detail/${record.requestId}`)}
+                        >
+                            Xem chi tiết
+                        </Button>
+                    ),
+                },
+            ];
+        }
+
+        return [
+            {
+                title: "Tên sinh viên",
+                dataIndex: "userName",
+                key: "userName",
+                width: 200,
+                sorter: (a, b) => a.userName?.localeCompare(b.userName || ''),
             },
-            sorter: (a, b) => new Date(a.createdDate) - new Date(b.createdDate),
-        },
-        {
-            title: "Status",
-            dataIndex: "status",
-            key: "status",
-            width: 160,
-            render: (status) => (
-                <Tag color={statusColor(status)}>
-                    {formatStatus(status)}
-                </Tag>
-            ),
-            filters: uniqueStatuses.map(status => ({
-                text: formatStatus(status),
-                value: status,
-            })),
-            onFilter: (value, record) => record.status === value,
-        },
-        {
-            title: "Action",
-            key: "action",
-            width: 130,
-            render: (_, record) => (
-                <Button
-                    type="link"
-                    icon={<EyeOutlined />}
-                    onClick={() => navigate(`/manager/request-detail/${record.requestId}`)}
-                >
-                    View Details
-                </Button>
-            ),
-        },
-    ];
+            {
+                title: "Phòng",
+                dataIndex: "roomName",
+                key: "roomName",
+                width: 120,
+            },
+            {
+                title: "Loại yêu cầu",
+                dataIndex: "requestType",
+                key: "requestType",
+                width: 180,
+                render: (type) => formatRequestType(type),
+                filters: uniqueTypes.map(type => ({
+                    text: formatRequestType(type),
+                    value: type,
+                })),
+                onFilter: (value, record) => record.requestType === value,
+            },
+            {
+                title: "Học kỳ",
+                dataIndex: "semester",
+                key: "semester",
+                width: 150,
+            },
+            {
+                title: "Ngày tạo",
+                dataIndex: "createdDate",
+                key: "createdDate",
+                width: 180,
+                render: (date) => {
+                    if (!date) return "N/A";
+                    const d = new Date(date);
+                    return d.toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                },
+                sorter: (a, b) => new Date(a.createdDate) - new Date(b.createdDate),
+            },
+            {
+                title: "Trạng thái",
+                dataIndex: "status",
+                key: "status",
+                width: 160,
+                render: (status) => (
+                    <Tag color={statusColor(status)}>
+                        {formatStatus(status)}
+                    </Tag>
+                ),
+                filters: uniqueStatuses.map(status => ({
+                    text: formatStatus(status),
+                    value: status,
+                })),
+                onFilter: (value, record) => record.status === value,
+            },
+            {
+                title: "Thao tác",
+                key: "action",
+                width: 130,
+                render: (_, record) => (
+                    <Button
+                        type="link"
+                        icon={<EyeOutlined />}
+                        onClick={() => navigate(`/manager/request-detail/${record.requestId}`)}
+                    >
+                        Xem chi tiết
+                    </Button>
+                ),
+            },
+        ];
+    };
+
+    const columns = getTableColumns();
 
     const isLoading = !isRequestsComplete;
 
@@ -373,6 +458,29 @@ export function ManagerRequests() {
                                 allowClear
                             />
                             <Select
+                                placeholder="Chọn loại yêu cầu"
+                                style={{ width: 200 }}
+                                onChange={(value) => {
+                                    setTypeFilter(value);
+                                    // Reset other filters when changing type
+                                    if (value !== 'ANONYMOUS') {
+                                        setSearchText('');
+                                        setStatusFilter('all');
+                                    }
+                                }}
+                                value={typeFilter}
+                            >
+                                <Option value="all">Tất cả</Option>
+                                <Option value="CHECKOUT">Trả phòng</Option>
+                                <Option value="SECURITY_INCIDENT">Sự cố an ninh</Option>
+                                <Option value="METER_READING_DISCREPANCY">Chênh lệch đồng hồ</Option>
+                                <Option value="MAINTENANCE">Bảo trì</Option>
+                                <Option value="TECHNICAL_ISSUE">Yêu cầu kỹ thuật</Option>
+                                <Option value="COMPLAINT">Khiếu nại</Option>
+                                <Option value="ANONYMOUS">Yêu cầu ẩn danh</Option>
+                                <Option value="OTHER">Khác</Option>
+                            </Select>
+                            <Select
                                 value={statusFilter}
                                 onChange={setStatusFilter}
                                 style={{ width: 150 }}
@@ -381,18 +489,6 @@ export function ManagerRequests() {
                                 {uniqueStatuses.map(status => (
                                     <Option key={status} value={status}>
                                         {formatStatus(status)}
-                                    </Option>
-                                ))}
-                            </Select>
-                            <Select
-                                value={typeFilter}
-                                onChange={setTypeFilter}
-                                style={{ width: 180 }}
-                            >
-                                <Option value="all">Tất cả loại</Option>
-                                {uniqueTypes.map(type => (
-                                    <Option key={type} value={type}>
-                                        {formatRequestType(type)}
                                     </Option>
                                 ))}
                             </Select>
@@ -411,21 +507,29 @@ export function ManagerRequests() {
                     </Space>
 
                     {/* Bảng danh sách */}
-                    <Table
-                        dataSource={filteredData}
-                        columns={columns}
-                        bordered
-                        pagination={{
-                            pageSize: 10,
-                            showSizeChanger: true,
-                            showQuickJumper: true,
-                            showTotal: (total, range) =>
-                                `${range[0]}-${range[1]} của ${total} yêu cầu`
-                        }}
-                        scroll={{ x: true }}
-                        locale={{ emptyText: "Không tìm thấy yêu cầu" }}
-                        loading={isLoading}
-                    />
+                    <div className="mb-4">
+                        {showAnonymous && (
+                            <Alert
+                                message="Đang hiển thị yêu cầu ẩn danh"
+                                type="info"
+                                showIcon
+                                className="mb-4"
+                            />
+                        )}
+                        <Table
+                            columns={columns}
+                            dataSource={filteredData}
+                            pagination={{ pageSize: 10 }}
+                            scroll={{ x: 1000 }}
+                            rowKey="requestId"
+                            loading={isLoading}
+                            locale={{
+                                emptyText: showAnonymous
+                                    ? 'Không có yêu cầu ẩn danh nào'
+                                    : 'Không có dữ liệu'
+                            }}
+                        />
+                    </div>
                 </Content>
             </Layout>
         </Layout>

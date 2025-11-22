@@ -29,7 +29,7 @@ export function useApi() {
             timeout: 3000,
             signal: abortController.current.signal
         }).then(res => {
-            if (res.status === 200) {
+            if (res.status === 200 || res.status === 201) {
                 setState("success");
                 setData(res.data);
                 console.log(res)

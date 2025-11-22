@@ -1,9 +1,10 @@
-import React, {useState} from "react";
-import { Card, Table, Typography, Layout, Tag, Input, DatePicker, Select, Space, Button } from "antd";
+import React, { useState, useEffect } from "react";
+import { Card, Table, Typography, Layout, Tag, Input, DatePicker, Select, Space, Button, message } from "antd";
 import { SideBarTechnical } from "../../../components/layout/SideBarTechnical.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
 import { SearchOutlined, ReloadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { warehouseItemApi } from "../../../api/Warehouse/warehouseApi.js";
 
 const { Title } = Typography;
 const { Content } = Layout;
@@ -20,59 +21,8 @@ export function WarehouseHistory() {
         dateRange: null
     });
 
-    // Sample data - replace with API call later
-    const [historyData] = useState([
-        {
-            key: 1,
-            date: "2024-01-15 14:30:00",
-            action: "NHẬP",
-            productCode: "IT-001",
-            productName: "Bóng đèn LED",
-            quantity: 50,
-            performedBy: "Nguyễn Văn A",
-            note: "Nhập kho mới đầu tháng"
-        },
-        {
-            key: 2,
-            date: "2024-01-15 15:20:00",
-            action: "XUẤT",
-            productCode: "IT-001",
-            productName: "Bóng đèn LED",
-            quantity: 10,
-            performedBy: "Trần Thị B",
-            note: "Xuất cho phòng 101 - sửa chữa"
-        },
-        {
-            key: 3,
-            date: "2024-01-16 09:15:00",
-            action: "NHẬP",
-            productCode: "IT-002",
-            productName: "Ống nước PPR",
-            quantity: 30,
-            performedBy: "Lê Văn C",
-            note: "Nhập bổ sung vật tư"
-        },
-        {
-            key: 4,
-            date: "2024-01-16 10:45:00",
-            action: "XUẤT",
-            productCode: "IT-002",
-            productName: "Ống nước PPR",
-            quantity: 5,
-            performedBy: "Phạm Thị D",
-            note: "Xuất sửa đường ống tầng 2"
-        },
-        {
-            key: 5,
-            date: "2024-01-17 08:30:00",
-            action: "XUẤT",
-            productCode: "IT-001",
-            productName: "Bóng đèn LED",
-            quantity: 20,
-            performedBy: "Nguyễn Văn A",
-            note: "Xuất thay thế bóng đèn hỏng"
-        },
-    ]);
+    const [loading, setLoading] = useState(false);
+    const [historyData, setHistoryData] = useState([]);
 
     const columns = [
         {
@@ -151,15 +101,46 @@ export function WarehouseHistory() {
         }
     ];
 
+    // Fetch warehouse history data
+    const fetchWarehouseHistory = async () => {
+        try {
+            setLoading(true);
+            const response = await warehouseItemApi.getWarehouseHistory({
+                action: filters.action,
+                search: filters.searchText,
+                startDate: filters.dateRange?.[0]?.format('YYYY-MM-DD'),
+                endDate: filters.dateRange?.[1]?.format('YYYY-MM-DD')
+            });
+            
+            if (response.data) {
+                const formattedData = response.data.map(item => ({
+                    ...item,
+                    key: item.id,
+                    date: item.createdAt || item.updatedAt
+                }));
+                setHistoryData(formattedData);
+            }
+        } catch (error) {
+            console.error('Error fetching warehouse history:', error);
+            message.error('Không thể tải lịch sử kho hàng');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchWarehouseHistory();
+    }, [filters]);
+
     // Filter data based on filters state
     const filteredData = historyData.filter(item => {
         if (filters.action && item.action !== filters.action) return false;
         if (filters.searchText) {
             const searchLower = filters.searchText.toLowerCase();
-            if (!item.productCode.toLowerCase().includes(searchLower) &&
-                !item.productName.toLowerCase().includes(searchLower) &&
-                !item.performedBy.toLowerCase().includes(searchLower) &&
-                !item.note.toLowerCase().includes(searchLower)) {
+            if (!item.productCode?.toLowerCase().includes(searchLower) &&
+                !item.productName?.toLowerCase().includes(searchLower) &&
+                !item.performedBy?.toLowerCase().includes(searchLower) &&
+                !item.note?.toLowerCase().includes(searchLower)) {
                 return false;
             }
         }
@@ -180,6 +161,7 @@ export function WarehouseHistory() {
             searchText: '',
             dateRange: null
         });
+        fetchWarehouseHistory();
     };
 
     return (
@@ -236,16 +218,12 @@ export function WarehouseHistory() {
                                     Tổng số bản ghi: {filteredData.length}
                                 </Typography.Text>
                             </div>
-                            <Table
-                                columns={columns}
-                                dataSource={filteredData}
-                                pagination={{
-                                    pageSize: 10,
-                                    showSizeChanger: true,
-                                    showTotal: (total) => `Tổng ${total} bản ghi`,
-                                    pageSizeOptions: ['10', '20', '50', '100']
-                                }}
-                                scroll={{ x: 1200 }}
+                            <Table 
+                                columns={columns} 
+                                dataSource={filteredData} 
+                                pagination={{ pageSize: 10 }} 
+                                scroll={{ x: true }}
+                                loading={loading}
                             />
                         </Card>
                     </div>

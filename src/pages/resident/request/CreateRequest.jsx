@@ -16,8 +16,9 @@ export function CreateRequest() {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [requestType, setRequestType] = useState(null);
+    const [hasSubmitted, setHasSubmitted] = useState(false);
 
-    const { post, data, isSuccess, isError, error } = useApi();
+    const { post, data, isSuccess, isError, error, errorData, isLoading } = useApi();
     const { currentSemester, loading: semesterLoading, error: semesterError } = useSemester();
 
     const handleSubmit = (values) => {
@@ -31,36 +32,52 @@ export function CreateRequest() {
             content: values.description,
             semesterId: currentSemester.id,
         };
-        
 
         // 🔥 FIX: Nếu là checkout request và có ngày checkout
         if (values.type === "CHECKOUT" && values.checkoutDate) {
-            // Format ngày checkout
             const checkoutTimeStr = values.checkoutDate.format("DD/MM/YYYY");
-            // Tạo content mới với format: thời gian checkout, dòng trống, content user nhập
             payload.content = `Ngày muốn check out: ${checkoutTimeStr}\n\n${values.description}`;
         }
 
         console.log("Đang gửi payload:", payload);
 
+        setHasSubmitted(true);
         setLoading(true);
         post("/requests", payload);
     };
 
+    // 🔥 FIX: Xử lý response - vì axiosClient đã strip status, chỉ cần check có data là success
     useEffect(() => {
-        if (isSuccess && data) {
-            setLoading(false);
-            message.success("Yêu cầu đã được gửi thành công!");
-            navigate("/my-requests");
-        }
-    }, [isSuccess, data, navigate]);
+        console.log("🔍 Effect triggered:", { hasSubmitted, isLoading, data, errorData, isError, error });
 
-    useEffect(() => {
-        if (isError) {
+        if (!hasSubmitted || isLoading) return;
+
+        // Nếu có data hoặc errorData => request đã hoàn thành
+        const responseData = data || errorData;
+
+        if (responseData && !isError) {
+            // Có data và không phải error => Success!
+            console.log("✅ Data received after submit:", responseData);
+
+            message.success({
+                content: 'Yêu cầu đã được tạo thành công!',
+                duration: 2,
+            });
+
+            // Navigate ngay lập tức, không đợi message đóng
+            navigate("/my-requests");
+
+            // Reset state sau khi navigate
             setLoading(false);
+            setHasSubmitted(false);
+        } else if (isError) {
+            // Error - có thể có hoặc không có errorData
+            console.log("❌ Error:", error, errorData);
+            setLoading(false);
+            setHasSubmitted(false);
             message.error(error || "Gửi yêu cầu thất bại.");
         }
-    }, [isError, error]);
+    }, [hasSubmitted, isLoading, data, errorData, isError, error, navigate]);
 
     // 🔥 Khi thay đổi loại request, reset checkoutDate nếu không phải CHECKOUT
     const handleRequestTypeChange = (value) => {
@@ -89,12 +106,13 @@ export function CreateRequest() {
                                 <span className="text-white">Gửi yêu cầu mới</span>
                             </div>
                         }
-                        headStyle={{ background: "#004aad" }}
+                        styles={{ header: { background: "#004aad" } }}
                         className="w-full lg:w-2/3"
                     >
                         {semesterLoading ? (
                             <div className="flex justify-center items-center py-8">
-                                <Spin size="large" tip="Đang tải thông tin học kỳ..." />
+                                <Spin size="large" />
+                                <span className="ml-2">Đang tải thông tin học kỳ...</span>
                             </div>
                         ) : semesterError ? (
                             <Alert
@@ -137,6 +155,8 @@ export function CreateRequest() {
                                                 <Option value="SECURITY_INCIDENT">Sự cố an ninh</Option>
                                                 <Option value="TECHNICAL_ISSUE">Sự cố kỹ thuật</Option>
                                                 <Option value="POLICY_VIOLATION_REPORT">Báo cáo vi phạm quy định</Option>
+                                                <Option value="CHANGEROOM">Đổi phòng</Option>
+                                                <Option value="ANONYMOUS">Báo cáo ẩn danh</Option>
                                                 <Option value="OTHER">Khác</Option>
                                             </Select>
                                         </Form.Item>

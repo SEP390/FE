@@ -1,32 +1,19 @@
-import React, {useEffect, useState} from "react";
-import {SideBarTechnical} from "../../../components/layout/SideBarTechnical.jsx";
-import {AppHeader} from "../../../components/layout/AppHeader.jsx";
-import {
-    App,
-    Button,
-    Card,
-    Descriptions,
-    Form,
-    Input,
-    InputNumber,
-    Layout,
-    Modal,
-    Select,
-    Spin,
-    Tag,
-    Typography
-} from "antd";
-import {useNavigate, useParams} from "react-router-dom";
-import {ArrowLeftOutlined, SaveOutlined} from "@ant-design/icons";
-import {useApi} from "../../../hooks/useApi.js";
+import React, { useState, useEffect } from "react";
+import { SideBarTechnical } from "../../../components/layout/SideBarTechnical.jsx";
+import { AppHeader } from "../../../components/layout/AppHeader.jsx";
+import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Select, Input, InputNumber, message, Modal } from "antd";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
+import { useApi } from "../../../hooks/useApi.js";
+import { warehouseItemApi } from "../../../api/Warehouse/warehouseApi.js";
 
-const {Content} = Layout;
-const {Title} = Typography;
-const {TextArea} = Input;
-const {Option} = Select;
+const { Content } = Layout;
+const { Title } = Typography;
+const { TextArea } = Input;
+const { Option } = Select;
 
 export function TechnicalRequestDetail() {
-    const {requestId} = useParams();
+    const { requestId } = useParams();
     const navigate = useNavigate();
     const [collapsed, setCollapsed] = useState(false);
     const [requestData, setRequestData] = useState(null);
@@ -37,14 +24,12 @@ export function TechnicalRequestDetail() {
     const [invoiceVisible, setInvoiceVisible] = useState(false);
     const [reportForm] = Form.useForm();
     const [invoiceForm] = Form.useForm();
+    const [warehouseItems, setWarehouseItems] = useState([]);
+    const [loadingWarehouse, setLoadingWarehouse] = useState(false);
+    const [exportingStock, setExportingStock] = useState(false);
     const activeKey = 'technical-requests';
-    const inventoryItems = [
-        {value: "Fan", label: "Quạt điện"},
-        {value: "LightBulb", label: "Bóng đèn"},
-        {value: "PowerCable", label: "Dây nguồn"}
-    ];
+
     const isAcceptedStatus = (requestData?.responseStatus || requestData?.requestStatus) === "ACCEPTED";
-    const {notification} = App.useApp();
 
     // API hooks
     const {
@@ -81,6 +66,29 @@ export function TechnicalRequestDetail() {
         isLoading: isUserLoading
     } = useApi();
 
+    // Fetch warehouse items
+    const fetchWarehouseItems = async () => {
+        try {
+            setLoadingWarehouse(true);
+            const response = await warehouseItemApi.getAllWarehouseItems();
+            if (response.data) {
+                const items = response.data.map(item => ({
+                    ...item,
+                    key: item.warehouseItemId,
+                    code: item.warehouseItemId,
+                    name: item.itemName,
+                    quantity: item.quantity,
+                }));
+                setWarehouseItems(items);
+            }
+        } catch (error) {
+            console.error('Error fetching warehouse items:', error);
+            message.error('Không thể tải danh sách kho hàng');
+        } finally {
+            setLoadingWarehouse(false);
+        }
+    };
+
     // Fetch request details on mount
     useEffect(() => {
         if (requestId) {
@@ -88,6 +96,13 @@ export function TechnicalRequestDetail() {
             getRequest(`/requests/${requestId}`);
         }
     }, [requestId]);
+
+    // Fetch warehouse items when opening export modal
+    useEffect(() => {
+        if (invoiceVisible) {
+            fetchWarehouseItems();
+        }
+    }, [invoiceVisible]);
 
     // Handle request data response
     useEffect(() => {
@@ -140,20 +155,20 @@ export function TechnicalRequestDetail() {
     // Handle update response
     useEffect(() => {
         if (isUpdateSuccess && updateResponse) {
-            notification.success({message: "Cập nhật trạng thái request thành công!"});
+            message.success("Cập nhật trạng thái request thành công!");
             setIsUpdating(false);
             // Refresh request data
             getRequest(`/requests/${requestId}`);
         }
-    }, [isUpdateSuccess, updateResponse, requestId, getRequest, notification]);
+    }, [isUpdateSuccess, updateResponse, requestId, getRequest]);
 
     // Handle update error
     useEffect(() => {
         if (isUpdateComplete && !isUpdateSuccess) {
-            notification.error({message: "Có lỗi xảy ra khi cập nhật request!"});
+            message.error("Có lỗi xảy ra khi cập nhật request!");
             setIsUpdating(false);
         }
-    }, [isUpdateComplete, isUpdateSuccess, notification]);
+    }, [isUpdateComplete, isUpdateSuccess]);
 
     // Status color mapping
     const statusColor = (status) => {
@@ -225,38 +240,76 @@ export function TechnicalRequestDetail() {
     // Handle create report response
     useEffect(() => {
         if (isReportCreateSuccess && reportCreateResponse) {
-            notification.success({message: "Tạo report thành công!"});
+            message.success("Tạo report thành công!");
             setReportVisible(false);
             reportForm.resetFields();
         }
-    }, [isReportCreateSuccess, notification, reportCreateResponse, reportForm]);
+    }, [isReportCreateSuccess, reportCreateResponse, reportForm]);
 
     useEffect(() => {
         if (isReportCreateComplete && !isReportCreateSuccess) {
-            notification.error({message: "Tạo report thất bại, vui lòng thử lại!"});
+            message.error("Tạo report thất bại, vui lòng thử lại!");
         }
-    }, [isReportCreateComplete, isReportCreateSuccess, notification]);
+    }, [isReportCreateComplete, isReportCreateSuccess]);
 
     const handleOpenReport = () => {
         setReportVisible(true);
         // preset room name when opening
         if (requestData?.roomName) {
-            reportForm.setFieldsValue({roomName: requestData.roomName});
+            reportForm.setFieldsValue({ roomName: requestData.roomName });
         }
     };
 
     const handleOpenInvoice = () => {
         setInvoiceVisible(true);
-        invoiceForm.setFieldsValue({
-            itemName: inventoryItems[0]?.value,
-            quantity: 1
-        });
+        invoiceForm.resetFields();
     };
 
-    const handleSubmitInvoice = (values) => {
-        console.log("Tạo hóa đơn xuất kho:", values);
-        notification.success({message: "Tạo hóa đơn xuất kho thành công (tạm thời)!"});
-        setInvoiceVisible(false);
+    const handleSubmitInvoice = async (values) => {
+        try {
+            const selectedItem = warehouseItems.find(
+                (item) => item.warehouseItemId === values.warehouseItemId
+            );
+
+            if (!selectedItem) {
+                message.error("Sản phẩm không tồn tại");
+                return;
+            }
+
+            if (values.quantity > selectedItem.quantity) {
+                message.error("Số lượng xuất vượt quá số lượng tồn kho");
+                return;
+            }
+
+            setExportingStock(true);
+
+            await warehouseItemApi.createWarehouseTransaction({
+                itemId: values.warehouseItemId,
+                transactionQuantity: values.quantity,
+                transactionType: 'EXPORT',
+                note: values.reason || `Xuất kho cho request ${requestData?.requestId}`,
+                reportId: null,
+                requestId: requestData?.requestId || null
+            });
+
+            message.success("Xuất kho thành công!");
+            setInvoiceVisible(false);
+            invoiceForm.resetFields();
+        } catch (error) {
+            console.error('Full error:', error);
+
+            if (error?.response?.status === 401) {
+                message.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại");
+            } else if (error?.response?.data?.message) {
+                message.error(error.response.data.message);
+            } else if (error?.response?.data) {
+                message.error(error.response.data);
+            } else if (!error?.errorFields) {
+                message.error("Không thể xuất kho");
+            }
+        } finally {
+            setExportingStock(false);
+        }
     };
 
     const handleSubmitReport = (values) => {
@@ -265,46 +318,46 @@ export function TechnicalRequestDetail() {
         const requestLine = requestData?.requestId ? `\nRequest ID: ${requestData.requestId}` : "";
         const content = `Report từ kỹ thuật\nPhòng: ${requestData?.roomName || values.roomName || "N/A"}\nĐối tượng: ${targetLabel}${requestLine}\n\nGhi chú:\n${values.note || ""}`;
 
-        createReport(`/reports`, {content, type: "MAINTENANCE_REQUEST"});
+        createReport(`/reports`, { content });
     };
 
     return (
-        <Layout style={{minHeight: "100vh"}}>
-            <SideBarTechnical active={activeKey} collapsed={collapsed}/>
+        <Layout style={{ minHeight: "100vh" }}>
+            <SideBarTechnical active={activeKey} collapsed={collapsed} />
             <Layout>
-                <AppHeader toggleSideBar={toggleSideBar}/>
-                <Content style={{margin: "24px", background: "#fff", padding: 24}}>
-                    <div style={{marginBottom: 24, display: "flex", alignItems: "center", gap: "16px"}}>
+                <AppHeader toggleSideBar={toggleSideBar} />
+                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+                    <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: "16px" }}>
                         <Button
-                            icon={<ArrowLeftOutlined/>}
+                            icon={<ArrowLeftOutlined />}
                             onClick={() => navigate("/technical/requests")}
                         >
                             Quay lại
                         </Button>
-                        <Title level={2} style={{margin: 0}}>
+                        <Title level={2} style={{ margin: 0 }}>
                             {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
                         </Title>
-                        <div style={{marginLeft: "auto"}}>
+                        <div style={{ marginLeft: "auto" }}>
                             <Button type="primary" onClick={handleOpenReport}>
                                 Tạo report
                             </Button>
                             {isAcceptedStatus && (
-                                <Button style={{marginLeft: 8}} onClick={handleOpenInvoice}>
-                                    Tạo hóa đơn xuất kho
+                                <Button style={{ marginLeft: 8 }} onClick={handleOpenInvoice}>
+                                    Tạo đơn xuất kho
                                 </Button>
                             )}
                         </div>
                     </div>
 
                     {isRequestLoading && (
-                        <div style={{textAlign: "center", padding: "60px 0"}}>
-                            <Spin size="large"/>
-                            <p style={{marginTop: 16}}>Đang tải thông tin request...</p>
+                        <div style={{ textAlign: "center", padding: "60px 0" }}>
+                            <Spin size="large" />
+                            <p style={{ marginTop: 16 }}>Đang tải thông tin request...</p>
                         </div>
                     )}
 
                     {!isRequestLoading && !requestData && (
-                        <div style={{textAlign: "center", padding: "60px 0"}}>
+                        <div style={{ textAlign: "center", padding: "60px 0" }}>
                             <h2>Không tìm thấy request</h2>
                             <Button type="primary" onClick={() => navigate("/technical/requests")}>
                                 Quay lại danh sách
@@ -325,8 +378,7 @@ export function TechnicalRequestDetail() {
                                             {formatRequestType(requestData.requestType)}
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Trạng thái">
-                                            <Tag
-                                                color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
+                                            <Tag color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
                                                 {formatStatus(requestData.responseStatus || requestData.requestStatus)}
                                             </Tag>
                                         </Descriptions.Item>
@@ -364,19 +416,17 @@ export function TechnicalRequestDetail() {
                                         <Form.Item
                                             label="Trạng thái mới"
                                             name="requestStatus"
-                                            rules={[{required: true, message: 'Vui lòng chọn trạng thái!'}]}
+                                            rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
                                         >
                                             <Select placeholder="Chọn trạng thái">
-
                                                 <Option value="ACCEPTED">Đã kiểm tra</Option>
-
                                             </Select>
                                         </Form.Item>
 
                                         <Form.Item
                                             label="Tin nhắn phản hồi"
                                             name="responseMessage"
-                                            rules={[{required: true, message: 'Vui lòng nhập tin nhắn phản hồi!'}]}
+                                            rules={[{ required: true, message: 'Vui lòng nhập tin nhắn phản hồi!' }]}
                                         >
                                             <TextArea
                                                 rows={4}
@@ -388,10 +438,10 @@ export function TechnicalRequestDetail() {
                                             <Button
                                                 type="primary"
                                                 htmlType="submit"
-                                                icon={<SaveOutlined/>}
+                                                icon={<SaveOutlined />}
                                                 loading={isUpdateLoading}
                                                 block
-                                                style={{backgroundColor: "#1890ff", borderColor: "#1890ff"}}
+                                                style={{ backgroundColor: "#1890ff", borderColor: "#1890ff" }}
                                             >
                                                 Cập nhật trạng thái
                                             </Button>
@@ -429,19 +479,19 @@ export function TechnicalRequestDetail() {
                         <Form
                             layout="vertical"
                             form={reportForm}
-                            initialValues={{roomName: requestData?.roomName}}
+                            initialValues={{ roomName: requestData?.roomName }}
                             onFinish={handleSubmitReport}
                         >
                             <Form.Item label="Phòng" name="roomName">
-                                <Input placeholder="Tên phòng" disabled value={requestData?.roomName}/>
+                                <Input placeholder="Tên phòng" disabled value={requestData?.roomName} />
                             </Form.Item>
 
                             <Form.Item
                                 label="Ghi chú"
                                 name="note"
-                                rules={[{required: true, message: "Vui lòng nhập nội dung báo cáo"}]}
+                                rules={[{ required: true, message: "Vui lòng nhập nội dung ghi chú" }]}
                             >
-                                <TextArea rows={5} placeholder="Nhập nội dung báo cáo"/>
+                                <TextArea rows={5} placeholder="Nhập nội dung ghi chú" />
                             </Form.Item>
 
                             <Form.Item>
@@ -452,8 +502,9 @@ export function TechnicalRequestDetail() {
                         </Form>
                     </Modal>
 
+                    {/* Export Warehouse Modal */}
                     <Modal
-                        title="Tạo hóa đơn xuất kho"
+                        title="Tạo đơn xuất kho"
                         open={invoiceVisible}
                         onCancel={() => setInvoiceVisible(false)}
                         footer={null}
@@ -465,24 +516,53 @@ export function TechnicalRequestDetail() {
                             onFinish={handleSubmitInvoice}
                         >
                             <Form.Item
-                                label="Tên đồ"
-                                name="itemName"
-                                rules={[{required: true, message: "Vui lòng chọn tên đồ"}]}
+                                label="Sản phẩm"
+                                name="warehouseItemId"
+                                rules={[{ required: true, message: "Vui lòng chọn sản phẩm" }]}
                             >
-                                <Select options={inventoryItems} placeholder="Chọn đồ xuất kho"/>
+                                <Select
+                                    placeholder="Chọn sản phẩm"
+                                    showSearch
+                                    optionFilterProp="label"
+                                    loading={loadingWarehouse}
+                                    options={warehouseItems.map((item) => ({
+                                        value: item.warehouseItemId,
+                                        label: `${item.itemName} (Còn: ${item.quantity} ${item.itemUnit})`,
+                                    }))}
+                                />
                             </Form.Item>
 
                             <Form.Item
-                                label="Số lượng"
+                                label="Số lượng xuất"
                                 name="quantity"
-                                rules={[{required: true, message: "Vui lòng nhập số lượng"}]}
+                                rules={[
+                                    { required: true, message: "Vui lòng nhập số lượng" },
+                                    { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" },
+                                    {
+                                        validator: (_, value) => {
+                                            const selectedItemId = invoiceForm.getFieldValue('warehouseItemId');
+                                            const selectedItem = warehouseItems.find(item => item.warehouseItemId === selectedItemId);
+                                            if (selectedItem && value > selectedItem.quantity) {
+                                                return Promise.reject(new Error('Số lượng xuất không được vượt quá số lượng tồn kho'));
+                                            }
+                                            return Promise.resolve();
+                                        },
+                                    },
+                                ]}
                             >
-                                <InputNumber min={1} style={{width: "100%"}}/>
+                                <InputNumber min={1} style={{ width: "100%" }} />
+                            </Form.Item>
+
+                            <Form.Item
+                                label="Lý do xuất"
+                                name="reason"
+                            >
+                                <TextArea rows={3} placeholder={`Xuất kho cho request ${requestData?.requestId || ''}`} />
                             </Form.Item>
 
                             <Form.Item>
-                                <Button type="primary" htmlType="submit" block>
-                                    Cập nhật
+                                <Button type="primary" htmlType="submit" loading={exportingStock} block>
+                                    Xuất kho
                                 </Button>
                             </Form.Item>
                         </Form>
@@ -494,4 +574,3 @@ export function TechnicalRequestDetail() {
 }
 
 export default TechnicalRequestDetail;
-

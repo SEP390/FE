@@ -1,42 +1,86 @@
+import {Layout, Form, Input, Button, message, Select} from "antd";
+import {GuardSidebar} from "../../../components/layout/GuardSidebar.jsx";
+import {AppHeader} from "../../../components/layout/AppHeader.jsx";
 import React, {useState} from "react";
-import { Button, Card, Form, Input, Typography, Layout } from "antd";
-import { SideBarTechnical } from "../../../components/layout/SideBarTechnical.jsx";
-import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-
-const { Title } = Typography;
-const { Content } = Layout;
-
-
+import axios from "axios";
+import {SideBarTechnical} from "../../../components/layout/SideBarTechnical.jsx";
 
 export function TeachnicalCreateReport() {
+    const [collapsed, setCollapsed] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
-    const onSubmit = () => {};
+
+    const toggleSideBar = () => setCollapsed(!collapsed);
+
+    const onFinish = async (values) => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("token");
+
+            await axios.post(
+                "http://localhost:8080/api/reports",
+                {
+                    content: values.content,
+                    createAt: new Date().toISOString(),
+                    reportType: values.reportType
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+            message.success("Tạo báo cáo thành công!");
+            form.resetFields();
+        } catch (err) {
+            console.error(err);
+            message.error("Tạo báo cáo thất bại!");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        <Layout style={{ minHeight: "100vh" }}>
-            <SideBarTechnical active="technical-create-report" />
+        <Layout style={{minHeight: "100vh"}}>
+            <SideBarTechnical collapsed={collapsed} active="technical-create-report"/>
             <Layout>
-                <AppHeader />
-                <Content>
-                    <div className="p-4">
-                        <Title level={3} style={{ marginBottom: 16 }}>Tạo báo cáo kỹ thuật</Title>
-                        <Card>
-                            <Form layout="vertical" form={form} onFinish={onSubmit}>
-                                <Form.Item label="Tiêu đề" name="title" rules={[{ required: true, message: "Nhập tiêu đề" }]}>
-                                    <Input placeholder="Nhập tiêu đề báo cáo" />
-                                </Form.Item>
-                                <Form.Item label="Nội dung" name="content" rules={[{ required: true, message: "Nhập nội dung" }]}>
-                                    <Input.TextArea rows={6} placeholder="Mô tả sự cố, phương án xử lý..." />
-                                </Form.Item>
-                                <Button type="primary" htmlType="submit">Lưu báo cáo</Button>
-                            </Form>
-                        </Card>
-                    </div>
-                </Content>
+                <AppHeader toggleSideBar={toggleSideBar}/>
+                <Layout.Content style={{margin: "24px 16px", padding: 24, background: "#fff"}}>
+                    <Form
+                        form={form}
+                        layout="vertical"
+                        onFinish={onFinish}
+                        style={{maxWidth: 600, margin: "0 auto"}}
+                    >
+                        <Form.Item
+                            label="Loại báo cáo"
+                            name="reportType"
+                            rules={[{required: true, message: "Vui lòng chọn loại báo cáo"}]}
+                        >
+                            <Select placeholder="Chọn loại báo cáo">
+                                <Select.Option value="VIOLATION">Vi phạm nội quy</Select.Option>
+                                <Select.Option value="MAINTENANCE_REQUEST">Yêu cầu bảo trì</Select.Option>
+                                <Select.Option value="SECURITY_ISSUE">Vấn đề an ninh</Select.Option>
+                            </Select>
+                        </Form.Item>
+                        <Form.Item
+                            label="Nội dung báo cáo"
+                            name="content"
+                            rules={[{required: true, message: "Vui lòng nhập nội dung báo cáo"}]}
+                        >
+                            <Input.TextArea rows={6} placeholder="Nhập nội dung báo cáo..." />
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Button type="primary" htmlType="submit" loading={loading}>
+                                Gửi báo cáo
+                            </Button>
+                        </Form.Item>
+                    </Form>
+                </Layout.Content>
             </Layout>
         </Layout>
     );
 }
-
-export default TeachnicalCreateReport;
-
-
