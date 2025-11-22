@@ -1,1 +1,5 @@
 @import "tailwindcss";
+
+.section {
+    @apply rounded-lg border border-gray-200 p-5 bg-white
+}

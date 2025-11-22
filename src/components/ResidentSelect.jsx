@@ -8,9 +8,10 @@ export function ResidentSelect({value, onChange}) {
 
     useEffect(() => {
         get("/residents/search", {
-            userCode: search
+            userCode: !value ? search : undefined,
+            id: value ? value : undefined,
         })
-    }, [get, search]);
+    }, [get, search, value]);
 
     const options = data ? data.content.map(item => ({
         label: `${item.userCode} - ${item.fullName}`,
