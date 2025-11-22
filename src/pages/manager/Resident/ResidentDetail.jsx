@@ -123,7 +123,7 @@ export function ResidentDetail() {
                     </Title>
                 </Header>
 
-                {/* Sửa lại Content: Bỏ nền trắng, thay bằng nền xám nhạt */}
+                {/* Content giữ nguyên */}
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#f0f2f5' }}>
 
                     {/* === 1. THẺ PROFILE HEADER === */}
@@ -162,7 +162,7 @@ export function ResidentDetail() {
                             </Card>
                         </Col>
 
-                        {/* CỘT BÊN PHẢI: Thông tin liên lạc & Phòng */}
+                        {/* CỘT BÊN PHẢI: Thông tin liên lạc (ĐÃ XÓA "Thông tin cư trú" bên dưới) */}
                         <Col xs={24} md={8}>
                             <Card title="Thông tin liên lạc" bordered={false}>
                                 <Descriptions column={1} layout="horizontal">
@@ -171,14 +171,12 @@ export function ResidentDetail() {
                                 </Descriptions>
                             </Card>
 
+                            {/*
+                            // ĐÃ XÓA PHẦN NÀY:
                             <Card title="Thông tin cư trú" bordered={false} style={{ marginTop: 24 }}>
-                                {/* Bạn có thể cập nhật DTO để lấy thông tin phòng ở đây */}
                                 <Text type='secondary'>Chưa có thông tin phòng.</Text>
-                                {/* <Descriptions column={1} layout="horizontal">
-                                    <Descriptions.Item label="Tòa nhà">A1</Descriptions.Item>
-                                    <Descriptions.Item label="Phòng">P.101</Descriptions.Item>
-                                </Descriptions> */}
                             </Card>
+                            */}
                         </Col>
                     </Row>
 
