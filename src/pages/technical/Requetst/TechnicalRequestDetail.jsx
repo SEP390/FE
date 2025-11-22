@@ -5,6 +5,7 @@ import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Select
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
+import { warehouseItemApi } from "../../../api/Warehouse/warehouseApi.js";
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -23,12 +24,11 @@ export function TechnicalRequestDetail() {
     const [invoiceVisible, setInvoiceVisible] = useState(false);
     const [reportForm] = Form.useForm();
     const [invoiceForm] = Form.useForm();
+    const [warehouseItems, setWarehouseItems] = useState([]);
+    const [loadingWarehouse, setLoadingWarehouse] = useState(false);
+    const [exportingStock, setExportingStock] = useState(false);
     const activeKey = 'technical-requests';
-    const inventoryItems = [
-        { value: "Fan", label: "Quạt điện" },
-        { value: "LightBulb", label: "Bóng đèn" },
-        { value: "PowerCable", label: "Dây nguồn" }
-    ];
+
     const isAcceptedStatus = (requestData?.responseStatus || requestData?.requestStatus) === "ACCEPTED";
 
     // API hooks
@@ -66,6 +66,29 @@ export function TechnicalRequestDetail() {
         isLoading: isUserLoading
     } = useApi();
 
+    // Fetch warehouse items
+    const fetchWarehouseItems = async () => {
+        try {
+            setLoadingWarehouse(true);
+            const response = await warehouseItemApi.getAllWarehouseItems();
+            if (response.data) {
+                const items = response.data.map(item => ({
+                    ...item,
+                    key: item.warehouseItemId,
+                    code: item.warehouseItemId,
+                    name: item.itemName,
+                    quantity: item.quantity,
+                }));
+                setWarehouseItems(items);
+            }
+        } catch (error) {
+            console.error('Error fetching warehouse items:', error);
+            message.error('Không thể tải danh sách kho hàng');
+        } finally {
+            setLoadingWarehouse(false);
+        }
+    };
+
     // Fetch request details on mount
     useEffect(() => {
         if (requestId) {
@@ -73,6 +96,13 @@ export function TechnicalRequestDetail() {
             getRequest(`/requests/${requestId}`);
         }
     }, [requestId]);
+
+    // Fetch warehouse items when opening export modal
+    useEffect(() => {
+        if (invoiceVisible) {
+            fetchWarehouseItems();
+        }
+    }, [invoiceVisible]);
 
     // Handle request data response
     useEffect(() => {
@@ -232,16 +262,54 @@ export function TechnicalRequestDetail() {
 
     const handleOpenInvoice = () => {
         setInvoiceVisible(true);
-        invoiceForm.setFieldsValue({
-            itemName: inventoryItems[0]?.value,
-            quantity: 1
-        });
+        invoiceForm.resetFields();
     };
 
-    const handleSubmitInvoice = (values) => {
-        console.log("Tạo hóa đơn xuất kho:", values);
-        message.success("Tạo hóa đơn xuất kho thành công (tạm thời)!");
-        setInvoiceVisible(false);
+    const handleSubmitInvoice = async (values) => {
+        try {
+            const selectedItem = warehouseItems.find(
+                (item) => item.warehouseItemId === values.warehouseItemId
+            );
+
+            if (!selectedItem) {
+                message.error("Sản phẩm không tồn tại");
+                return;
+            }
+
+            if (values.quantity > selectedItem.quantity) {
+                message.error("Số lượng xuất vượt quá số lượng tồn kho");
+                return;
+            }
+
+            setExportingStock(true);
+
+            await warehouseItemApi.createWarehouseTransaction({
+                itemId: values.warehouseItemId,
+                transactionQuantity: values.quantity,
+                transactionType: 'EXPORT',
+                note: values.reason || `Xuất kho cho request ${requestData?.requestId}`,
+                reportId: null,
+                requestId: requestData?.requestId || null
+            });
+
+            message.success("Xuất kho thành công!");
+            setInvoiceVisible(false);
+            invoiceForm.resetFields();
+        } catch (error) {
+            console.error('Full error:', error);
+
+            if (error?.response?.status === 401) {
+                message.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại");
+            } else if (error?.response?.data?.message) {
+                message.error(error.response.data.message);
+            } else if (error?.response?.data) {
+                message.error(error.response.data);
+            } else if (!error?.errorFields) {
+                message.error("Không thể xuất kho");
+            }
+        } finally {
+            setExportingStock(false);
+        }
     };
 
     const handleSubmitReport = (values) => {
@@ -275,7 +343,7 @@ export function TechnicalRequestDetail() {
                             </Button>
                             {isAcceptedStatus && (
                                 <Button style={{ marginLeft: 8 }} onClick={handleOpenInvoice}>
-                                    Tạo  đơn xuất kho
+                                    Tạo đơn xuất kho
                                 </Button>
                             )}
                         </div>
@@ -351,9 +419,7 @@ export function TechnicalRequestDetail() {
                                             rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
                                         >
                                             <Select placeholder="Chọn trạng thái">
-
                                                 <Option value="ACCEPTED">Đã kiểm tra</Option>
-
                                             </Select>
                                         </Form.Item>
 
@@ -436,8 +502,9 @@ export function TechnicalRequestDetail() {
                         </Form>
                     </Modal>
 
+                    {/* Export Warehouse Modal */}
                     <Modal
-                        title="Tạo hóa đơn xuất kho"
+                        title="Tạo đơn xuất kho"
                         open={invoiceVisible}
                         onCancel={() => setInvoiceVisible(false)}
                         footer={null}
@@ -449,24 +516,53 @@ export function TechnicalRequestDetail() {
                             onFinish={handleSubmitInvoice}
                         >
                             <Form.Item
-                                label="Tên đồ"
-                                name="itemName"
-                                rules={[{ required: true, message: "Vui lòng chọn tên đồ" }]}
+                                label="Sản phẩm"
+                                name="warehouseItemId"
+                                rules={[{ required: true, message: "Vui lòng chọn sản phẩm" }]}
                             >
-                                <Select options={inventoryItems} placeholder="Chọn đồ xuất kho" />
+                                <Select
+                                    placeholder="Chọn sản phẩm"
+                                    showSearch
+                                    optionFilterProp="label"
+                                    loading={loadingWarehouse}
+                                    options={warehouseItems.map((item) => ({
+                                        value: item.warehouseItemId,
+                                        label: `${item.itemName} (Còn: ${item.quantity} ${item.itemUnit})`,
+                                    }))}
+                                />
                             </Form.Item>
 
                             <Form.Item
-                                label="Số lượng"
+                                label="Số lượng xuất"
                                 name="quantity"
-                                rules={[{ required: true, message: "Vui lòng nhập số lượng" }]}
+                                rules={[
+                                    { required: true, message: "Vui lòng nhập số lượng" },
+                                    { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" },
+                                    {
+                                        validator: (_, value) => {
+                                            const selectedItemId = invoiceForm.getFieldValue('warehouseItemId');
+                                            const selectedItem = warehouseItems.find(item => item.warehouseItemId === selectedItemId);
+                                            if (selectedItem && value > selectedItem.quantity) {
+                                                return Promise.reject(new Error('Số lượng xuất không được vượt quá số lượng tồn kho'));
+                                            }
+                                            return Promise.resolve();
+                                        },
+                                    },
+                                ]}
                             >
                                 <InputNumber min={1} style={{ width: "100%" }} />
                             </Form.Item>
 
+                            <Form.Item
+                                label="Lý do xuất"
+                                name="reason"
+                            >
+                                <TextArea rows={3} placeholder={`Xuất kho cho request ${requestData?.requestId || ''}`} />
+                            </Form.Item>
+
                             <Form.Item>
-                                <Button type="primary" htmlType="submit" block>
-                                    Cập nhật
+                                <Button type="primary" htmlType="submit" loading={exportingStock} block>
+                                    Xuất kho
                                 </Button>
                             </Form.Item>
                         </Form>
@@ -478,4 +574,3 @@ export function TechnicalRequestDetail() {
 }
 
 export default TechnicalRequestDetail;
-
