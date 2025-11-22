@@ -73,7 +73,7 @@ export function ManagerRequests() {
                             isAnonymous: true
                         };
                     }
-                    
+
                     // For regular requests
                     return {
                         key: item.requestId,
@@ -103,7 +103,7 @@ export function ManagerRequests() {
     // Handler cho quick date filter
     const handleQuickDateFilterChange = (value) => {
         setQuickDateFilter(value);
-        
+
         if (value === "all") {
             setDateRange(null);
         } else if (value === "today") {
@@ -137,7 +137,7 @@ export function ManagerRequests() {
             const weekAgo = today.subtract(7, 'day');
             const monthAgo = today.subtract(1, 'month');
             const threeMonthsAgo = today.subtract(3, 'month');
-            
+
             if (startDate.isSame(today, 'day') && endDate.isSame(today, 'day')) {
                 setQuickDateFilter("today");
             } else if (startDate.isSame(weekAgo, 'day') && endDate.isSame(today, 'day')) {
@@ -188,7 +188,7 @@ export function ManagerRequests() {
         if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
             const startDate = dayjs(dateRange[0]).startOf('day');
             const endDate = dayjs(dateRange[1]).endOf('day');
-            
+
             filtered = filtered.filter(item => {
                 if (!item.createdDate) return false;
                 const itemDate = dayjs(item.createdDate);
@@ -227,11 +227,12 @@ export function ManagerRequests() {
     // Format request type
     const formatRequestType = (type) => {
         const typeMap = {
-            CHECKOUT: "Trả phòng",
+            CHECKOUT: "Yêu cầu trả phòng",
+            METER_READING_DISCREPANCY: "Kiểm tra sai số điện/nước",
             SECURITY_INCIDENT: "Sự cố an ninh",
-            METER_READING_DISCREPANCY: "Chênh lệch đồng hồ",
-            MAINTENANCE: "Bảo trì",
-            COMPLAINT: "Khiếu nại",
+            TECHNICAL_ISSUE: "Sự cố kỹ thuật",
+            POLICY_VIOLATION_REPORT: "Báo cáo vi phạm quy định",
+            CHANGEROOM: "Yêu cầu đổi phòng",
             ANONYMOUS: "Yêu cầu ẩn danh",
             OTHER: "Khác"
         };
@@ -247,14 +248,14 @@ export function ManagerRequests() {
         if (showAnonymous) {
             return [
                 {
-                    title: "Request Type",
+                    title: "Loại yêu cầu",
                     dataIndex: "requestType",
                     key: "requestType",
                     width: 180,
                     render: (type) => formatRequestType(type),
                 },
                 {
-                    title: "Created Date",
+                    title: "Ngày tạo",
                     dataIndex: "createdDate",
                     key: "createdDate",
                     width: 180,
@@ -272,7 +273,7 @@ export function ManagerRequests() {
                     sorter: (a, b) => new Date(a.createdDate) - new Date(b.createdDate),
                 },
                 {
-                    title: "Action",
+                    title: "Thao tác",
                     key: "action",
                     width: 130,
                     render: (_, record) => (
@@ -281,7 +282,7 @@ export function ManagerRequests() {
                             icon={<EyeOutlined />}
                             onClick={() => navigate(`/manager/request-detail/${record.requestId}`)}
                         >
-                            View Details
+                            Xem chi tiết
                         </Button>
                     ),
                 },
@@ -290,20 +291,20 @@ export function ManagerRequests() {
 
         return [
             {
-                title: "Student Name",
+                title: "Tên sinh viên",
                 dataIndex: "userName",
                 key: "userName",
                 width: 200,
                 sorter: (a, b) => a.userName?.localeCompare(b.userName || ''),
             },
             {
-                title: "Room",
+                title: "Phòng",
                 dataIndex: "roomName",
                 key: "roomName",
                 width: 120,
             },
             {
-                title: "Request Type",
+                title: "Loại yêu cầu",
                 dataIndex: "requestType",
                 key: "requestType",
                 width: 180,
@@ -315,13 +316,13 @@ export function ManagerRequests() {
                 onFilter: (value, record) => record.requestType === value,
             },
             {
-                title: "Semester",
+                title: "Học kỳ",
                 dataIndex: "semester",
                 key: "semester",
                 width: 150,
             },
             {
-                title: "Created Date",
+                title: "Ngày tạo",
                 dataIndex: "createdDate",
                 key: "createdDate",
                 width: 180,
@@ -339,7 +340,7 @@ export function ManagerRequests() {
                 sorter: (a, b) => new Date(a.createdDate) - new Date(b.createdDate),
             },
             {
-                title: "Status",
+                title: "Trạng thái",
                 dataIndex: "status",
                 key: "status",
                 width: 160,
@@ -355,7 +356,7 @@ export function ManagerRequests() {
                 onFilter: (value, record) => record.status === value,
             },
             {
-                title: "Action",
+                title: "Thao tác",
                 key: "action",
                 width: 130,
                 render: (_, record) => (
@@ -364,7 +365,7 @@ export function ManagerRequests() {
                         icon={<EyeOutlined />}
                         onClick={() => navigate(`/manager/request-detail/${record.requestId}`)}
                     >
-                        View Details
+                        Xem chi tiết
                     </Button>
                 ),
             },
@@ -474,6 +475,7 @@ export function ManagerRequests() {
                                 <Option value="SECURITY_INCIDENT">Sự cố an ninh</Option>
                                 <Option value="METER_READING_DISCREPANCY">Chênh lệch đồng hồ</Option>
                                 <Option value="MAINTENANCE">Bảo trì</Option>
+                                <Option value="TECHNICAL_ISSUE">Yêu cầu kỹ thuật</Option>
                                 <Option value="COMPLAINT">Khiếu nại</Option>
                                 <Option value="ANONYMOUS">Yêu cầu ẩn danh</Option>
                                 <Option value="OTHER">Khác</Option>
@@ -522,8 +524,8 @@ export function ManagerRequests() {
                             rowKey="requestId"
                             loading={isLoading}
                             locale={{
-                                emptyText: showAnonymous 
-                                    ? 'Không có yêu cầu ẩn danh nào' 
+                                emptyText: showAnonymous
+                                    ? 'Không có yêu cầu ẩn danh nào'
                                     : 'Không có dữ liệu'
                             }}
                         />
