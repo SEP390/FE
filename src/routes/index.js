@@ -53,6 +53,8 @@ import {StaffDetailPage} from "../pages/manager/Staff/StaffDetailPage.jsx";
 import {GuardViewReport} from "../pages/guard/Report/GuardViewReport.jsx";
 import {CleanerViewReport} from "../pages/cleaner/report/CleanerViewReport.jsx";
 import {TechnicianViewReport} from "../pages/technical/report/TechnicianViewReport.jsx";
+import {RoomInfoGuard} from "../pages/guard/Dorm/RoomInfoGuard.jsx";
+import {RoomInforDetailGuard} from "../pages/guard/Dorm/RoomInforDetailGuard.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -68,12 +70,10 @@ const routes = [
 
     // router dành cho guard //
     { path: "/electric-water", element: ElectricWaterBillPage },
-    // { path: "/guard/electric-water", element: GuardElectricWaterPage },
     { path: "/guard/reports", element: GuardViewReport },
-
-    // === THAY ĐỔI ĐƯỜNG DẪN TẠI ĐÂY ===
-    // { path: "/guard/schedule", element: GuardSchedule }, // Đường dẫn cũ
-    { path: "/guard/schedule", element: StaffAttendancePage }, // Đường dẫn mới trỏ đến trang chấm công
+    { path: "/guard/schedule", element: StaffAttendancePage },
+    { path: "/guard/rooms", element: RoomInfoGuard },
+    { path: "/guard/room-detail/:roomId", element: RoomInforDetailGuard },
     // === KẾT THÚC THAY ĐỔI ===
 
     { path: "/guard/requests", element: GuardViewRequest },
