@@ -58,7 +58,16 @@ export const warehouseItemApi = {
             throw error;
         }
     },
-
+    // Get all warehouse transactions
+    getAllWarehouseTransaction: async () => {
+        try {
+            const response = await axiosClient.get(TRANSACTION_RESOURCE);
+            return response;
+        } catch (error) {
+            console.error('Error fetching warehouse transactions:', error);
+            throw error;
+        }
+    },
     // Create warehouse transaction (import/export)
     createWarehouseTransaction: async (transactionData) => {
         try {
