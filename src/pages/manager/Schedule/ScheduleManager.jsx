@@ -69,7 +69,7 @@ export function ScheduleManager() {
                 axiosClient.get('/employees'),
                 axiosClient.get('/shifts'),
                 axiosClient.get('/dorms'),
-                axiosClient.get('/semesters')
+                axiosClient.get('/semesters', { params: { page: 0, size: 1000 } })
             ]);
 
             setStaffs(staffRes.data || []);
@@ -81,7 +81,12 @@ export function ScheduleManager() {
             }));
             setShifts(formattedShifts);
             setDorms(dormRes.data || []);
-            setSemesters(semesterRes?.content?.data || []);
+
+            // SỬA LỖI CUỐI CÙNG: Truy cập đúng cấu trúc BaseResponse.content
+            // (Vì PagedModel được đặt ngay tại field "data" của BaseResponse)
+            const semesterData = semesterRes?.data?.content || [];
+            setSemesters(semesterData);
+
         } catch (error) {
             console.error("Lỗi dependencies:", error);
             message.error("Không thể tải dữ liệu hệ thống.");
@@ -137,6 +142,7 @@ export function ScheduleManager() {
     const handleUpdateSchedule = async (values) => {
         setLoading(true);
         try {
+            // Dùng dormID (D hoa) để khớp với Backend DTO (Do không muốn sửa BE)
             const payload = {
                 shiftId: values.shiftId,
                 dormID: values.dormId,
@@ -149,6 +155,54 @@ export function ScheduleManager() {
             setEditingSchedule(null);
         } catch (error) {
             message.error("Cập nhật thất bại: " + (error.response?.data?.message || error.message));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCreateSchedule = async (values, isRecurring = false) => {
+        setLoading(true);
+        let payload = {};
+
+        // --- TẠO LỊCH ĐỊNH KỲ (Recurring) ---
+        if (isRecurring) {
+            // Ép kiểu ID sang String khi tìm kiếm để khớp với giá trị Form Select
+            const selectedSemester = semesters.find(s => String(s.id) === String(values.semesterId));
+            if (!selectedSemester) { message.error("Chọn kỳ học!"); setLoading(false); return; }
+
+            const repeatedDays = values.repeatDays.map(String);
+
+            payload = {
+                employeeId: values.employeeId, shiftId: values.shiftId, dormId: values.dormId,
+                semesterId: values.semesterId, from: selectedSemester.startDate, to: selectedSemester.endDate,
+                repeatDays: repeatedDays,
+                note: values.note,
+            };
+        }
+        // --- TẠO LỊCH NGÀY LẺ (Single Date) ---
+        else {
+            const date = dayjs(selectedDate);
+            const selectedSemester = semesters.find(s => date.isSameOrAfter(s.startDate) && date.isSameOrBefore(s.endDate));
+
+            if (!selectedSemester) {
+                message.error(`Ngày ${selectedDate} không thuộc kỳ nào. Vui lòng thêm/kiểm tra dữ liệu Kỳ học.`);
+                setLoading(false);
+                return;
+            }
+
+            payload = {
+                employeeId: values.employeeId, shiftId: values.shiftId, dormId: values.dormId,
+                semesterId: selectedSemester.id, singleDate: selectedDate, note: values.note,
+            };
+        }
+
+        try {
+            await axiosClient.post('/schedules', payload);
+            message.success('Tạo lịch thành công!');
+            fetchSchedule(currentMonth);
+            if (isRecurring) setIsRecurringModalVisible(false); else setIsSingleModalVisible(false);
+        } catch (error) {
+            message.error(`Lỗi: ` + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
@@ -210,39 +264,6 @@ export function ScheduleManager() {
     };
     const onPanelChange = (value) => setCurrentMonth(value);
 
-    const handleCreateSchedule = async (values, isRecurring = false) => {
-        setLoading(true);
-        let payload = {};
-        if (isRecurring) {
-            const selectedSemester = semesters.find(s => s.id === values.semesterId);
-            if (!selectedSemester) { message.error("Chọn kỳ học!"); setLoading(false); return; }
-            payload = {
-                employeeId: values.employeeId, shiftId: values.shiftId, dormId: values.dormId,
-                semesterId: values.semesterId, from: selectedSemester.startDate, to: selectedSemester.endDate,
-                repeatDays: values.repeatDays, note: values.note,
-            };
-        } else {
-            const date = dayjs(selectedDate);
-            const selectedSemester = semesters.find(s => date.isSameOrAfter(s.startDate) && date.isSameOrBefore(s.endDate));
-            if (!selectedSemester) { message.error(`Ngày ${selectedDate} không thuộc kỳ nào.`); setLoading(false); return; }
-            payload = {
-                employeeId: values.employeeId, shiftId: values.shiftId, dormId: values.dormId,
-                semesterId: selectedSemester.id, singleDate: selectedDate, note: values.note,
-            };
-        }
-
-        try {
-            await axiosClient.post('/schedules', payload);
-            message.success('Tạo lịch thành công!');
-            fetchSchedule(currentMonth);
-            if (isRecurring) setIsRecurringModalVisible(false); else setIsSingleModalVisible(false);
-        } catch (error) {
-            message.error(`Lỗi: ` + (error.response?.data?.message || error.message));
-        } finally {
-            setLoading(false);
-        }
-    };
-
     // --- GIAO DIỆN ---
     return (
         <Layout style={{ minHeight: '100vh' }}>
@@ -277,7 +298,7 @@ export function ScheduleManager() {
 
                                     {/* BỘ LỌC KỲ HỌC */}
                                     <Select placeholder="Lọc kỳ học" style={{ width: 180 }} allowClear onChange={setFilterSemesterId}>
-                                        {semesters.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}
+                                        {semesters.map(s => <Option key={String(s.id)} value={String(s.id)}>{s.name}</Option>)}
                                     </Select>
 
                                     {/* BỘ LỌC TÒA NHÀ */}
@@ -287,12 +308,12 @@ export function ScheduleManager() {
                                         allowClear
                                         onChange={setFilterDormId}
                                     >
-                                        {dorms.map(d => <Option key={d.id} value={d.id}>{d.dormName}</Option>)}
+                                        {dorms.map(d => <Option key={String(d.id)} value={String(d.id)}>{d.dormName}</Option>)}
                                     </Select>
 
                                     {/* BỘ LỌC NHÂN VIÊN */}
                                     <Select placeholder="Lọc nhân viên" style={{ width: 200 }} allowClear showSearch optionFilterProp="children" onChange={setFilterEmployeeId}>
-                                        {staffs.map(s => <Option key={s.employeeId} value={s.employeeId}>{s.username} <Tag style={{marginLeft:5, fontSize:10}}>{s.role}</Tag></Option>)}
+                                        {staffs.map(s => <Option key={String(s.employeeId)} value={String(s.employeeId)}>{s.username} <Tag style={{marginLeft:5, fontSize:10}}>{s.role}</Tag></Option>)}
                                     </Select>
                                 </Space>
                             </Col>
@@ -370,14 +391,14 @@ export function ScheduleManager() {
                     <Row gutter={16} style={{ marginTop: 10, borderTop: '1px dashed #d9d9d9', paddingTop: 10 }}>
                         <Col span={24}>
                             <Form.Item name="semesterId" label="Áp dụng cho kỳ học" rules={[{ required: true }]}>
-                                <Select placeholder="Chọn kỳ học">
-                                    {semesters.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}
+                                {/* Ép buộc ID thành chuỗi */}
+                                <Select placeholder="Chọn kỳ học" notFoundContent={loadingDependencies ? <Spin size="small" /> : "Không có dữ liệu"}>
+                                    {semesters.map(s => <Option key={String(s.id)} value={String(s.id)}>{s.name}</Option>)}
                                 </Select>
                             </Form.Item>
                         </Col>
                         <Col span={24}>
                             <Form.Item name="repeatDays" label="Lặp lại" rules={[{ required: true }]}>
-                                {/* === SỬA PHẦN NÀY THÀNH TIẾNG VIỆT === */}
                                 <CheckboxGroup
                                     options={[
                                         { label: 'Thứ 2', value: 'MONDAY' },
@@ -420,14 +441,14 @@ export function ScheduleManager() {
                         <Col span={12}>
                             <Form.Item name="shiftId" label="Ca làm việc" rules={[{ required: true, message: 'Chọn ca' }]}>
                                 <Select placeholder="Chọn ca">
-                                    {shifts.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}
+                                    {shifts.map(s => <Option key={String(s.id)} value={String(s.id)}>{s.name}</Option>)}
                                 </Select>
                             </Form.Item>
                         </Col>
                         <Col span={12}>
                             <Form.Item name="dormId" label="Khu vực (KTX)" rules={[{ required: true, message: 'Chọn KTX' }]}>
                                 <Select placeholder="Chọn khu vực">
-                                    {dorms.map(d => <Option key={d.id} value={d.id}>{d.dormName}</Option>)}
+                                    {dorms.map(d => <Option key={String(d.id)} value={String(d.id)}>{d.dormName}</Option>)}
                                 </Select>
                             </Form.Item>
                         </Col>
@@ -464,7 +485,7 @@ const CommonScheduleForm = ({ staffs, shifts, dorms }) => {
                 <Col span={12}>
                     <Form.Item name="employeeId" label={<><UserOutlined /> Nhân viên</>} rules={[{ required: true }]}>
                         <Select placeholder="Chọn nhân viên" showSearch optionFilterProp="children">
-                            {filteredStaffs.map(s => <Option key={s.employeeId} value={s.employeeId}>{s.username} <Tag style={{fontSize:10}}>{s.role}</Tag></Option>)}
+                            {staffs.map(s => <Option key={String(s.employeeId)} value={String(s.employeeId)}>{s.username} <Tag style={{fontSize:10}}>{s.role}</Tag></Option>)}
                         </Select>
                     </Form.Item>
                 </Col>
@@ -473,14 +494,14 @@ const CommonScheduleForm = ({ staffs, shifts, dorms }) => {
                 <Col span={12}>
                     <Form.Item name="shiftId" label={<><ClockCircleOutlined /> Ca làm việc</>} rules={[{ required: true }]}>
                         <Select placeholder="Chọn ca">
-                            {shifts.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}
+                            {shifts.map(s => <Option key={String(s.id)} value={String(s.id)}>{s.name}</Option>)}
                         </Select>
                     </Form.Item>
                 </Col>
                 <Col span={12}>
                     <Form.Item name="dormId" label={<><EnvironmentOutlined /> Khu vực (KTX)</>} rules={[{ required: true }]}>
                         <Select placeholder="Chọn khu vực">
-                            {dorms.map(d => <Option key={d.id} value={d.id}>{d.dormName}</Option>)}
+                            {dorms.map(d => <Option key={String(d.id)} value={String(d.id)}>{d.dormName}</Option>)}
                         </Select>
                     </Form.Item>
                 </Col>
