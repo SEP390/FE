@@ -1,249 +1,261 @@
-import { Layout, Typography, Calendar, Card, Tag, Space, Row, Col } from "antd";
-import { ScheduleOutlined, ClockCircleOutlined, UserOutlined, EnvironmentOutlined } from "@ant-design/icons";
-import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
-import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { useState } from "react";
-import dayjs from "dayjs";
+import React, { useState, useEffect } from 'react';
+import {
+    Layout, Typography, Calendar, Tag, Space, message, Spin, Row, Col, Select
+} from 'antd';
+import {
+    ClockCircleOutlined, UserOutlined, EnvironmentOutlined, FilterOutlined
+} from "@ant-design/icons";
+import { GuardSidebar } from '../../../components/layout/GuardSidebar.jsx';
+import axiosClient from '../../../api/axiosClient/axiosClient.js';
+import dayjs from 'dayjs';
 
-const { Content, Header } = Layout;
+// --- CẤU HÌNH DAYJS ---
+import isBetween from 'dayjs/plugin/isBetween';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+dayjs.extend(isBetween);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+
+const { Header, Content } = Layout;
 const { Title, Text } = Typography;
+const { Option } = Select;
 
-// Dữ liệu fix cứng cho lịch làm việc
-const mockScheduleData = {
-    '2025-01-20': [
-        { 
-            id: 1, 
-            shiftName: 'Ca Sáng', 
-            time: '06:00 - 14:00', 
-            dorm: 'Dorm A', 
-            guard: 'Nguyễn Văn A',
-            status: 'completed'
-        },
-    ],
-    '2025-01-21': [
-        { 
-            id: 2, 
-            shiftName: 'Ca Chiều', 
-            time: '14:00 - 22:00', 
-            dorm: 'Dorm A', 
-            guard: 'Nguyễn Văn A',
-            status: 'upcoming'
-        },
-    ],
-    '2025-01-22': [
-        { 
-            id: 3, 
-            shiftName: 'Ca Đêm', 
-            time: '22:00 - 06:00', 
-            dorm: 'Dorm B', 
-            guard: 'Nguyễn Văn A',
-            status: 'upcoming'
-        },
-    ],
-    '2025-01-23': [
-        { 
-            id: 4, 
-            shiftName: 'Ca Sáng', 
-            time: '06:00 - 14:00', 
-            dorm: 'Dorm A', 
-            guard: 'Nguyễn Văn A',
-            status: 'upcoming'
-        },
-    ],
-    '2025-01-24': [
-        { 
-            id: 5, 
-            shiftName: 'Ca Chiều', 
-            time: '14:00 - 22:00', 
-            dorm: 'Dorm A', 
-            guard: 'Nguyễn Văn A',
-            status: 'upcoming'
-        },
-    ],
-    '2025-01-25': [
-        { 
-            id: 6, 
-            shiftName: 'Ca Sáng', 
-            time: '06:00 - 14:00', 
-            dorm: 'Dorm C', 
-            guard: 'Nguyễn Văn A',
-            status: 'upcoming'
-        },
-    ],
-};
-
-// Render nội dung cho từng ngày trong calendar
-function dateCellRender(value) {
-    const dateKey = value.format('YYYY-MM-DD');
-    const listData = mockScheduleData[dateKey] || [];
-
-    return (
-        <ul className="events" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {listData.map((item) => {
-                let tagColor = 'default';
-                if (item.status === 'completed') tagColor = 'success';
-                else if (item.status === 'upcoming') tagColor = 'processing';
-                else if (item.status === 'current') tagColor = 'warning';
-
-                return (
-                    <li key={item.id} style={{ marginBottom: 4 }}>
-                        <Tag 
-                            color={tagColor}
-                            style={{ 
-                                whiteSpace: 'normal', 
-                                cursor: 'pointer', 
-                                maxWidth: '100%',
-                                fontSize: '11px',
-                                padding: '2px 6px'
-                            }}
-                            title={`${item.shiftName} - ${item.time} - ${item.dorm}`}
-                        >
-                            {item.shiftName} - {item.dorm}
-                        </Tag>
-                    </li>
-                );
-            })}
-        </ul>
-    );
-}
-
-// Component hiển thị chi tiết ca làm việc được chọn
-function ShiftDetailCard({ selectedDate, scheduleData }) {
-    if (!selectedDate || !scheduleData) {
-        return (
-            <Card>
-                <Text type="secondary">Chọn một ngày để xem chi tiết lịch làm việc</Text>
-            </Card>
-        );
-    }
-
-    const dateKey = selectedDate.format('YYYY-MM-DD');
-    const shifts = mockScheduleData[dateKey] || [];
-
-    if (shifts.length === 0) {
-        return (
-            <Card>
-                <Text type="secondary">Không có ca làm việc vào ngày {selectedDate.format('DD/MM/YYYY')}</Text>
-            </Card>
-        );
-    }
-
-    return (
-        <Card title={`Lịch làm việc ngày ${selectedDate.format('DD/MM/YYYY')}`}>
-            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                {shifts.map((shift) => {
-                    let statusColor = 'default';
-                    let statusText = 'Chưa xác định';
-                    
-                    if (shift.status === 'completed') {
-                        statusColor = 'success';
-                        statusText = 'Đã hoàn thành';
-                    } else if (shift.status === 'upcoming') {
-                        statusColor = 'processing';
-                        statusText = 'Sắp tới';
-                    } else if (shift.status === 'current') {
-                        statusColor = 'warning';
-                        statusText = 'Đang làm việc';
-                    }
-
-                    return (
-                        <Card 
-                            key={shift.id} 
-                            size="small"
-                            style={{ 
-                                borderLeft: `4px solid ${
-                                    shift.status === 'completed' ? '#52c41a' : 
-                                    shift.status === 'upcoming' ? '#1890ff' : 
-                                    shift.status === 'current' ? '#faad14' : '#d9d9d9'
-                                }` 
-                            }}
-                        >
-                            <Row gutter={[16, 8]}>
-                                <Col span={24}>
-                                    <Space>
-                                        <ClockCircleOutlined />
-                                        <Text strong>{shift.shiftName}</Text>
-                                        <Tag color={statusColor}>{statusText}</Tag>
-                                    </Space>
-                                </Col>
-                                <Col span={24}>
-                                    <Space>
-                                        <Text type="secondary">Thời gian:</Text>
-                                        <Text>{shift.time}</Text>
-                                    </Space>
-                                </Col>
-                                <Col span={24}>
-                                    <Space>
-                                        <EnvironmentOutlined />
-                                        <Text type="secondary">Khu vực:</Text>
-                                        <Text>{shift.dorm}</Text>
-                                    </Space>
-                                </Col>
-                                <Col span={24}>
-                                    <Space>
-                                        <UserOutlined />
-                                        <Text type="secondary">Bảo vệ:</Text>
-                                        <Text>{shift.guard}</Text>
-                                    </Space>
-                                </Col>
-                            </Row>
-                        </Card>
-                    );
-                })}
-            </Space>
-        </Card>
-    );
-}
-
+// --- COMPONENT CHÍNH ---
 export function GuardSchedule() {
-    const [collapsed, setCollapsed] = useState(false);
-    const [selectedDate, setSelectedDate] = useState(dayjs());
+    // Layout State
+    const [collapsed] = useState(false);
     const activeKey = 'guard-schedule';
 
-    const toggleSideBar = () => {
-        setCollapsed(!collapsed);
+    // Data States
+    const [scheduleData, setScheduleData] = useState({});
+    const [loading, setLoading] = useState(false);
+
+    // Guard Info State
+    const [guardId, setGuardId] = useState(null);
+    const [guardInfo, setGuardInfo] = useState(null);
+    const [loadingInfo, setLoadingInfo] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Filter State
+    const [currentMonth, setCurrentMonth] = useState(dayjs());
+    // [KHÔNG DÙNG NỮA] const [filterDormId, setFilterDormId] = useState(undefined);
+
+    // --- 1. FETCH USER INFO VÀ DORM ID ---
+    const fetchGuardInfo = async () => {
+        setLoadingInfo(true);
+        setError(null);
+
+        try {
+            // Dùng endpoint đã được xác nhận là chính xác: /users/profile
+            const response = await axiosClient.get('/users/profile');
+            const userData = response.data;
+
+            // SỬA LỖI LOGIC: Lấy ID từ StudentId hoặc username (DÙNG TẠM VÌ THIẾU UUID)
+            const employeeId = userData?.StudentId || userData?.username;
+
+            if (employeeId) {
+                setGuardId(String(employeeId));
+                setGuardInfo(userData);
+                // [KHÔNG DÙNG NỮA] if (userData?.dormId) { setFilterDormId(userData.dormId); }
+            } else {
+                setError("Lỗi cấu trúc dữ liệu: Response API không chứa trường ID người dùng.");
+                message.error("Lỗi cấu trúc dữ liệu người dùng.");
+            }
+
+        } catch (error) {
+            console.error("Lỗi tải thông tin cá nhân:", error);
+            const status = error.response?.status;
+
+            if (status === 401 || status === 403) {
+                setError(`Lỗi xác thực (${status}). Vui lòng kiểm tra quyền truy cập của tài khoản Guard.`);
+            } else {
+                setError(error.message);
+            }
+            message.error("Không thể tải thông tin Bảo vệ!");
+        } finally {
+            setLoadingInfo(false);
+        }
     };
 
-    const onSelect = (value) => {
-        setSelectedDate(value);
+    // --- 2. FETCH SCHEDULE DỰA TRÊN GUARD ID ---
+    const fetchSchedule = async (dateObj, employeeId) => {
+        if (!employeeId) return;
+
+        setLoading(true);
+        const from = dateObj.startOf('month').format('YYYY-MM-DD');
+        const to = dateObj.endOf('month').format('YYYY-MM-DD');
+
+        try {
+            // Gửi employeeId cố định của Bảo vệ và size lớn để lấy hết lịch
+            const response = await axiosClient.get(`/schedules`, {
+                params: { from, to, employeeId: employeeId, size: 1000 }
+            });
+
+            // Xử lý an toàn cấu trúc Response
+            const listSchedules = response.data?.data?.content || response.data?.data || response.data || [];
+
+            const schedulesArray = Array.isArray(listSchedules) ? listSchedules :
+                (listSchedules.content ? listSchedules.content : []);
+
+            const dataByDate = {};
+            if (Array.isArray(schedulesArray)) {
+                schedulesArray.forEach(item => {
+                    const dateKey = item.workDate;
+                    if (dateKey) {
+                        if (!dataByDate[dateKey]) dataByDate[dateKey] = [];
+                        dataByDate[dateKey].push(item);
+                    }
+                });
+            }
+            setScheduleData(dataByDate);
+        } catch (error) {
+            console.error("Lỗi tải lịch:", error);
+            message.error("Không thể tải lịch làm việc!");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const dateKey = selectedDate.format('YYYY-MM-DD');
-    const scheduleData = mockScheduleData[dateKey] || [];
+    useEffect(() => { fetchGuardInfo(); }, []);
+    useEffect(() => { fetchSchedule(currentMonth, guardId); }, [currentMonth, guardId]);
 
+
+    // --- 3. RENDER Ô LỊCH ---
+    const cellRender = (value) => {
+        const dateKey = value.format('YYYY-MM-DD');
+        const listData = scheduleData[dateKey] || [];
+
+        // Không cần lọc theo dormId nữa, chỉ hiển thị lịch cá nhân
+        const filteredListData = listData;
+
+        return (
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {filteredListData.map((item) => {
+                    const simpleShiftName = item.shiftName.split('(')[0].trim();
+                    return (
+                        <li key={item.scheduleId} style={{ marginBottom: 2 }}>
+                            <Tag
+                                color="green"
+                                style={{
+                                    width: '100%', margin: 0,
+                                    fontSize: '11px', padding: '0 4px', border: 'none',
+                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                }}
+                                title={`Ca: ${item.shiftName}\nKhu: ${item.dormName}`}
+                            >
+                                <ClockCircleOutlined style={{ marginRight: 4 }} />
+                                <b>{simpleShiftName}</b> ({item.dormName})
+                            </Tag>
+                        </li>
+                    )
+                })}
+            </ul>
+        );
+    };
+
+    const onPanelChange = (value) => setCurrentMonth(value);
+
+    // --- XỬ LÝ TRẠNG THÁI LOADING VÀ ERROR ---
+    if (loadingInfo) {
+        return (
+            <Spin size="large" style={{ display: 'block', margin: '50px auto' }} />
+        );
+    }
+
+    if (error) {
+        return (
+            <Layout style={{ minHeight: '100vh' }}>
+                <GuardSidebar collapsed={collapsed} active={activeKey} />
+                <div style={{ padding: 50, textAlign: 'center', margin: 'auto', background: '#fff' }}>
+                    <Title level={4} style={{ color: 'red' }}>Lỗi tải thông tin!</Title>
+                    <Text type="danger">{error}</Text>
+                    <p style={{ marginTop: 15 }}>Vui lòng kiểm tra kết nối hoặc đảm bảo tài khoản của bạn có quyền truy cập endpoint này.</p>
+                </div>
+            </Layout>
+        );
+    }
+
+    // --- RENDER MAIN CONTENT ---
     return (
-        <Layout className={"!h-screen"}>
-            <GuardSidebar active={activeKey} collapsed={collapsed} />
+        <Layout style={{ minHeight: '100vh' }}>
+            <GuardSidebar collapsed={collapsed} active={activeKey} />
             <Layout>
-                <AppHeader toggleSideBar={toggleSideBar} />
-                <Content className={"!overflow-auto h-full p-5 flex flex-col gap-4"}>
-                    <Card>
-                        <Title level={2}>
-                            <ScheduleOutlined /> Lịch làm việc
-                        </Title>
-                        <Text type="secondary">
-                            Xem lịch làm việc và thông tin ca làm việc của bạn
-                        </Text>
-                    </Card>
+                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 64, display: 'flex', alignItems: 'center' }}>
+                    <Title level={3} style={{ margin: 0 }}>Lịch làm việc Cá nhân</Title>
+                </Header>
 
-                    <Row gutter={16}>
-                        <Col span={16}>
-                            <Card>
-                                <Calendar
-                                    dateCellRender={dateCellRender}
-                                    onSelect={onSelect}
-                                    value={selectedDate}
-                                    style={{ border: '1px solid #f0f0f0', borderRadius: 4 }}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={8}>
-                            <ShiftDetailCard selectedDate={selectedDate} scheduleData={scheduleData} />
-                        </Col>
-                    </Row>
+                <Content style={{ margin: '16px', padding: 24, background: '#fff' }}>
+                    <Spin spinning={loading}>
+
+                        {/* --- THÔNG TIN VÀ CHỌN THÁNG/NĂM --- */}
+                        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+                            <Col>
+                                <Space direction="vertical" size={2}>
+                                    <Text strong><UserOutlined /> Bảo vệ: {guardInfo?.fullName || guardInfo?.username || 'N/A'}</Text>
+                                    {/* DÒNG NÀY ĐÃ ĐƯỢC XÓA */}
+                                </Space>
+                            </Col>
+                            <Col>
+                                <Space>
+                                    <FilterOutlined style={{ color: '#888' }} />
+                                    {/* Lọc tháng/năm tự động của Calendar */}
+                                </Space>
+                            </Col>
+                        </Row>
+
+                        {/* CALENDAR */}
+                        <Calendar
+                            cellRender={cellRender}
+                            onPanelChange={onPanelChange}
+                            headerRender={({ value, onChange }) => {
+                                // Lấy code render header từ Manager Schedule để đồng bộ
+                                const currentYear = value.year();
+                                const currentMonth = value.month();
+                                const monthOptions = [];
+                                for (let i = 0; i < 12; i++) {
+                                    monthOptions.push(<Option key={i} value={i}>Tháng {i + 1}</Option>);
+                                }
+                                const yearOptions = [];
+                                for (let i = currentYear - 10; i < currentYear + 10; i++) {
+                                    yearOptions.push(<Option key={i} value={i}>Năm {i}</Option>);
+                                }
+                                return (
+                                    <div style={{ padding: '10px 0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                        <Select
+                                            value={currentMonth}
+                                            onChange={(newMonth) => {
+                                                const now = value.clone().month(newMonth);
+                                                onChange(now);
+                                            }}
+                                            style={{ width: 110 }}
+                                        >
+                                            {monthOptions}
+                                        </Select>
+                                        <Select
+                                            value={currentYear}
+                                            onChange={(newYear) => {
+                                                const now = value.clone().year(newYear);
+                                                onChange(now);
+                                            }}
+                                            style={{ width: 110 }}
+                                        >
+                                            {yearOptions}
+                                        </Select>
+                                    </div>
+                                );
+                            }}
+                        />
+
+                        {/* Thông báo nếu không có lịch */}
+                        {!loading && Object.keys(scheduleData).length === 0 && (
+                            <div style={{ textAlign: 'center', marginTop: 20, color: '#999' }}>
+                                Không có lịch làm việc được phân công trong tháng này.
+                            </div>
+                        )}
+                    </Spin>
                 </Content>
             </Layout>
         </Layout>
     );
 }
-
