@@ -17,7 +17,10 @@ export function WarehouseManagement() {
     const [importForm] = Form.useForm();
     const [isStockModalVisible, setIsStockModalVisible] = useState(false);
     const [importingStock, setImportingStock] = useState(false);
+    const [exportingStock, setExportingStock] = useState(false);
     const [stockForm] = Form.useForm();
+    const [exportForm] = Form.useForm();
+    const [isExportModalVisible, setIsExportModalVisible] = useState(false);
     const activeKey = 'technical-inventory';
 
     const columns = [
@@ -103,6 +106,61 @@ export function WarehouseManagement() {
         stockForm.resetFields();
     };
 
+    const handleOpenExportModal = () => {
+        setIsExportModalVisible(true);
+    };
+
+    const handleCloseExportModal = () => {
+        setIsExportModalVisible(false);
+        exportForm.resetFields();
+    };
+
+    const handleExportStock = async () => {
+        try {
+            const values = await exportForm.validateFields();
+            const selectedItem = warehouseItems.find(
+                (item) => item.warehouseItemId === values.warehouseItemId
+            );
+            if (!selectedItem) {
+                message.error("Sản phẩm không tồn tại");
+                return;
+            }
+            if (values.quantity > selectedItem.quantity) {
+                message.error("Số lượng xuất vượt quá số lượng tồn kho");
+                return;
+            }
+            setExportingStock(true);
+
+            await warehouseItemApi.createWarehouseTransaction({
+                itemId: values.warehouseItemId,  // ✅ Đổi từ warehouseItemId thành itemId
+                transactionQuantity: values.quantity,  // ✅ Đổi từ quantity thành transactionQuantity
+                transactionType: 'EXPORT',  // ✅ Đổi từ type thành transactionType
+                note: values.reason,  // ✅ Đổi từ reason thành note
+                reportId: null,  // ✅ Thêm nếu cần
+                requestId: null  // ✅ Thêm nếu cần
+            });
+
+            message.success("Xuất kho thành công");
+            handleCloseExportModal();
+            fetchWarehouseItems();
+        } catch (error) {
+            console.error('Full error:', error);
+
+            if (error?.response?.status === 401) {
+                message.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại");
+            } else if (error?.response?.data?.message) {
+                message.error(error.response.data.message);
+            } else if (error?.response?.data) {
+                message.error(error.response.data);
+            } else if (!error?.errorFields) {
+                message.error("Không thể xuất kho");
+            }
+        } finally {
+            setExportingStock(false);
+        }
+    };
+
+
     const handleImportStock = async () => {
         try {
             const values = await stockForm.validateFields();
@@ -114,18 +172,28 @@ export function WarehouseManagement() {
                 return;
             }
             setImportingStock(true);
-            const newQuantity = (selectedItem.quantity || 0) + values.quantity;
-            await warehouseItemApi.updateWarehouseItem(selectedItem.warehouseItemId, {
-                itemName: selectedItem.itemName,
-                itemUnit: selectedItem.itemUnit,
-                quantity: newQuantity,
+
+            await warehouseItemApi.createWarehouseTransaction({
+                itemId: values.warehouseItemId,  // ✅ Đổi từ warehouseItemId thành itemId
+                transactionQuantity: values.quantity,  // ✅ Đổi từ quantity thành transactionQuantity
+                transactionType: 'IMPORT',  // ✅ Đổi từ type thành transactionType
+                note: values.reason || 'Nhập kho',  // ✅ Đổi từ reason thành note
+                reportId: null,  // ✅ Thêm nếu cần
+                requestId: null  // ✅ Thêm nếu cần
             });
+
             message.success("Nhập kho thành công");
             handleCloseStockModal();
             fetchWarehouseItems();
         } catch (error) {
-            if (error?.response?.data?.message) {
+            console.error('Full error:', error);
+
+            if (error?.response?.status === 401) {
+                message.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại");
+            } else if (error?.response?.data?.message) {
                 message.error(error.response.data.message);
+            } else if (error?.response?.data) {
+                message.error(error.response.data);
             } else if (!error?.errorFields) {
                 message.error("Không thể nhập kho");
             }
@@ -153,14 +221,14 @@ export function WarehouseManagement() {
                                 onSearch={(value) => setSearchText(value)}
                             />
                             <Button type="primary" onClick={handleOpenImportModal}>Tạo mới</Button>
-                            <Button className="ml-2" onClick={handleOpenStockModal}>Nhập kho</Button>
-                            <Button className="ml-2">Xuất kho</Button>
+                            <Button type="primary" className="ml-2" onClick={handleOpenStockModal}>Nhập kho</Button>
+                            <Button type="primary" className="ml-2" onClick={handleOpenExportModal}>Xuất kho</Button>
                         </Card>
                         <Card>
-                            <Table 
-                                columns={columns} 
-                                dataSource={filteredItems} 
-                                pagination={{ pageSize: 10 }} 
+                            <Table
+                                columns={columns}
+                                dataSource={filteredItems}
+                                pagination={{ pageSize: 10 }}
                                 loading={loading}
                             />
                         </Card>
@@ -226,6 +294,61 @@ export function WarehouseManagement() {
                                     ]}
                                 >
                                     <InputNumber min={1} style={{ width: "100%" }} />
+                                </Form.Item>
+                            </Form>
+                        </Modal>
+                        <Modal
+                            title="Xuất kho"
+                            open={isExportModalVisible}
+                            onCancel={handleCloseExportModal}
+                            onOk={handleExportStock}
+                            okText="Xuất"
+                            cancelText="Hủy"
+                            confirmLoading={exportingStock}
+                            destroyOnHidden
+                        >
+                            <Form layout="vertical" form={exportForm}>
+                                <Form.Item
+                                    label="Sản phẩm"
+                                    name="warehouseItemId"
+                                    rules={[{ required: true, message: "Vui lòng chọn sản phẩm" }]}
+                                >
+                                    <Select
+                                        placeholder="Chọn sản phẩm"
+                                        showSearch
+                                        optionFilterProp="label"
+                                        options={warehouseItems.map((item) => ({
+                                            value: item.warehouseItemId,
+                                            label: `${item.itemName} (Còn: ${item.quantity} ${item.itemUnit})`,
+                                        }))}
+                                    />
+                                </Form.Item>
+                                <Form.Item
+                                    label="Số lượng xuất"
+                                    name="quantity"
+                                    rules={[
+                                        { required: true, message: "Vui lòng nhập số lượng" },
+                                        { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" },
+                                        {
+                                            validator: (_, value) => {
+                                                const selectedItemId = exportForm.getFieldValue('warehouseItemId');
+                                                const selectedItem = warehouseItems.find(item => item.warehouseItemId === selectedItemId);
+                                                if (selectedItem && value > selectedItem.quantity) {
+                                                    return Promise.reject(new Error('Số lượng xuất không được vượt quá số lượng tồn kho'));
+                                                }
+                                                return Promise.resolve();
+                                            },
+                                        },
+                                    ]}
+                                >
+                                    <InputNumber min={1} style={{ width: "100%" }} />
+                                </Form.Item>
+                                <Form.Item
+                                    label="Lý do xuất"
+                                    name="reason"
+                                    rules={[{ required: true, message: 'Vui lòng nhập lý do xuất kho' }]}
+                                >
+                                    <Input.TextArea rows={3} placeholder="Nhập lý do xuất kho" />
                                 </Form.Item>
                             </Form>
                         </Modal>
