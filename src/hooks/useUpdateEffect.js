@@ -1,7 +1,7 @@
 import {useEffect, useRef} from "react";
 import {App} from "antd";
 
-export function useUpdateEffect(store, message, errorMap) {
+export function useUpdateEffect(store, message = "Thành công", errorMap = {}) {
     const error = store(state => state.error)
     const data = store(state => state.data)
     const isError = store(state => state.isError)

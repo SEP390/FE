@@ -25,11 +25,13 @@ export function createApiStore(method, url, payload = null) {
                     data: payload,
                     params: method === "GET" ? payload : null,
                 });
-                set({data: res.data, isLoading: false, isSuccess: true})
+                console.log(res)
+                set({data: res.data, isLoading: false, isSuccess: true, error: null, errorData: null, isError: false})
             } catch (e) {
                 const error = e.response?.data?.message || e.message;
                 const errorData = e.response?.data
-                set({error, errorData, isLoading: false, isError: true})
+                console.log(e)
+                set({error, errorData, isLoading: false, isError: true, isSucess: false})
             }
         }
     }))
