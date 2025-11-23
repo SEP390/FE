@@ -1,10 +1,35 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Button, Card, Table, Typography, Layout, message, Input, Modal, Form, Select, InputNumber } from "antd";
+import {
+    Button,
+    Card,
+    Table,
+    Typography,
+    Layout,
+    message,
+    Input,
+    Modal,
+    Form,
+    Select,
+    InputNumber,
+    Space,
+    Tag,
+    Statistic,
+    Row,
+    Col
+} from "antd";
+import {
+    PlusOutlined,
+    ImportOutlined,
+    ExportOutlined,
+    SearchOutlined,
+    InboxOutlined,
+    AppstoreOutlined
+} from '@ant-design/icons';
 import { SideBarTechnical } from "../../../components/layout/SideBarTechnical.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
 import { warehouseItemApi } from "../../../api/Warehouse/warehouseApi.js";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { Content } = Layout;
 
 export function WarehouseManagement() {
@@ -24,9 +49,36 @@ export function WarehouseManagement() {
     const activeKey = 'technical-inventory';
 
     const columns = [
-        { title: "Mã SP", dataIndex: "code", key: "code", width: 120 },
-        { title: "Tên hàng", dataIndex: "name", key: "name" },
-        { title: "Số lượng", dataIndex: "quantity", key: "quantity", width: 120 },
+        {
+            title: "Mã SP",
+            dataIndex: "code",
+            key: "code",
+            width: 120,
+            render: (text) => <Tag color="blue">{text}</Tag>
+        },
+        {
+            title: "Tên hàng",
+            dataIndex: "name",
+            key: "name",
+            render: (text, record) => (
+                <div>
+                    <div className="font-medium">{text}</div>
+                    <Text type="secondary" className="text-xs">{record.itemUnit}</Text>
+                </div>
+            )
+        },
+        {
+            title: "Số lượng",
+            dataIndex: "quantity",
+            key: "quantity",
+            width: 120,
+            align: 'center',
+            render: (quantity) => (
+                <Tag color={quantity > 50 ? 'green' : quantity > 10 ? 'orange' : 'red'}>
+                    {quantity}
+                </Tag>
+            )
+        },
     ];
 
     useEffect(() => {
@@ -64,6 +116,15 @@ export function WarehouseManagement() {
         ));
     }, [warehouseItems, searchText]);
 
+    // Statistics
+    const statistics = useMemo(() => {
+        const totalItems = warehouseItems.length;
+        const totalQuantity = warehouseItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const lowStockItems = warehouseItems.filter(item => item.quantity <= 10).length;
+
+        return { totalItems, totalQuantity, lowStockItems };
+    }, [warehouseItems]);
+
     const handleOpenImportModal = () => {
         setIsImportModalVisible(true);
     };
@@ -87,9 +148,7 @@ export function WarehouseManagement() {
         } catch (error) {
             if (error?.response?.data?.message) {
                 message.error(error.response.data.message);
-            } else if (error?.errorFields) {
-                // Validation errors handled by form
-            } else {
+            } else if (!error?.errorFields) {
                 message.error('Không thể tạo sản phẩm mới');
             }
         } finally {
@@ -132,12 +191,12 @@ export function WarehouseManagement() {
             setExportingStock(true);
 
             await warehouseItemApi.createWarehouseTransaction({
-                itemId: values.warehouseItemId,  // ✅ Đổi từ warehouseItemId thành itemId
-                transactionQuantity: values.quantity,  // ✅ Đổi từ quantity thành transactionQuantity
-                transactionType: 'EXPORT',  // ✅ Đổi từ type thành transactionType
-                note: values.reason,  // ✅ Đổi từ reason thành note
-                reportId: null,  // ✅ Thêm nếu cần
-                requestId: null  // ✅ Thêm nếu cần
+                itemId: values.warehouseItemId,
+                transactionQuantity: values.quantity,
+                transactionType: 'EXPORT',
+                note: values.reason,
+                reportId: null,
+                requestId: null
             });
 
             message.success("Xuất kho thành công");
@@ -160,7 +219,6 @@ export function WarehouseManagement() {
         }
     };
 
-
     const handleImportStock = async () => {
         try {
             const values = await stockForm.validateFields();
@@ -174,12 +232,12 @@ export function WarehouseManagement() {
             setImportingStock(true);
 
             await warehouseItemApi.createWarehouseTransaction({
-                itemId: values.warehouseItemId,  // ✅ Đổi từ warehouseItemId thành itemId
-                transactionQuantity: values.quantity,  // ✅ Đổi từ quantity thành transactionQuantity
-                transactionType: 'IMPORT',  // ✅ Đổi từ type thành transactionType
-                note: values.reason || 'Nhập kho',  // ✅ Đổi từ reason thành note
-                reportId: null,  // ✅ Thêm nếu cần
-                requestId: null  // ✅ Thêm nếu cần
+                itemId: values.warehouseItemId,
+                transactionQuantity: values.quantity,
+                transactionType: 'IMPORT',
+                note: values.reason || 'Nhập kho',
+                reportId: null,
+                requestId: null
             });
 
             message.success("Nhập kho thành công");
@@ -203,44 +261,126 @@ export function WarehouseManagement() {
     };
 
     return (
-        <Layout className={"!h-screen"}>
+        <Layout className="!h-screen">
             <SideBarTechnical active={activeKey} collapsed={collapsed} />
             <Layout>
                 <AppHeader toggleSideBar={() => setCollapsed(!collapsed)} />
-                <Content className={"!overflow-auto h-full p-5 flex flex-col"}>
-                    <div className="p-0">
-                        <Title level={3} style={{ marginBottom: 16 }}>Quản lý kho kỹ thuật</Title>
-                        <Card className="mb-4 flex flex-wrap items-center gap-3">
-                            <Input.Search
-                                placeholder="Tìm kiếm sản phẩm theo mã hoặc tên"
-                                allowClear
-                                enterButton="Tìm kiếm"
-                                style={{ maxWidth: 320 }}
-                                value={searchText}
-                                onChange={(e) => setSearchText(e.target.value)}
-                                onSearch={(value) => setSearchText(value)}
-                            />
-                            <Button type="primary" onClick={handleOpenImportModal}>Tạo mới</Button>
-                            <Button type="primary" className="ml-2" onClick={handleOpenStockModal}>Nhập kho</Button>
-                            <Button type="primary" className="ml-2" onClick={handleOpenExportModal}>Xuất kho</Button>
+                <Content className="!overflow-auto h-full p-6 bg-gray-50">
+                    <div className="max-w-7xl mx-auto">
+                        {/* Header */}
+                        <div className="mb-6">
+                            <Title level={2} className="!mb-2">
+                                <InboxOutlined className="mr-2" />
+                                Quản lý kho kỹ thuật
+                            </Title>
+                            <Text type="secondary">Quản lý tồn kho và giao dịch nhập xuất</Text>
+                        </div>
+
+                        {/* Statistics Cards */}
+                        <Row gutter={[16, 16]} className="mb-6">
+                            <Col xs={24} sm={8}>
+                                <Card>
+                                    <Statistic
+                                        title="Tổng sản phẩm"
+                                        value={statistics.totalItems}
+                                        prefix={<AppstoreOutlined />}
+                                        valueStyle={{ color: '#1890ff' }}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col xs={24} sm={8}>
+                                <Card>
+                                    <Statistic
+                                        title="Tổng số lượng"
+                                        value={statistics.totalQuantity}
+                                        prefix={<InboxOutlined />}
+                                        valueStyle={{ color: '#52c41a' }}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col xs={24} sm={8}>
+                                <Card>
+                                    <Statistic
+                                        title="Sắp hết hàng"
+                                        value={statistics.lowStockItems}
+                                        suffix={`/ ${statistics.totalItems}`}
+                                        valueStyle={{ color: statistics.lowStockItems > 0 ? '#ff4d4f' : '#52c41a' }}
+                                    />
+                                </Card>
+                            </Col>
+                        </Row>
+
+                        {/* Action Bar */}
+                        <Card className="mb-4 shadow-sm">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <Input.Search
+                                    placeholder="Tìm kiếm sản phẩm theo mã hoặc tên"
+                                    allowClear
+                                    enterButton={<SearchOutlined />}
+                                    style={{ maxWidth: 400 }}
+                                    value={searchText}
+                                    onChange={(e) => setSearchText(e.target.value)}
+                                    onSearch={(value) => setSearchText(value)}
+                                    size="large"
+                                />
+                                <div className="ml-auto">
+                                    <Space>
+                                        <Button
+                                            type="primary"
+                                            icon={<PlusOutlined />}
+                                            onClick={handleOpenImportModal}
+                                            size="large"
+                                        >
+                                            Tạo mới
+                                        </Button>
+                                        <Button
+                                            type="primary"
+                                            icon={<ImportOutlined />}
+                                            onClick={handleOpenStockModal}
+                                            size="large"
+                                            style={{ backgroundColor: '#52c41a' }}
+                                        >
+                                            Nhập kho
+                                        </Button>
+                                        <Button
+                                            type="primary"
+                                            icon={<ExportOutlined />}
+                                            onClick={handleOpenExportModal}
+                                            size="large"
+                                            danger
+                                        >
+                                            Xuất kho
+                                        </Button>
+                                    </Space>
+                                </div>
+                            </div>
                         </Card>
-                        <Card>
+
+                        {/* Table */}
+                        <Card className="shadow-sm">
                             <Table
                                 columns={columns}
                                 dataSource={filteredItems}
-                                pagination={{ pageSize: 10 }}
+                                pagination={{
+                                    pageSize: 10,
+                                    showTotal: (total) => `Tổng ${total} sản phẩm`,
+                                    showSizeChanger: true
+                                }}
                                 loading={loading}
+                                locale={{ emptyText: 'Không có dữ liệu' }}
                             />
                         </Card>
+
+                        {/* Create Item Modal */}
                         <Modal
-                            title="Nhập kho - Thêm sản phẩm"
+                            title={<span><PlusOutlined /> Tạo sản phẩm mới</span>}
                             open={isImportModalVisible}
                             onCancel={handleCloseImportModal}
                             onOk={handleCreateWarehouseItem}
                             okText="Tạo"
                             cancelText="Hủy"
                             confirmLoading={creatingItem}
-                            destroyOnHidden
+                            width={500}
                         >
                             <Form layout="vertical" form={importForm}>
                                 <Form.Item
@@ -248,26 +388,34 @@ export function WarehouseManagement() {
                                     name="itemName"
                                     rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
                                 >
-                                    <Input placeholder="Nhập tên sản phẩm" />
+                                    <Input
+                                        placeholder="Nhập tên sản phẩm"
+                                        size="large"
+                                    />
                                 </Form.Item>
                                 <Form.Item
                                     label="Đơn vị tính"
                                     name="itemUnit"
                                     rules={[{ required: true, message: 'Vui lòng nhập đơn vị tính' }]}
                                 >
-                                    <Input placeholder="Ví dụ: cái, bộ, chai..." />
+                                    <Input
+                                        placeholder="Ví dụ: cái, bộ, chai..."
+                                        size="large"
+                                    />
                                 </Form.Item>
                             </Form>
                         </Modal>
+
+                        {/* Import Stock Modal */}
                         <Modal
-                            title="Nhập kho"
+                            title={<span><ImportOutlined /> Nhập kho</span>}
                             open={isStockModalVisible}
                             onCancel={handleCloseStockModal}
                             onOk={handleImportStock}
                             okText="Nhập"
                             cancelText="Hủy"
                             confirmLoading={importingStock}
-                            destroyOnHidden
+                            width={500}
                         >
                             <Form layout="vertical" form={stockForm}>
                                 <Form.Item
@@ -279,6 +427,7 @@ export function WarehouseManagement() {
                                         placeholder="Chọn sản phẩm"
                                         showSearch
                                         optionFilterProp="label"
+                                        size="large"
                                         options={warehouseItems.map((item) => ({
                                             value: item.warehouseItemId,
                                             label: item.itemName,
@@ -293,19 +442,35 @@ export function WarehouseManagement() {
                                         { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" },
                                     ]}
                                 >
-                                    <InputNumber min={1} style={{ width: "100%" }} />
+                                    <InputNumber
+                                        min={1}
+                                        style={{ width: "100%" }}
+                                        size="large"
+                                        placeholder="Nhập số lượng"
+                                    />
+                                </Form.Item>
+                                <Form.Item
+                                    label="Ghi chú"
+                                    name="reason"
+                                >
+                                    <Input.TextArea
+                                        rows={3}
+                                        placeholder="Nhập ghi chú (không bắt buộc)"
+                                    />
                                 </Form.Item>
                             </Form>
                         </Modal>
+
+                        {/* Export Stock Modal */}
                         <Modal
-                            title="Xuất kho"
+                            title={<span><ExportOutlined /> Xuất kho</span>}
                             open={isExportModalVisible}
                             onCancel={handleCloseExportModal}
                             onOk={handleExportStock}
                             okText="Xuất"
                             cancelText="Hủy"
                             confirmLoading={exportingStock}
-                            destroyOnHidden
+                            width={500}
                         >
                             <Form layout="vertical" form={exportForm}>
                                 <Form.Item
@@ -317,6 +482,7 @@ export function WarehouseManagement() {
                                         placeholder="Chọn sản phẩm"
                                         showSearch
                                         optionFilterProp="label"
+                                        size="large"
                                         options={warehouseItems.map((item) => ({
                                             value: item.warehouseItemId,
                                             label: `${item.itemName} (Còn: ${item.quantity} ${item.itemUnit})`,
@@ -341,14 +507,22 @@ export function WarehouseManagement() {
                                         },
                                     ]}
                                 >
-                                    <InputNumber min={1} style={{ width: "100%" }} />
+                                    <InputNumber
+                                        min={1}
+                                        style={{ width: "100%" }}
+                                        size="large"
+                                        placeholder="Nhập số lượng"
+                                    />
                                 </Form.Item>
                                 <Form.Item
                                     label="Lý do xuất"
                                     name="reason"
                                     rules={[{ required: true, message: 'Vui lòng nhập lý do xuất kho' }]}
                                 >
-                                    <Input.TextArea rows={3} placeholder="Nhập lý do xuất kho" />
+                                    <Input.TextArea
+                                        rows={3}
+                                        placeholder="Nhập lý do xuất kho"
+                                    />
                                 </Form.Item>
                             </Form>
                         </Modal>
@@ -360,5 +534,3 @@ export function WarehouseManagement() {
 }
 
 export default WarehouseManagement;
-
-

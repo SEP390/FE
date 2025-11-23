@@ -56,16 +56,12 @@ export function CreateRequest() {
         const responseData = data || errorData;
 
         if (responseData && !isError) {
-            // Có data và không phải error => Success!
             console.log("✅ Data received after submit:", responseData);
 
-            message.success({
-                content: 'Yêu cầu đã được tạo thành công!',
-                duration: 2,
+            // Navigate với state để hiện message ở trang đích
+            navigate("/my-requests", {
+                state: { showSuccessMessage: true }
             });
-
-            // Navigate ngay lập tức, không đợi message đóng
-            navigate("/my-requests");
 
             // Reset state sau khi navigate
             setLoading(false);
