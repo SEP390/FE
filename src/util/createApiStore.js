@@ -1,5 +1,6 @@
 import axiosClient from "../api/axiosClient/axiosClient.js";
 import {create} from "zustand";
+import {data} from "react-router";
 
 export function createApiStore(method, url, payload = null) {
     return create((set, get) => ({
@@ -30,6 +31,7 @@ export function createApiStore(method, url, payload = null) {
                 });
                 console.log(res)
                 set({data: res.data, isLoading: false, isSuccess: true, error: null, errorData: null, isError: false})
+                return res.data;
             } catch (e) {
                 const error = e.response?.data?.message || e.message;
                 const errorData = e.response?.data

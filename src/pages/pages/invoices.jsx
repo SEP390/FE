@@ -52,15 +52,13 @@ function InvoiceModal() {
 }
 
 function PaymentAction({invoiceId}) {
-    const {fetch, setUrl, data} = useApiStore(invoicePaymentStore)
-    useUpdateEffect(invoicePaymentStore)
+    const {fetch, setUrl} = useApiStore(invoicePaymentStore)
     const onClick = async () => {
         setUrl(`/invoices/${invoiceId}/payment`)
-        fetch().then()
+        fetch().then(data => {
+            window.open(data, '_blank')
+        })
     }
-    useEffect(() => {
-        data && window.open(data, '_blank').focus()
-    }, [data]);
     return <Button onClick={onClick} type={"link"}>Thanh toán</Button>
 }
 

@@ -52,7 +52,7 @@ const items = [
         key: "invoices",
     },
     {
-        label: <Link to={"/pages/ew"}>Hóa đơn điện nước</Link>,
+        label: <Link to={"/pages/ew"}>Điện nước</Link>,
         icon: <ThunderboltOutlined />,
         key: "ew",
     },
