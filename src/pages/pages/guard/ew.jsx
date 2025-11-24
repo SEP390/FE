@@ -7,13 +7,26 @@ import {RoomFilter} from "../../../components/RoomSelect.jsx";
 import {DateRangeFilter} from "../../../components/DateRangeSelect.jsx";
 import {createApiStore} from "../../../util/createApiStore.js";
 import {useViewEffect} from "../../../hooks/useViewEffect.js";
+import {create} from "zustand";
+import {useEffect} from "react";
 
 const ewRoomStore = createApiStore("GET", "/ew/room")
+
+const filterStore = create(set => ({
+    roomId: null,
+    setRoomId: (roomId) => set({roomId})
+}))
 
 export default function GuardEW() {
     const navigate = useNavigate();
 
-    const {data} = useViewEffect(ewRoomStore)
+    const {data, mutate} = useViewEffect(ewRoomStore)
+
+    const {roomId, setRoomId} = filterStore();
+
+    useEffect(() => {
+        mutate({roomId})
+    }, [mutate, roomId]);
 
     return <LayoutGuard active={"electric-water"}>
         <div className={"flex flex-col gap-3"}>
@@ -22,7 +35,7 @@ export default function GuardEW() {
                 <div>
                     <div className={"font-medium mb-3 text-lg"}>Bộ lọc</div>
                     <div className={"flex gap-3 flex-wrap"}>
-                        <RoomFilter/>
+                        <RoomFilter value={roomId} onChange={setRoomId}/>
                         <DateRangeFilter/>
                     </div>
                 </div>
