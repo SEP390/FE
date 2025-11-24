@@ -4,7 +4,7 @@ import {useApi} from "../../hooks/useApi.js";
 import {Button, Descriptions, Result, Skeleton, Tag} from "antd";
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import {formatPrice} from "../../util/formatPrice.js";
-import {formatDate} from "../../util/formatTime.js";
+import {createApiStore} from "../../util/createApiStore.js";
 
 function BookingDetail({data}) {
     return <div className={"w-100 mx-auto"}><Descriptions layout={"vertical"} items={[
@@ -26,10 +26,11 @@ function BookingDetail({data}) {
         },
         {
             label: "Kỳ",
-            children: <Tag>{data.slotInvoice.semesterName}</Tag>
+            children: <Tag>{data.slotInvoice.semester.name}</Tag>
         },
     ]}/></div>
 }
+
 export function PaymentResult() {
     const [searchParams] = useSearchParams();
 
@@ -41,27 +42,30 @@ export function PaymentResult() {
         post("/payment?" + new URLSearchParams(params), null);
     }, []);
 
+    console.log(data)
+
     const subTitle = (data) => {
-        if (data && data.slotHistory) {
-            return <span>{data.slotHistory.slotName}, {data.slotHistory.roomNumber}, {data.slotHistory.dormName}</span>
+        if (data && data.invoice?.slotHistory) {
+            return <span>{data.invoice.slotHistory.slotName}, {data.slotHistory.roomNumber}, {data.slotHistory.dormName}</span>
         }
         return "";
     }
 
     const extra = (data) => {
-        if (data && data.slotInvoice) {
+        if (data && data.invoice?.slotInvoice) {
             return [
                 <Button><Link to={"/pages/booking/history"}>Lịch sử đặt
                     phòng</Link></Button>, data.status !== 'SUCCESS' &&
-                <Button><Link to={"/booking"}>Đặt lại phòng</Link></Button>
+                <Button><Link to={"/pages/booking"}>Đặt lại phòng</Link></Button>
             ]
         }
+        return ""
     }
 
     const status = (data) => {
         if (data.status === "CANCEL") return "info";
         if (data.status === "SUCCESS") return "success";
-        return "";
+        return "info";
     }
     const title = (data) => {
         if (data.status === "CANCEL") return "Bạn đã hủy thanh toán";
@@ -80,7 +84,7 @@ export function PaymentResult() {
                         subTitle={subTitle(data)}
                         extra={extra(data)}
                     />}
-                    {data && data.type === 'BOOKING' && <BookingDetail data={data} />}
+                    {data && data.invoice?.type === 'BOOKING' && <BookingDetail data={data.invoice}/>}
                 </div>
             </div>
         </AppLayout>

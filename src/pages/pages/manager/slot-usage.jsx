@@ -1,17 +1,25 @@
-import {AppLayout} from "../../../components/layout/AppLayout.jsx";
-import {Table, Tag} from "antd";
+import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import {PageHeader} from "../../../components/PageHeader.jsx";
-import {createApiStore} from "../../../util/createApiStore.js";
 import {useViewEffect} from "../../../hooks/useViewEffect.js";
+import {createApiStore} from "../../../util/createApiStore.js";
+import {Table} from 'antd'
+import {ResidentFilter} from "../../../components/ResidentSelect.jsx";
+import {RoomFilter} from "../../../components/RoomSelect.jsx";
 
-const slotHistoryStore = createApiStore("GET", "/user/slot-history")
+const slotHistoryStore = createApiStore("GET", "/slot-history")
 
-export default function BookingHistoryPage() {
+export default function SlotUsageManage() {
     const {data} = useViewEffect(slotHistoryStore)
-
-    return <AppLayout>
+    return <LayoutManager>
         <div className={"flex flex-col gap-3"}>
-            <PageHeader title={"Lịch sử đặt phòng"}/>
+            <PageHeader title="Quản lý giường"/>
+            <div className={"section"}>
+                <div className={"font-medium mb-3 text-lg"}>Bộ lọc</div>
+                <div className={"flex gap-3 flex-wrap"}>
+                    <ResidentFilter/>
+                    <RoomFilter/>
+                </div>
+            </div>
             <div className={"section"}>
                 <Table className={"overflow-auto"} bordered dataSource={data ? data.content : []} columns={[
                     {
@@ -38,10 +46,16 @@ export default function BookingHistoryPage() {
                         title: "Checkout",
                         dataIndex: ["checkout"],
                     },
+                    {
+                        title: "Hành động",
+                        render: () => {
+                            return <></>;
+                        }
+                    }
                 ]} pagination={{
                     total: data?.page.totalElements
                 }}/>
             </div>
         </div>
-    </AppLayout>
+    </LayoutManager>
 }

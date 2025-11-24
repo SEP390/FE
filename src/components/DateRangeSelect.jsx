@@ -2,8 +2,8 @@ import { DatePicker } from "antd";
 
 const {RangePicker} = DatePicker;
 
-export function DateRangeSelect({ onChange }) {
-    return <RangePicker placeholder={["Từ ngày", "Đến ngày"]} onChange={(date, dateStr) => onChange(dateStr)} />
+export function DateRangeSelect(props) {
+    return <RangePicker {...props} placeholder={["Từ ngày", "Đến ngày"]} />
 }
 
 export function DateRangeFilter({ onChange }) {

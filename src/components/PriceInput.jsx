@@ -37,5 +37,9 @@ const parser = val => {
     }
 };
 export default function PriceInput(props) {
-    return <InputNumber className={"!w-full"} parser={parser} formatter={formatter} {...props} />
+    return <InputNumber suffix={"vnđ"} className={"!w-full"}
+                        formatter={value => `${value}`.replace(new RegExp(/\B(?=(\d{3})+(?!\d))/g), '.')}
+                        parser={value => value.replace(new RegExp(/([.]*)/g), '')}
+                        step={1000}
+                        {...props} />
 }
