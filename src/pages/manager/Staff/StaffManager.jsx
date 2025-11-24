@@ -10,7 +10,8 @@ import {
     EditOutlined,
     UnlockOutlined,
     ClearOutlined,
-    ReloadOutlined
+    ReloadOutlined,
+    EyeOutlined // Import thêm EyeOutlined
 } from "@ant-design/icons";
 import { useNavigate } from 'react-router-dom';
 
@@ -36,7 +37,6 @@ export function StaffManager() {
     const [loading, setLoading] = useState(true);
     const [searchText, setSearchText] = useState('');
     const [filterPosition, setFilterPosition] = useState(undefined);
-    // --- ĐÃ XÓA: filterArea và dorms states ---
 
     // (State Modals - giữ nguyên)
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -58,14 +58,11 @@ export function StaffManager() {
         setLoading(true);
         try {
             const response = await axiosClient.get('/employees');
-            // 'response' đã là BaseResponse {status, message, data}
             if (response && response.data) {
-                // response.data là List<GetAllEmployeeResponse>
                 const dataWithKey = response.data.map(staff => ({
                     ...staff,
                     key: staff.employeeId,
                     phone: staff.phone || 'N/A'
-                    // --- ĐÃ XÓA: dormName ---
                 }));
                 setStaffData(dataWithKey);
             } else { setStaffData([]); }
@@ -76,11 +73,8 @@ export function StaffManager() {
         } finally { setLoading(false); }
     };
 
-    // --- ĐÃ XÓA: fetchDorms() ---
-
     useEffect(() => {
         fetchStaff();
-        // --- ĐÃ XÓA: fetchDorms() ---
     }, []);
 
     // --- Filtering Logic ---
@@ -88,14 +82,12 @@ export function StaffManager() {
         const searchTarget = `${staff.username || ''} ${staff.email || ''} ${staff.phone || ''}`.toLowerCase();
         const matchesSearch = searchTarget.includes(searchText.toLowerCase());
         const matchesPosition = filterPosition ? staff.role === filterPosition : true;
-        // --- ĐÃ XÓA: matchesArea ---
         return matchesSearch && matchesPosition;
     });
 
     const handleClearFilters = () => {
         setSearchText('');
         setFilterPosition(undefined);
-        // --- ĐÃ XÓA: setFilterArea(undefined) ---
     };
 
     // --- Handlers cho Modals (giữ nguyên) ---
@@ -104,9 +96,12 @@ export function StaffManager() {
     const handleAddStaff = async (values) => {
         setIsSubmittingAdd(true);
         try {
+            // Chuẩn hóa dữ liệu ngày tháng trước khi gửi
             const formattedValues = {
                 ...values,
                 dob: values.dob ? dayjs(values.dob).format('YYYY-MM-DD') : null,
+                hireDate: values.hireDate ? dayjs(values.hireDate).format('YYYY-MM-DD') : null,
+                contractEndDate: values.contractEndDate ? dayjs(values.contractEndDate).format('YYYY-MM-DD') : null,
             };
             await axiosClient.post('/employees', formattedValues);
             message.success(`Đã thêm nhân viên ${values.username} thành công!`);
@@ -120,7 +115,6 @@ export function StaffManager() {
 
     const showEditModal = (record) => {
         setEditingStaff(record);
-        // 'response' đã là BaseResponse {status, message, data}
         axiosClient.get(`/employees/${record.employeeId}`)
             .then(response => {
                 if (response && response.data) {
@@ -129,6 +123,8 @@ export function StaffManager() {
                         phoneNumber: details.phoneNumber,
                         role: details.role,
                         birthDate: details.dob ? dayjs(details.dob) : null,
+                        hireDate: details.hireDate ? dayjs(details.hireDate) : null,
+                        contractEndDate: details.contractEndDate ? dayjs(details.contractEndDate) : null,
                     });
                 }
             })
@@ -153,7 +149,9 @@ export function StaffManager() {
                 phoneNumber: values.phoneNumber,
                 birthDate: values.birthDate ? dayjs(values.birthDate).format('YYYY-MM-DD') : null,
                 role: values.role,
-                EmployeeId: employeeId
+                EmployeeId: employeeId,
+                hireDate: values.hireDate ? dayjs(values.hireDate).format('YYYY-MM-DD') : null,
+                contractEndDate: values.contractEndDate ? dayjs(values.contractEndDate).format('YYYY-MM-DD') : null,
             };
 
             await axiosClient.put(`/employees/${employeeId}`, payload);
@@ -217,16 +215,23 @@ export function StaffManager() {
         navigate(`/manager/staff/details/${employeeId}`);
     };
 
-    // --- Dropdown Actions (giữ nguyên) ---
+    // --- Dropdown Actions ---
     const handleMenuClick = (key, record) => {
-        if (key === 'edit') {
+        if (key === 'viewDetails') { // Xử lý click Xem chi tiết
+            handleNavigateToDetails(record.employeeId);
+        } else if (key === 'edit') {
             showEditModal(record);
         } else if (key === 'resetPass') {
             showResetPasswordModal(record);
         }
     };
+
+    // THÊM MỤC XEM CHI TIẾT VÀO MENU
     const getActionMenu = (record) => (
         <Menu onClick={({ key }) => handleMenuClick(key, record)}>
+            <Menu.Item key="viewDetails" icon={<EyeOutlined />}>
+                Xem chi tiết
+            </Menu.Item>
             <Menu.Item key="edit" icon={<EditOutlined />}>
                 Chỉnh sửa thông tin
             </Menu.Item>
@@ -237,7 +242,7 @@ export function StaffManager() {
         </Menu>
     );
 
-    // --- ĐÃ SỬA: Cập nhật Cột ---
+    // --- Cột Bảng ---
     const columns = [
         {
             title: 'Username',
@@ -245,6 +250,7 @@ export function StaffManager() {
             key: 'username',
             sorter: (a, b) => (a.username || '').localeCompare(b.username || ''),
             render: (text, record) => (
+                // Giữ lại Link để có thể click vào Username để xem chi tiết
                 <Link strong onClick={() => handleNavigateToDetails(record.employeeId)}>
                     {text || 'N/A'}
                 </Link>
@@ -252,11 +258,9 @@ export function StaffManager() {
         },
         { title: 'Email', dataIndex: 'email', key: 'email' },
         { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone' },
-        // --- ĐÃ XÓA: Cột 'Khu vực' ---
-        { title: 'Chức vụ', dataIndex: 'role', key: 'role', filters: [...new Set(staffData.map(item => item.role).filter(Boolean))].map(role => ({ text: role, value: role })), onFilter: (value, record) => (record.role || '').indexOf(value) === 0, render: (role) => <Tag color="blue">{role || 'N/A'}</Tag> },
+        { title: 'Chức vụ', dataIndex: 'role', key: 'role', render: (role) => <Tag color="blue">{role || 'N/A'}</Tag> },
         { title: 'Hành động', key: 'action', render: (text, record) => ( <Dropdown overlay={() => getActionMenu(record)} trigger={['click']}><Button type="text" icon={<MoreOutlined />} /></Dropdown> ) },
     ];
-    // --- KẾT THÚC SỬA ---
 
 
     // --- PHẦN RENDER (Return) ---
@@ -274,20 +278,23 @@ export function StaffManager() {
                         <Col><Button type="primary" icon={<UserAddOutlined />} onClick={showAddModal}>+ Thêm nhân viên</Button></Col>
                     </Row>
 
-                    {/* --- ĐÃ SỬA: Hàng Filter --- */}
+                    {/* --- Hàng Filter --- */}
                     <Row gutter={[16, 16]} style={{ marginBottom: 20, alignItems: 'center' }}>
                         <Col flex="400px"><Input placeholder="Tìm kiếm (Username, Email, SĐT)..." prefix={<SearchOutlined />} value={searchText} onChange={(e) => setSearchText(e.target.value)} /></Col>
-                        {/* --- ĐÃ XÓA: Bộ lọc 'Khu vực' --- */}
-                        <Col> <Select placeholder="Lọc theo Chức vụ" style={{ width: 150 }} value={filterPosition} onChange={setFilterPosition} allowClear> {[...new Set(staffData.map(item => item.role).filter(Boolean))].map(role => (<Option key={role} value={role}>{role}</Option>))} </Select> </Col>
+                        <Col>
+                            <Select placeholder="Lọc theo Chức vụ" style={{ width: 150 }} value={filterPosition} onChange={setFilterPosition} allowClear>
+                                {[...new Set(staffData.map(item => item.role).filter(Boolean))].map(role => (<Option key={role} value={role}>{role}</Option>))}
+                            </Select>
+                        </Col>
                         <Col><Button onClick={handleClearFilters} icon={<ClearOutlined />}>Xóa bộ lọc</Button></Col>
                     </Row>
-                    {/* --- KẾT THÚC SỬA --- */}
+                    {/* --- KẾT THÚC Hàng Filter --- */}
 
                     <Table columns={columns} dataSource={filteredData} loading={loading} pagination={{ pageSize: 10 }} bordered />
                 </Content>
             </Layout>
 
-            {/* (Modal Thêm Nhân Viên - ĐÃ SỬA) */}
+            {/* (Modal Thêm Nhân Viên - ĐÃ GIỚI HẠN ROLE VÀ THÊM NGÀY HỢP ĐỒNG) */}
             <Modal title="Thêm nhân viên mới" open={isAddModalVisible} onCancel={handleCancelAdd} footer={null} destroyOnClose>
                 <Form form={formAddStaff} layout="vertical" onFinish={handleAddStaff} name="add_staff_form">
                     <Row gutter={16}>
@@ -296,40 +303,62 @@ export function StaffManager() {
                     </Row>
                     <Form.Item name="fullName" label="Họ tên" rules={[{ required: true }]}><Input /></Form.Item>
                     <Row gutter={16}><Col span={12}><Form.Item name="email" label="Email" rules={[{ required: true }, { type: 'email' }]}><Input /></Form.Item></Col><Col span={12}><Form.Item name="phoneNumber" label="SĐT" rules={[{ required: true }]}><Input /></Form.Item></Col></Row>
-                    <Row gutter={16}><Col span={12}><Form.Item name="dob" label="Ngày sinh" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/></Form.Item></Col><Col span={12}><Form.Item name="gender" label="Giới tính" rules={[{ required: true }]}><Select><Option value="MALE">Nam</Option><Option value="FEMALE">Nữ</Option><Option value="OTHER">Khác</Option></Select></Form.Item></Col></Row>
+                    <Row gutter={16}>
+                        <Col span={12}><Form.Item name="dob" label="Ngày sinh" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/></Form.Item></Col>
+                        <Col span={12}><Form.Item name="gender" label="Giới tính" rules={[{ required: true }]}><Select><Option value="MALE">Nam</Option><Option value="FEMALE">Nữ</Option><Option value="OTHER">Khác</Option></Select></Form.Item></Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="hireDate" label="Ngày bắt đầu hợp đồng" rules={[{ required: true, message: 'Chọn ngày bắt đầu!' }]}>
+                                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/>
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="contractEndDate" label="Ngày kết thúc hợp đồng" rules={[{ required: true, message: 'Chọn ngày kết thúc!' }]}>
+                                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/>
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
                     <Form.Item name="userCode" label="Mã NV (Tùy chọn)"><Input /></Form.Item>
 
-                    {/* --- SỬA ĐỔI Ở ĐÂY --- */}
                     <Form.Item name="role" label="Chức vụ" rules={[{ required: true }]}>
-                        <Select>
-                            <Option value="TECHNICAL">Kỹ thuật</Option>
+                        <Select placeholder="Chọn chức vụ">
                             <Option value="GUARD">Bảo vệ</Option>
                             <Option value="CLEANER">Lao công</Option>
                         </Select>
                     </Form.Item>
-                    {/* --- KẾT THÚC SỬA ĐỔI --- */}
 
                     <Form.Item style={{ textAlign: 'right', marginTop: 24 }}><Space><Button onClick={handleCancelAdd}>Hủy</Button><Button type="primary" htmlType="submit" loading={isSubmittingAdd}>Thêm</Button></Space></Form.Item>
                 </Form>
             </Modal>
 
-            {/* (Modal Sửa Nhân Viên - ĐÃ SỬA) */}
+            {/* (Modal Sửa Nhân Viên - ĐÃ GIỚI HẠN ROLE VÀ THÊM NGÀY HỢP ĐỒNG) */}
             <Modal title={`Cập nhật thông tin ${editingStaff?.username || ''}`} open={isEditModalVisible} onCancel={handleCancelEdit} footer={null} destroyOnClose >
                 <Form form={formEditStaff} layout="vertical" onFinish={handleUpdateStaff} name="edit_staff_form">
                     <Form.Item name="phoneNumber" label="Số điện thoại" rules={[{ required: true }]}><Input /></Form.Item>
                     <Form.Item name="birthDate" label="Ngày sinh" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/></Form.Item>
 
-                    {/* --- SỬA ĐỔI Ở ĐÂY --- */}
-                    {/* (Giữ lại Manager để bạn có thể sửa các quản lý viên khác) */}
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="hireDate" label="Ngày bắt đầu hợp đồng" rules={[{ required: true, message: 'Chọn ngày bắt đầu!' }]}>
+                                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/>
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="contractEndDate" label="Ngày kết thúc hợp đồng" rules={[{ required: true, message: 'Chọn ngày kết thúc!' }]}>
+                                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY"/>
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
                     <Form.Item name="role" label="Chức vụ" rules={[{ required: true }]}>
-                        <Select>
-                            <Option value="TECHNICAL">Kỹ thuật</Option>
+                        <Select placeholder="Chọn chức vụ">
                             <Option value="GUARD">Bảo vệ</Option>
                             <Option value="CLEANER">Lao công</Option>
-                            <Option value="MANAGER">Quản lý</Option>
                         </Select>
                     </Form.Item>
-                    {/* --- KẾT THÚC SỬA ĐỔI --- */}
 
                     <Form.Item style={{ textAlign: 'right', marginTop: 24 }}><Space><Button onClick={handleCancelEdit}> Hủy </Button><Button type="primary" htmlType="submit" loading={isSubmittingEdit}> Cập nhật </Button></Space></Form.Item>
                 </Form>

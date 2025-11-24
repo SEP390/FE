@@ -31,7 +31,7 @@ import {AttendanceManagementPage} from "../pages/manager/Schedule/AttendanceMana
 import { InvoiceManager } from "../pages/manager/Invoice/InvoiceManager.jsx";
 import { ElectricInvoiceAuto } from "../pages/manager/Invoice/ElectricInvoiceAuto.jsx";
 import { ViolationInvoiceCreate } from "../pages/manager/Invoice/ViolationInvoiceCreate.jsx";
-import {CleanerSchedule} from "../pages/cleaner/CleanerSchedule.jsx";
+import {CleanerSchedule} from "../pages/cleaner/Scheduale/CleanerSchedule.jsx";
 import {CleanerSupplies} from "../pages/cleaner/CleanerSupplies.jsx";
 import {TechnicalRequests} from "../pages/technical/Requetst/TechnicalRequests.jsx";
 import {TechnicalRequestDetail} from "../pages/technical/Requetst/TechnicalRequestDetail.jsx";
