@@ -12,6 +12,8 @@ export function GuardViewReport() {
     const [collapsed, setCollapsed] = useState(false);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [selectedReport, setSelectedReport] = useState(null);
+
 
     const token = localStorage.getItem("token");
 
@@ -61,6 +63,11 @@ export function GuardViewReport() {
             title: "Nội dung",
             dataIndex: "content",
             key: "content",
+        },
+        {
+            title: "Loại báo cáo",
+            dataIndex: "reportType",
+            key: "reportType",
         },
         {
             title: "Ngày tạo",

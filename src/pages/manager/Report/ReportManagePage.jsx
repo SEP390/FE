@@ -115,6 +115,11 @@ export function ReportManagePage() {
             key: "content",
         },
         {
+            title: "Loại báo cáo",
+            dataIndex: "reportType",
+            key: "reportType",
+        },
+        {
             title: "Ngày tạo",
             dataIndex: "createdDate",
             key: "createdDate",
