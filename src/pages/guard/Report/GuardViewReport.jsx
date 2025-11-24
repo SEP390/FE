@@ -4,6 +4,7 @@ import { EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
 import axios from "axios";
 import {AppHeader} from "../../../components/layout/AppHeader.jsx";
+import {ReportDetailModal} from "../../../components/Report/ReportDetailModal.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -87,11 +88,11 @@ export function GuardViewReport() {
             align: "center",
             render: (_, record) => (
                 <Button
-                    type="text"
-                    icon={<EditOutlined />}
-                    disabled={record.reportStatus !== "PENDING"}
-                    onClick={() => window.location.href = `/guard/reports/edit/${record.reportId}`}
-                />
+                    type="link"
+                    onClick={() => setSelectedReport(record)}
+                >
+                    Xem chi tiết
+                </Button>
             ),
         },
     ];
@@ -121,6 +122,13 @@ export function GuardViewReport() {
                 </Content>
 
             </Layout>
+            {selectedReport && (
+                <ReportDetailModal
+                    open={!!selectedReport}
+                    report={selectedReport}
+                    onClose={() => setSelectedReport(null)}
+                />
+            )}
         </Layout>
     );
 }
