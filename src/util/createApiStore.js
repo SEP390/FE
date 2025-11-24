@@ -21,7 +21,7 @@ export function createApiStore(method, url, payload = null) {
             const url = get().url;
             console.log(method, url, payload)
             try {
-                set({isLoading: true, isSuccess: false, isError: false})
+                set({isLoading: true, isSuccess: false, isError: false, error: null, errorData: null})
                 const res = await axiosClient({
                     method,
                     url,
