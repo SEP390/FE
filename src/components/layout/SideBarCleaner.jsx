@@ -33,7 +33,8 @@ export function SideBarCleaner({ collapsed, active }) {
             className={"bg-white border-r border-gray-200"}
         >
             <div className="flex items-center justify-center py-4">
-                <Bed size={32} />
+                {/* Sử dụng icon phù hợp hơn cho Quản lý KTX / Vệ sinh */}
+                <Bed size={32} className="text-blue-500" />
             </div>
 
             <Menu
@@ -45,5 +46,3 @@ export function SideBarCleaner({ collapsed, active }) {
         </Sider>
     );
 }
-
-
