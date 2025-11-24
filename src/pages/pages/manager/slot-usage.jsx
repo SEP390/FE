@@ -6,12 +6,13 @@ import {App, Button, Popconfirm, Table} from 'antd'
 import {ResidentFilter} from "../../../components/ResidentSelect.jsx";
 import {RoomFilter} from "../../../components/RoomSelect.jsx";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
+import {useNavigate} from "react-router-dom";
 
 const slotHistoryStore = createApiStore("GET", "/slot-history")
 
 export default function SlotUsageManage() {
     const {data, fetch} = useViewEffect(slotHistoryStore)
-
+    const navigate = useNavigate();
     const {notification} = App.useApp();
     const onCheckout = (slotHistory) => {
         axiosClient({
@@ -77,7 +78,7 @@ export default function SlotUsageManage() {
                                 <Popconfirm onConfirm={() => onCheckout(row)} title={"Xác nhận checkout"}>
                                     <Button type={"link"}>Checkout</Button>
                                 </Popconfirm>,
-                                !row.checkout && <Button type={"link"}>Đổi phòng</Button>
+                                !row.checkout && <Button onClick={() => navigate("/pages/manager/swap?userId=" + row.user.id)} type={"link"}>Đổi phòng</Button>
                             ];
                         }
                     }
