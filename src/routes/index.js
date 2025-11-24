@@ -6,12 +6,6 @@ import {BookingHistoryPage} from "../pages/booking/BookingHistoryPage.jsx";
 import {PaymentHistoryPage} from "../pages/booking/PaymentHistoryPage.jsx";
 import {NewsList} from "../pages/News/NewsList.jsx";
 import {ElectricWaterBillPage} from "../pages/electric-water/ElectricWaterBillPage.jsx";
-//import {GuardElectricWaterPage} from "../pages/guard/electric-water/GuardElectricWaterPage.jsx";
-
-// === THAY ĐỔI IMPORT TẠI ĐÂY ===
-// import {GuardSchedule} from "../pages/guard/Scheduale/GuardSchedule.jsx"; // Đây là file cũ
-import { StaffAttendancePage } from "../pages/guard/Attendance/StaffAttendancePage.jsx"; // Đây là file chấm công mới
-// === KẾT THÚC THAY ĐỔI ===
 
 import {GuardViewRequest} from "../pages/guard/Request/GuardViewRequest.jsx";
 import {GuardViewRequestDetail} from "../pages/guard/Request/GuardViewRequestDetail.jsx";
@@ -52,6 +46,9 @@ import {StaffDetailPage} from "../pages/manager/Staff/StaffDetailPage.jsx";
 import {GuardViewReport} from "../pages/guard/Report/GuardViewReport.jsx";
 import {CleanerViewReport} from "../pages/cleaner/report/CleanerViewReport.jsx";
 import {TechnicianViewReport} from "../pages/technical/report/TechnicianViewReport.jsx";
+import {RoomInfoGuard} from "../pages/guard/Dorm/RoomInfoGuard.jsx";
+import {RoomInforDetailGuard} from "../pages/guard/Dorm/RoomInforDetailGuard.jsx";
+import {GuardSchedule} from "../pages/guard/Scheduale/GuardSchedule.jsx";
 
 const routes = [
     { path: "/", element: HomePage },
@@ -65,12 +62,10 @@ const routes = [
 
     // router dành cho guard //
     { path: "/electric-water", element: ElectricWaterBillPage },
-    // { path: "/guard/electric-water", element: GuardElectricWaterPage },
     { path: "/guard/reports", element: GuardViewReport },
-
-    // === THAY ĐỔI ĐƯỜNG DẪN TẠI ĐÂY ===
-    // { path: "/guard/schedule", element: GuardSchedule }, // Đường dẫn cũ
-    { path: "/guard/schedule", element: StaffAttendancePage }, // Đường dẫn mới trỏ đến trang chấm công
+    { path: "/guard/schedule", element:  GuardSchedule},
+    { path: "/guard/rooms", element: RoomInfoGuard },
+    { path: "/guard/room-detail/:roomId", element: RoomInforDetailGuard },
     // === KẾT THÚC THAY ĐỔI ===
 
     { path: "/guard/requests", element: GuardViewRequest },

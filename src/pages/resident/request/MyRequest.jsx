@@ -13,11 +13,13 @@ import {
 } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
+import { useLocation } from "react-router-dom";
 
 const { Option } = Select;
 
 export function MyRequest() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [dataSource, setDataSource] = useState([]);
     const [allData, setAllData] = useState([]);
     const [isResident, setIsResident] = useState(null);
@@ -168,6 +170,19 @@ export function MyRequest() {
     useEffect(() => {
         setDataSource(filteredData);
     }, [filteredData]);
+
+    // Hiển thị thông báo thành công khi tạo request xong
+    useEffect(() => {
+        if (location.state?.showSuccessMessage) {
+            message.success({
+                content: 'Yêu cầu đã được tạo thành công!',
+                duration: 5, // 5 giây
+            });
+
+            // Clear state để không hiện lại khi refresh
+            window.history.replaceState({}, document.title);
+        }
+    }, [location]);
 
     // Statistics calculations
     const stats = useMemo(() => {

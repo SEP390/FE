@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import {
     SearchOutlined, EditOutlined, PlusOutlined, DollarCircleOutlined,
-    EyeOutlined // <-- Đã thêm Icon xem chi tiết
+    EyeOutlined
 } from "@ant-design/icons";
 import { Link } from 'react-router-dom';
 
@@ -21,7 +21,7 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
 
-// === CỘT BẢNG PHÒNG CHÍNH ===
+// === CỘT BẢNG PHÒNG CHÍNH (LOGIC TÍNH TOÁN ĐÃ KHẮC PHỤC) ===
 const roomColumns = [
     {
         title: 'Tòa nhà',
@@ -39,7 +39,6 @@ const roomColumns = [
         title: 'Số phòng',
         dataIndex: 'roomNumber',
         key: 'roomNumber',
-        // --- ĐÃ BỎ LINK VÀ CHỈ HIỂN THỊ SỐ PHÒNG BÌNH THƯỜNG ---
         render: (text) => <span style={{ fontWeight: 'bold' }}>{text || 'N/A'}</span>,
     },
     {
@@ -47,18 +46,24 @@ const roomColumns = [
         key: 'occupancy',
         render: (text, record) => {
             const totalSlot = record?.totalSlot ?? record?.pricing?.totalSlot ?? 0;
-            const availableSlot = record?.slots?.filter(slot => slot?.status === "AVAILABLE").length ?? 0;
-            const currentSlot = Math.max(0, totalSlot - availableSlot);
-            return <span>{currentSlot} / {totalSlot}</span>;
+
+            // KHẮC PHỤC LỖI: Đếm trực tiếp các slot có trạng thái KHÁC "AVAILABLE" (đã sử dụng, CHECKIN, LOCK, UNAVAILABLE)
+            const currentResidents = record?.slots?.filter(slot => slot?.status !== "AVAILABLE").length ?? 0;
+
+            return <span>{currentResidents} / {totalSlot}</span>;
         },
     },
     {
         title: 'Trạng thái',
         key: 'status',
         render: (text, record) => {
-            const totalSlot = record?.totalSlot ?? record?.pricing?.totalSlot;
-            const availableSlot = record?.slots?.filter(slot => slot?.status === "AVAILABLE").length ?? 0;
-            const isFull = totalSlot > 0 && availableSlot === 0;
+            const totalSlot = record?.totalSlot ?? record?.pricing?.totalSlot ?? 0;
+
+            // TÍNH TOÁN TRẠNG THÁI DỰA TRÊN availableSlot
+            const availableSlotCount = record?.slots?.filter(slot => slot?.status === "AVAILABLE").length ?? 0;
+
+            const isFull = totalSlot > 0 && availableSlotCount === 0;
+
             const statusText = isFull ? 'Đã đầy' : 'Còn chỗ';
             return <Tag color={isFull ? 'red' : 'green'}>{statusText.toUpperCase()}</Tag>;
         }
