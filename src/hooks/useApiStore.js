@@ -1,11 +1,8 @@
 import {useEffect} from "react";
 import {App} from "antd";
 
-export function useViewEffect(store) {
+export function useApiStore(store) {
     const {fetch, mutate, data, error, isLoading, isError, isSuccess} = store()
-    useEffect(() => {
-        fetch()
-    }, [fetch])
     const {notification} = App.useApp()
     useEffect(() => {
         if (error) notification.error({message: error})

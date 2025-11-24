@@ -3,6 +3,7 @@ import {create} from "zustand";
 
 export function createApiStore(method, url, payload = null) {
     return create((set, get) => ({
+        url: url,
         isLoading: false,
         isSuccess: false,
         isError: false,
@@ -10,12 +11,14 @@ export function createApiStore(method, url, payload = null) {
         error: null,
         errorData: null,
         payload: payload,
+        setUrl: (url) => set({url}),
         mutate: async (payload) => {
             set({payload})
             await get().fetch()
         },
         fetch: async () => {
             const payload = get().payload;
+            const url = get().url;
             console.log(method, url, payload)
             try {
                 set({isLoading: true, isSuccess: false, isError: false})

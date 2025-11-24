@@ -1,22 +1,26 @@
 import {LayoutGuard} from "../../../components/layout/LayoutGuard.jsx";
-import {App, Button, Popconfirm, Table} from "antd";
-import {useCallback, useEffect, useState} from "react";
-import {useApi} from "../../../hooks/useApi.js";
+import {Button, Popconfirm, Table} from "antd";
+import {useEffect, useState} from "react";
 import {ResidentFilter} from "../../../components/ResidentSelect.jsx";
 import {PageHeader} from "../../../components/PageHeader.jsx";
 import {RoomFilter} from "../../../components/RoomSelect.jsx";
+import {useApiStore} from "../../../hooks/useApiStore.js";
+import {createApiStore} from "../../../util/createApiStore.js";
 
-function CheckinButton({slotId, fetchSlots}) {
-    const {post, error, isLoading} = useApi();
-    const {notification} = App.useApp();
-    useEffect(() => {
-        if (error) notification.error({message: String(error)})
-    }, [error, notification]);
+const guardCheckinStore = createApiStore("POST", "/guard/checkins")
+const guardCheckinSlotsStore = createApiStore("GET", "/slots", { status: "CHECKIN "})
+
+function CheckinButton({slotId}) {
+    const { isLoading, isSuccess} = useApiStore(guardCheckinStore);
+    const {fetch: fetchSlots} = guardCheckinStore()
 
     const onConfirm = () => {
-        post(`/checkin?slotId=${slotId}`, null)
-        fetchSlots()
+        mutate({slotId})
     }
+    useEffect(() => {
+        isSuccess && fetchSlots().then()
+    }, [fetchSlots, isSuccess]);
+
     return <Popconfirm title={"Xác nhận"} description={"Xác nhận checkin"} onConfirm={onConfirm}
                        onCancel={() => {
                        }}
@@ -27,26 +31,12 @@ function CheckinButton({slotId, fetchSlots}) {
 }
 
 export default function GuardCheckinPage() {
-    const {get, data, error, isLoading} = useApi();
+    const {mutate, data, isLoading} = useApiStore(guardCheckinSlotsStore)
     const [page, setPage] = useState(0);
-    const {notification} = App.useApp();
-    const [userCode, setUserCode] = useState(undefined);
-
-    const fetchSlots = useCallback(() => {
-        get("/slots", {
-            status: 'CHECKIN',
-            page,
-            userCode
-        })
-    }, [get, page, userCode])
 
     useEffect(() => {
-        fetchSlots()
-    }, [fetchSlots]);
-
-    useEffect(() => {
-        if (error) notification.error({message: String(error)})
-    }, [error, notification]);
+        mutate({page, status: "CHECKIN"})
+    }, [mutate, page])
 
     return <LayoutGuard active={"guard-checkin"}>
         <div className={"flex flex-col gap-3"}>
@@ -83,7 +73,7 @@ export default function GuardCheckinPage() {
                     {
                         title: "Hành động",
                         render: (val, row) => {
-                            return <CheckinButton slotId={row.id} fetchSlots={fetchSlots}/>
+                            return <CheckinButton slotId={row.id}/>
                         }
                     }
                 ]} pagination={{
