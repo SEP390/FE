@@ -115,6 +115,8 @@ export default function InvoicesPage() {
                         dataIndex: ["type"],
                         render: (val) => {
                             if (val === "BOOKING") return <Tag>Đặt phòng</Tag>
+                            if (val === "EW") return <Tag>Điện nước</Tag>
+                            if (val === "OTHER") return <Tag>Khác</Tag>
                         }
                     },
                     {

@@ -64,6 +64,10 @@ export default function ManagerCreateInvoice() {
                                         value: "VIOLATION",
                                     },
                                     {
+                                        label: "Đền bù",
+                                        value: "COMPENSATE",
+                                    },
+                                    {
                                         label: "Khác",
                                         value: "OTHER",
                                     },

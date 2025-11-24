@@ -2,15 +2,30 @@ import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import {PageHeader} from "../../../components/PageHeader.jsx";
 import {useViewEffect} from "../../../hooks/useViewEffect.js";
 import {createApiStore} from "../../../util/createApiStore.js";
-import {Table} from 'antd'
+import {App, Button, Popconfirm, Table} from 'antd'
 import {ResidentFilter} from "../../../components/ResidentSelect.jsx";
 import {RoomFilter} from "../../../components/RoomSelect.jsx";
+import axiosClient from "../../../api/axiosClient/axiosClient.js";
 
 const slotHistoryStore = createApiStore("GET", "/slot-history")
 
 export default function SlotUsageManage() {
-    const {data} = useViewEffect(slotHistoryStore)
-    return <LayoutManager>
+    const {data, fetch} = useViewEffect(slotHistoryStore)
+
+    const {notification} = App.useApp();
+    const onCheckout = (slotHistory) => {
+        axiosClient({
+            method: "POST",
+            url: "/slots/checkout/" + slotHistory.slotId,
+        }).then((res) => {
+            console.log(res)
+            fetch()
+        }).catch(err => {
+            notification.error({message: err?.response?.data?.message || err.message})
+        })
+    }
+
+    return <LayoutManager active={"slot"}>
         <div className={"flex flex-col gap-3"}>
             <PageHeader title="Quản lý giường"/>
             <div className={"section"}>
@@ -22,6 +37,14 @@ export default function SlotUsageManage() {
             </div>
             <div className={"section"}>
                 <Table className={"overflow-auto"} bordered dataSource={data ? data.content : []} columns={[
+                    {
+                        title: "Mã sinh viên",
+                        dataIndex: ["user", "userCode"],
+                    },
+                    {
+                        title: "Sinh viên",
+                        dataIndex: ["user", "fullName"],
+                    },
                     {
                         title: "Kỳ",
                         dataIndex: ["semester", "name"],
@@ -48,8 +71,14 @@ export default function SlotUsageManage() {
                     },
                     {
                         title: "Hành động",
-                        render: () => {
-                            return <></>;
+                        render: (val, row) => {
+                            return [
+                                !row.checkout &&
+                                <Popconfirm onConfirm={() => onCheckout(row)} title={"Xác nhận checkout"}>
+                                    <Button type={"link"}>Checkout</Button>
+                                </Popconfirm>,
+                                !row.checkout && <Button type={"link"}>Đổi phòng</Button>
+                            ];
                         }
                     }
                 ]} pagination={{

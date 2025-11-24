@@ -8,6 +8,7 @@ import {cn} from "../../util/cn.js";
 import {Bed} from "lucide-react";
 import {formatDate} from "../../util/formatTime.js";
 import {createApiStore} from "../../util/createApiStore.js";
+import {useViewEffect} from "../../hooks/useViewEffect.js";
 
 const useStore = create(set => ({
     recentRoom: null,
@@ -46,50 +47,87 @@ function PaymentAction() {
     return <Button onClick={onClick} type="link">Thanh toán</Button>
 }
 
-function CurrentSlot() {
-    const data = currentSlotStore(state => state.data);
+const roommatesStore = createApiStore("GET", "/user/roommates")
 
+function Roommates() {
+    const {data} = useViewEffect(roommatesStore)
     return <div className={"section"}>
-        <div className={"font-medium mb-3"}>Phòng hiện tại</div>
-        <Table bordered dataSource={[data]} columns={[
+        <div className={"font-medium mb-3"}>Bạn cùng phòng</div>
+        <Table bordered dataSource={data} columns={[
             {
-                title: "Dorm",
-                dataIndex: ["room", "dorm", "dormName"],
+                title: "Mã sinh viên",
+                dataIndex: ["userCode"],
             },
             {
-                title: "Phòng",
-                dataIndex: ["room", "roomNumber"],
+                title: "Sinh viên",
+                dataIndex: ["fullName"],
             },
             {
-                title: "Slot",
-                dataIndex: ["slotName"],
+                title: "email",
+                dataIndex: ["email"],
             },
             {
-                title: "Số giường",
-                dataIndex: ["room", "totalSlot"],
-            },
-            {
-                title: "Giá",
-                dataIndex: ["room", "pricing", "price"],
-                render: (val) => formatPrice(val)
-            },
-            {
-                title: "Trạng thái",
-                dataIndex: ["status"],
-                render: (val) => {
-                    if (val === "LOCK") return <Tag>Chưa thanh toán</Tag>
-                    if (val === "CHECKIN") return <Tag>Chờ checkin</Tag>
-                    if (val === "UNAVAILABLE") return <Tag>Đã checkin</Tag>
-                }
+                title: "Độ phù hợp",
+                dataIndex: ["matching"],
             },
             {
                 title: "Hành động",
                 render: (val, row) => {
-                    if (row.status === "LOCK") return [<PaymentAction />, <CancelAction />]
+                    return <Button type={"text"}>Chi tiết</Button>
                 }
             },
         ]} pagination={false}/>
     </div>
+}
+
+function CurrentSlot() {
+    const data = currentSlotStore(state => state.data);
+
+    return (<>
+            <div className={"section"}>
+                <div className={"font-medium mb-3"}>Phòng hiện tại</div>
+                <Table bordered dataSource={[data]} columns={[
+                    {
+                        title: "Dorm",
+                        dataIndex: ["room", "dorm", "dormName"],
+                    },
+                    {
+                        title: "Phòng",
+                        dataIndex: ["room", "roomNumber"],
+                    },
+                    {
+                        title: "Slot",
+                        dataIndex: ["slotName"],
+                    },
+                    {
+                        title: "Số giường",
+                        dataIndex: ["room", "totalSlot"],
+                    },
+                    {
+                        title: "Giá",
+                        dataIndex: ["room", "pricing", "price"],
+                        render: (val) => formatPrice(val)
+                    },
+                    {
+                        title: "Trạng thái",
+                        dataIndex: ["status"],
+                        render: (val) => {
+                            if (val === "LOCK") return <Tag>Chưa thanh toán</Tag>
+                            if (val === "CHECKIN") return <Tag>Chờ checkin</Tag>
+                            if (val === "UNAVAILABLE") return <Tag>Đã checkin</Tag>
+                        }
+                    },
+                    {
+                        title: "Hành động",
+                        render: (val, row) => {
+                            if (row.status === "LOCK") return [<PaymentAction/>, <CancelAction/>]
+                        }
+                    },
+                ]} pagination={false}/>
+            </div>
+            <Roommates/>
+        </>
+    )
 }
 
 function PaymentButton() {

@@ -1,38 +1,33 @@
 import {LayoutGuard} from "../../../components/layout/LayoutGuard.jsx";
-import {Button, Popconfirm, Table} from "antd";
+import {App, Button, Popconfirm, Table} from "antd";
 import {useEffect, useState} from "react";
 import {ResidentFilter} from "../../../components/ResidentSelect.jsx";
 import {PageHeader} from "../../../components/PageHeader.jsx";
 import {RoomFilter} from "../../../components/RoomSelect.jsx";
 import {useApiStore} from "../../../hooks/useApiStore.js";
 import {createApiStore} from "../../../util/createApiStore.js";
+import axiosClient from "../../../api/axiosClient/axiosClient.js";
 
-const guardCheckinStore = createApiStore("POST", "/guard/checkins")
-const guardCheckinSlotsStore = createApiStore("GET", "/slots", { status: "CHECKIN "})
-
-function CheckinButton({slotId}) {
-    const { isLoading, isSuccess} = useApiStore(guardCheckinStore);
-    const {fetch: fetchSlots} = guardCheckinStore()
-
-    const onConfirm = () => {
-        mutate({slotId})
-    }
-    useEffect(() => {
-        isSuccess && fetchSlots().then()
-    }, [fetchSlots, isSuccess]);
-
-    return <Popconfirm title={"Xác nhận"} description={"Xác nhận checkin"} onConfirm={onConfirm}
-                       onCancel={() => {
-                       }}
-                       okText="OK"
-                       cancelText="Hủy">
-        <Button loading={isLoading} type={"link"}>Checkin</Button>
-    </Popconfirm>
-}
+const guardCheckinSlotsStore = createApiStore("GET", "/slots", {status: "CHECKIN "})
 
 export default function GuardCheckinPage() {
-    const {mutate, data, isLoading} = useApiStore(guardCheckinSlotsStore)
+    const {mutate, fetch, data, isLoading} = useApiStore(guardCheckinSlotsStore)
     const [page, setPage] = useState(0);
+    const {notification} = App.useApp();
+    const onCheckin = (slot) => {
+        axiosClient({
+            method: "POST",
+            url: "/checkin",
+            data: {
+                slotId: slot.id
+            }
+        }).then((res) => {
+            console.log(res)
+            fetch()
+        }).catch(err => {
+            notification.error({message: err?.response?.data?.message || err.message})
+        })
+    }
 
     useEffect(() => {
         mutate({page, status: "CHECKIN"})
@@ -73,7 +68,7 @@ export default function GuardCheckinPage() {
                     {
                         title: "Hành động",
                         render: (val, row) => {
-                            return <CheckinButton slotId={row.id}/>
+                            return <Popconfirm onConfirm={() => onCheckin(row)} title={"Xác nhận"}><Button type={"link"}>Checkin</Button></Popconfirm>
                         }
                     }
                 ]} pagination={{
