@@ -8,56 +8,64 @@ import {DateRangeFilter} from "../../../components/DateRangeSelect.jsx";
 import {useNavigate} from "react-router-dom";
 import {DollarSign, Plus} from "lucide-react";
 import {create} from "zustand";
+import {useEffect} from "react";
 
-const getEWIndex = createApiStore("GET", "/ew/room", {page: 0})
+const getEWIndex = createApiStore("GET", "/ew/room")
 
 function EWTable() {
-    const data = getEWIndex(state => state.data);
+    const roomId = useFilterStore(state => state.roomId);
+    const {data, mutate} = getEWIndex();
 
     useViewEffect(getEWIndex)
 
+    useEffect(() => {
+        mutate({roomId})
+    }, [mutate, roomId]);
+
     return <Table className={"overflow-auto"} bordered dataSource={data ? data.content : []} columns={[
         {
-            title: "Dorm"
+            title: "Phòng",
+            dataIndex: ["room", "roomNumber"]
         },
         {
-            title: "Phòng"
+            title: "Kỳ",
+            dataIndex: ["semester", "name"]
         },
         {
-            title: "Ngày tạo"
+            title: "Số điện",
+            dataIndex: "electric"
         },
         {
-            title: "Kỳ"
+            title: "Số nước",
+            dataIndex: "water"
         },
         {
-            title: "Công tơ điện"
+            title: "Sử dụng điện",
+            dataIndex: "electricUsed"
         },
         {
-            title: "Công tơ nước",
+            title: "Sử dụng nước",
+            dataIndex: "waterUsed"
         },
         {
-            title: "Điện tiêu thụ",
+            title: "Ngày nhập",
+            dataIndex: "createDate"
         },
-        {
-            title: "Nước tiêu thụ",
-        },
-        {
-            title: "Hành động",
-        },
-    ]} pagination={{
-        current: 0,
-    }}>
-    </Table>
+    ]}/>
+
 }
 
 function CreateElectricInvoiceButton() {
     const navigate = useNavigate();
-    return <Button icon={<Plus size={14} />} onClick={() => navigate("/pages/manager/invoice/create?type=EW&subject=ALL&back=ew")}>Tạo hóa đơn</Button>
+    return <Button icon={<Plus size={14}/>}
+                   onClick={() => navigate("/pages/manager/invoice/create?type=EW&subject=ALL&back=ew")}>Tạo hóa
+        đơn</Button>
 }
 
 function ManageEWPriceButton() {
     const navigate = useNavigate();
-    return <Button icon={<DollarSign size={14} />} onClick={() => navigate("/pages/manager/ew/price")}>Quản lý giá</Button>
+    return <Button icon={<DollarSign size={14}/>} onClick={() => navigate("/pages/manager/ew/price")}>Quản lý
+        giá</Button>
 }
 
 const useFilterStore = create(set => ({

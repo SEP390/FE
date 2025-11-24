@@ -12,6 +12,7 @@ import {useApiStore} from "../../hooks/useApiStore.js";
 import {createApiStore} from "../../util/createApiStore.js";
 import {useViewEffect} from "../../hooks/useViewEffect.js";
 import {InvoiceCountLabel} from "../../components/InvoiceCountLabel.jsx";
+import {useUpdateEffect} from "../../hooks/useUpdateEffect.js";
 
 const userInvoicesStore = createApiStore("GET", "/user/invoices")
 const invoicePaymentStore = createApiStore("GET", "/invoices/{id}/payment")
@@ -52,6 +53,7 @@ function InvoiceModal() {
 
 function PaymentAction({invoiceId}) {
     const {fetch, setUrl, data} = useApiStore(invoicePaymentStore)
+    useUpdateEffect(invoicePaymentStore)
     const onClick = async () => {
         setUrl(`/invoices/${invoiceId}/payment`)
         fetch().then()

@@ -24,7 +24,7 @@ const useModal = create(set => ({
 const renderInvoiceStatus = (val) => {
     if (val === "PENDING") return <Tag>Chưa thanh toán</Tag>
     if (val === "SUCCESS") return <Tag color={"green"}>Đã thanh toán</Tag>
-    if (val === "CANCEL") return <Tag color={"red"}>Hủy thanh toán</Tag>
+    if (val === "CANCEL") return <Tag color={"red"}>Hủy</Tag>
 }
 
 function CancelAction({invoice}) {
@@ -234,6 +234,7 @@ function InvoiceTable() {
             dataIndex: ["type"],
             render: (val) => {
                 if (val === "BOOKING") return <Tag>Đặt phòng</Tag>
+                if (val === "EW") return <Tag>Điện nước</Tag>
             }
         },
         {
