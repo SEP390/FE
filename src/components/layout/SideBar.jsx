@@ -75,7 +75,7 @@ export function SideBar({ collapsed, active, setCollapsed }) {
                 trigger={null}
                 collapsible
                 breakpoint={"md"}
-                onBreakpoint={(broken) => {console.log("break");setCollapsed(broken)}}
+                onBreakpoint={(broken) => {setCollapsed && setCollapsed(broken)}}
                 collapsed={collapsed}
                 theme="light"
                 className={"bg-white border-r border-gray-200"}
