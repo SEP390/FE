@@ -1,74 +1,33 @@
 import {LayoutManager} from "../../../../components/layout/LayoutManager.jsx";
 import {Button, Form, Input, Select} from "antd";
 import {ChevronLeft, Minus, Plus} from "lucide-react";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router-dom";
 import {useApi} from "../../../../hooks/useApi.js";
-import {useEffect, useState} from "react";
+import {useEffect} from "react";
 import useErrorNotification from "../../../../hooks/useErrorNotification.js";
 import PriceInput from "../../../../components/PriceInput.jsx";
 import {RoomSelect} from "../../../../components/RoomSelect.jsx";
+import {ResidentSelect} from "../../../../components/ResidentSelect.jsx";
 
 function BackButton() {
     const navigate = useNavigate();
-    return <Button type={"text"} onClick={() => navigate("/pages/manager/invoice")} icon={<ChevronLeft size={14}/>}>Quay
+    const [params] = useSearchParams()
+    const onClick = () => {
+        if (params.get("back") === "ew") navigate("/pages/manager/ew")
+        else navigate("/pages/manager/invoice")
+    }
+    return <Button type={"text"} onClick={onClick} icon={<ChevronLeft size={14}/>}>Quay
         lại</Button>
-}
-
-function UserSelect({value, onChange}) {
-    const {get, data} = useApi();
-    const [search, setSearch] = useState("");
-
-    useEffect(() => {
-        get("/residents/search", {
-            userCode: search
-        })
-    }, [get, search]);
-
-    const options = data ? data.content.map(item => ({
-        label: `${item.userCode} - ${item.fullName}`,
-        value: item.id,
-    })) : null
-    return <Select value={value} allowClear filterOption={false} options={options} showSearch onSearch={setSearch}
-                   placeholder={"Chọn sinh viên"} onChange={onChange}/>
-}
-
-function InvoiceFormUsers(props) {
-    return <Form.List {...props} name={"users"}>
-        {(fields, {add, remove}) => (
-            <>
-                {fields.map(({key, name, ...restField}) => (
-                    <>
-                        <div className={"flex gap-3"}>
-                            <Form.Item
-                                key={key}
-                                {...restField}
-                                name={[name, 'userId']}
-                                rules={[{
-                                    required: true,
-                                    message: 'Chưa chọn sinh viên'
-                                }]}
-                                className={"flex-grow"}
-                            >
-                                <UserSelect/>
-                            </Form.Item>
-                            <Button onClick={() => remove(name)} type={"dashed"}
-                                    icon={<Minus size={14}/>}></ Button>
-                        </div>
-                    </>
-                ))}
-                <Form.Item><Button onClick={() => add()} type={"dashed"}
-                                   icon={<Plus size={14}/>}>Thêm sinh viên</Button></Form.Item>
-            </>
-        )}
-    </Form.List>
 }
 
 export default function ManagerCreateInvoice() {
     const {post, data, error, isLoading} = useApi()
     const onFinish = (value) => {
-        console.log(value);
+        post("/invoices", value)
     }
     const navigate = useNavigate();
+
+    const [params] = useSearchParams()
 
     useEffect(() => {
         if (data) navigate("/pages/manager/invoice")
@@ -88,8 +47,8 @@ export default function ManagerCreateInvoice() {
                     className={"w-130"}
                     onFinish={onFinish}
                     initialValues={{
-                        subject: "USER",
-                        type: "OTHER"
+                        subject: params.get("subject") || "USER",
+                        type: params.get("type") || "OTHER"
                     }}
                 >
                     {(fields) => (
@@ -103,6 +62,10 @@ export default function ManagerCreateInvoice() {
                                     {
                                         label: "Vi phạm",
                                         value: "VIOLATION",
+                                    },
+                                    {
+                                        label: "Đền bù",
+                                        value: "COMPENSATE",
                                     },
                                     {
                                         label: "Khác",
@@ -139,7 +102,7 @@ export default function ManagerCreateInvoice() {
                                 <>
                                     <Form.Item label={"Sinh viên"}
                                                rules={[{required: true, message: 'Chưa chọn sinh viên'}]}>
-                                        <Form.List name={"users"}>
+                                        <Form.List initialValue={[undefined]} name={"users"}>
                                             {(fields, {add, remove}) => (
                                                 <>
                                                     {fields.map(({key, name}) => (
@@ -154,7 +117,7 @@ export default function ManagerCreateInvoice() {
                                                                     }]}
                                                                     className={"flex-grow"}
                                                                 >
-                                                                    <UserSelect/>
+                                                                    <ResidentSelect/>
                                                                 </Form.Item>
                                                                 <Button onClick={() => remove(name)} type={"dashed"}
                                                                         icon={<Minus size={14}/>}></ Button>

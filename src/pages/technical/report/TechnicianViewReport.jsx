@@ -4,6 +4,7 @@ import { EditOutlined, PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
 import {AppHeader} from "../../../components/layout/AppHeader.jsx";
 import {SideBarTechnical} from "../../../components/layout/SideBarTechnical.jsx";
+import {ReportDetailModal} from "../../../components/Report/ReportDetailModal.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -12,6 +13,7 @@ export function TechnicianViewReport() {
     const [collapsed, setCollapsed] = useState(false);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [selectedReport, setSelectedReport] = useState(null);
 
     const token = localStorage.getItem("token");
 
@@ -63,6 +65,11 @@ export function TechnicianViewReport() {
             key: "content",
         },
         {
+            title: "Loại báo cáo",
+            dataIndex: "reportType",
+            key: "reportType",
+        },
+        {
             title: "Ngày tạo",
             dataIndex: "createdDate",
             key: "createdDate",
@@ -80,11 +87,11 @@ export function TechnicianViewReport() {
             align: "center",
             render: (_, record) => (
                 <Button
-                    type="text"
-                    icon={<EditOutlined />}
-                    disabled={record.reportStatus !== "PENDING"}
-                    onClick={() => window.location.href = `/technical/reports/edit/${record.reportId}`}
-                />
+                    type="link"
+                    onClick={() => setSelectedReport(record)}
+                >
+                    Xem chi tiết
+                </Button>
             ),
         },
     ];
@@ -114,6 +121,13 @@ export function TechnicianViewReport() {
                 </Content>
 
             </Layout>
+            {selectedReport && (
+                <ReportDetailModal
+                    open={!!selectedReport}
+                    report={selectedReport}
+                    onClose={() => setSelectedReport(null)}
+                />
+            )}
         </Layout>
     );
 }

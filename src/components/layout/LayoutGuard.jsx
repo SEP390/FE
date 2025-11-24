@@ -11,7 +11,7 @@ export function LayoutGuard({active, children}) {
 		<GuardSidebar active={active} collapsed={collapsed}/>
 		<Layout>
 			<AppHeader toggleSideBar={() => setCollapsed(!collapsed)}/>
-			<Content className={"!overflow-auto h-full p-5 flex flex-col"}>
+			<Content className={"!overflow-auto h-full p-5 flex flex-col *:flex-grow"}>
 				{children}
 			</Content>
 		</Layout>

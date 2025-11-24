@@ -1,74 +1,66 @@
 import {LayoutManager} from "../../../../components/layout/LayoutManager.jsx";
-import {useApi} from "../../../../hooks/useApi.js";
-import {useCallback, useEffect} from "react";
-import useErrorNotification from "../../../../hooks/useErrorNotification.js";
+import {useEffect} from "react";
 import {formatPrice} from "../../../../util/formatPrice.js";
 import {Button, Form, InputNumber} from "antd";
-import useSuccessNotification from "../../../../hooks/useSuccessNotification.js";
-import {create} from 'zustand'
+import PriceInput from "../../../../components/PriceInput.jsx";
+import {createApiStore} from "../../../../util/createApiStore.js";
+import {useViewEffect} from "../../../../hooks/useViewEffect.js";
+import {useUpdateEffect} from "../../../../hooks/useUpdateEffect.js";
+import {ChevronLeft} from "lucide-react";
+import {GoBack} from "../../../../components/GoBack.jsx";
 
-const useUpdateStore = create((set, get) => ({
-    refresh: 0,
-    forceUpdate: () => set({
-        refresh: get().refresh + 1,
-    })
-}))
+const getCurrentPriceApi = createApiStore("GET", "/ew/price");
+const updatePriceApi = createApiStore("POST", "/ew/price");
 
-function ItemLabel({label, value}) {
+function ItemLabel({label, value, prefix}) {
     return <div className={"p-5 rounded-lg border border-gray-200 bg-white flex flex-col justify-center items-center"}>
-        <div className={"font-medium text-lg"}>{value}</div>
+        <div className={"font-medium text-lg flex gap-1"}>{value}{prefix}</div>
         <div className={"text-gray-500"}>{label}</div>
     </div>
 }
 
 function CurrentPrice() {
-    const {refresh} = useUpdateStore();
-    const {get, data, error} = useApi();
+    const data = getCurrentPriceApi(state => state.data);
 
-    const fetchCurrentPrice = useCallback(() => {
-        get("/ew/price");
-    }, [get])
+    useViewEffect(getCurrentPriceApi)
 
-    useErrorNotification(error)
-
-    useEffect(() => {
-        fetchCurrentPrice()
-    }, [fetchCurrentPrice, refresh]);
-
-    return <div className={"flex gap-3 *:flex-grow"}>
+    return <div className={"flex gap-3 *:flex-grow flex-wrap"}>
         <ItemLabel value={formatPrice(data?.electricPrice)} label={"Giá điện hiện tại"}/>
         <ItemLabel value={formatPrice(data?.waterPrice)} label={"Giá nước hiện tại"}/>
-        <ItemLabel value={data?.maxElectricIndex + " kW"} label={"Số điện vượt quá"}/>
-        <ItemLabel value={data?.maxWaterIndex + " m3"} label={"Số nước vượt quá"}/>
+        <ItemLabel value={data?.maxElectricIndex} label={"Số điện miễn phí"} prefix={<span>kWG</span>}/>
+        <ItemLabel value={data?.maxWaterIndex} label={"Số nước miễn phí"} prefix={<span>m<sup>3</sup></span>}/>
     </div>
 }
 
 function UpdatePriceForm() {
-    const {forceUpdate} = useUpdateStore();
+    const currentPrice = getCurrentPriceApi(state => state.data);
+    const fetchCurrentPrice = getCurrentPriceApi(state => state.fetch);
+    const updatePrice = updatePriceApi(state => state.mutate);
+    const isLoading = updatePriceApi(state => state.isLoading);
+
     const [form] = Form.useForm();
 
-    const {post, data, error} = useApi();
-
-    useErrorNotification(error)
-    useSuccessNotification({data, message: "Cập nhật thành công"})
-
-    const onFinish = (value) => {
-        post("/ew/price", value);
-    }
+    useUpdateEffect(updatePriceApi, "Cập nhật thành công", {
+        "MAX_ELECTRIC_INDEX_MIN": "Số điện nước miễn phí phải > 0",
+        "MAX_WATER_INDEX_MIN": "Số điện nước miễn phí phải > 0",
+    })
 
     useEffect(() => {
-        if (data) {
-            forceUpdate()
-        }
-    }, [data, forceUpdate]);
+        form && form.setFieldsValue(currentPrice)
+    }, [currentPrice, form]);
+
+    const onFinish = (value) => {
+        updatePrice(value).then(fetchCurrentPrice)
+    }
 
     return <div className={"flex-grow bg-white rounded-lg border border-gray-200 p-5"}>
         <div className={"font-medium mb-3"}>Cập nhật giá mới</div>
         <Form
             form={form}
             name="basic"
-            labelCol={{span: 8}}
-            className={"w-130"}
+            labelCol={{span: 7}}
+            className={"md:w-130"}
+            disabled={isLoading}
             onFinish={onFinish}
         >
             <Form.Item
@@ -76,32 +68,32 @@ function UpdatePriceForm() {
                 name="electricPrice"
                 rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
             >
-                <InputNumber className={"!w-full"} placeholder={"Giá điện"}/>
+                <PriceInput placeholder={"Nhập giá điện"}/>
             </Form.Item>
             <Form.Item
                 label="Giá nước"
                 name="waterPrice"
                 rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
             >
-                <InputNumber className={"!w-full"} placeholder={"Giá nước"}/>
+                <PriceInput placeholder={"Nhập giá nước"}/>
             </Form.Item>
             <Form.Item
                 label="Số điện miễn phí"
                 name="maxElectricIndex"
                 rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
             >
-                <InputNumber className={"!w-full"} placeholder={"Số điện miễn phí"}/>
+                <InputNumber suffix={"kW"} className={"!w-full"} placeholder={"Số điện miễn phí"}/>
             </Form.Item>
             <Form.Item
                 label="Số nước miễn phí"
                 name="maxWaterIndex"
                 rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
             >
-                <InputNumber className={"!w-full"} placeholder={"Số nước miễn phí"}/>
+                <InputNumber suffix={<span>m<sup>3</sup></span>} className={"!w-full"} placeholder={"Số nước miễn phí"}/>
             </Form.Item>
             <Form.Item label={null}>
-                <Button type="primary" htmlType="submit">
-                    Tạo
+                <Button loading={isLoading} type="primary" htmlType="submit">
+                    Cập nhật
                 </Button>
             </Form.Item>
         </Form>
@@ -110,7 +102,10 @@ function UpdatePriceForm() {
 
 export default function ManageEWPrice() {
     return <LayoutManager>
-        <div className={"flex flex-col gap-5"}>
+        <div className={"flex flex-col gap-3"}>
+            <div className={"section flex items-center gap-3"}>
+                <GoBack url={"/pages/manager/ew"} /><div className={"text-lg font-medium"}>Quản lý giá điện nước</div>
+            </div>
             <CurrentPrice/>
             <UpdatePriceForm/>
         </div>

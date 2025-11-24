@@ -1,119 +1,138 @@
-import {useEffect, useState} from "react";
+import {useEffect} from "react";
 import axiosClient from "../../api/axiosClient/axiosClient.js";
-import {Alert, App, Button, Card, Descriptions, Divider, Skeleton, Table, Tag} from "antd";
+import {Alert, App, Button, Descriptions, Skeleton, Table, Tag} from "antd";
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import {create} from 'zustand'
 import {formatPrice} from "../../util/formatPrice.js";
 import {cn} from "../../util/cn.js";
 import {Bed} from "lucide-react";
 import {formatDate} from "../../util/formatTime.js";
-import {WarningOutlined} from "@ant-design/icons";
+import {createApiStore} from "../../util/createApiStore.js";
+import {useViewEffect} from "../../hooks/useViewEffect.js";
 
 const useStore = create(set => ({
-    currentSlot: null,
-    fetchCurrentSlot: async () => {
-        const res = await axiosClient("/slots/current");
-        console.log(res.data)
-        set({currentSlot: res.data});
-    },
     recentRoom: null,
     selectedRoom: null,
     selectedSlot: null,
     nextSemester: null,
-    ewPrice: {
-        electricPrice: null,
-        waterPrice: null,
-    },
-    fetchEWPrice: async () => {
-        const res = await axiosClient("/ew/price")
-        set({ewPrice: res.data})
-    },
-    fetchNextSemester: async () => {
-        const res = await axiosClient("/semesters/next");
-        console.log(res.data)
-        set({nextSemester: res.data})
-    },
     setSelectedRoom: (selectedRoom) => set({selectedRoom}),
     setSelectedSlot: (selectedSlot) => set({selectedSlot}),
-    fetchRecentRoom: async () => {
-
-    },
-    matchingRooms: [],
-    fetchMatchingRooms: async () => {
-        const res = await axiosClient("/rooms-matching", {})
-        console.log(res.data)
-        set({matchingRooms: res.data})
-    },
 }))
 
-function PaymentAction({slotId}) {
-    const {fetchCurrentSlot} = useStore();
-    const onClick = async () => {
-        try {
-            const res = await axiosClient({
-                url: "/payment/pending-booking",
-                method: "GET",
-                params: {
-                    slotId
-                }
-            })
-            const paymentUrl = res.data;
-            window.open(paymentUrl, '_blank').focus();
-        } catch (error) {
-            await fetchCurrentSlot()
+function CancelAction() {
+    return (
+        <>
+        </>
+    )
+}
+
+const bookingPaymentStore = createApiStore("POST", "/booking/payment")
+
+function PaymentAction() {
+    const {fetch: fetchCurrentSlot} = currentSlotStore();
+    const {fetch: getBookingPayment, data: paymentUrl, error} = bookingPaymentStore()
+    const {notification} = App.useApp();
+    useEffect(() => {
+        if (paymentUrl) {
+            window.open(paymentUrl, '_blank')
         }
+    }, [paymentUrl])
+    useEffect(() => {
+        error && notification.error({message: error})
+    }, [error, notification]);
+    const onClick = async () => {
+        await getBookingPayment()
+        await fetchCurrentSlot()
     }
     return <Button onClick={onClick} type="link">Thanh toán</Button>
 }
 
-function CurrentSlot() {
-    const {currentSlot} = useStore();
+const roommatesStore = createApiStore("GET", "/user/roommates")
 
-    return <div>
-        <div className={"font-medium mb-3"}>Phòng hiện tại</div>
-        <Table bordered dataSource={[currentSlot]} columns={[
+function Roommates() {
+    const {data} = useViewEffect(roommatesStore)
+    return <div className={"section"}>
+        <div className={"font-medium mb-3"}>Bạn cùng phòng</div>
+        <Table bordered dataSource={data} columns={[
             {
-                title: "Dorm",
-                dataIndex: ["room", "dorm", "dormName"],
+                title: "Mã sinh viên",
+                dataIndex: ["userCode"],
             },
             {
-                title: "Phòng",
-                dataIndex: ["room", "roomNumber"],
+                title: "Sinh viên",
+                dataIndex: ["fullName"],
             },
             {
-                title: "Slot",
-                dataIndex: ["slotName"],
+                title: "email",
+                dataIndex: ["email"],
             },
             {
-                title: "Số giường",
-                dataIndex: ["room", "totalSlot"],
-            },
-            {
-                title: "Giá",
-                dataIndex: ["room", "pricing", "price"],
-                render: (val) => formatPrice(val)
-            },
-            {
-                title: "Trạng thái",
-                dataIndex: ["status"],
-                render: (val) => {
-                    if (val === "LOCK") return <Tag>Chưa thanh toán</Tag>
-                    if (val === "CHECKIN") return <Tag>Chờ checkin</Tag>
-                    if (val === "UNAVAILABLE") return <Tag>Đã checkin</Tag>
-                }
+                title: "Độ phù hợp",
+                dataIndex: ["matching"],
             },
             {
                 title: "Hành động",
                 render: (val, row) => {
-                    if (row.status === "LOCK") return <PaymentAction slotId={row.id}/>
+                    return <Button type={"text"}>Chi tiết</Button>
                 }
             },
         ]} pagination={false}/>
     </div>
 }
 
+function CurrentSlot() {
+    const data = currentSlotStore(state => state.data);
+
+    return (<>
+            <div className={"section"}>
+                <div className={"font-medium mb-3"}>Phòng hiện tại</div>
+                <Table bordered dataSource={[data]} columns={[
+                    {
+                        title: "Dorm",
+                        dataIndex: ["room", "dorm", "dormName"],
+                    },
+                    {
+                        title: "Phòng",
+                        dataIndex: ["room", "roomNumber"],
+                    },
+                    {
+                        title: "Slot",
+                        dataIndex: ["slotName"],
+                    },
+                    {
+                        title: "Số giường",
+                        dataIndex: ["room", "totalSlot"],
+                    },
+                    {
+                        title: "Giá",
+                        dataIndex: ["room", "pricing", "price"],
+                        render: (val) => formatPrice(val)
+                    },
+                    {
+                        title: "Trạng thái",
+                        dataIndex: ["status"],
+                        render: (val) => {
+                            if (val === "LOCK") return <Tag>Chưa thanh toán</Tag>
+                            if (val === "CHECKIN") return <Tag>Chờ checkin</Tag>
+                            if (val === "UNAVAILABLE") return <Tag>Đã checkin</Tag>
+                        }
+                    },
+                    {
+                        title: "Hành động",
+                        render: (val, row) => {
+                            if (row.status === "LOCK") return [<PaymentAction/>, <CancelAction/>]
+                        }
+                    },
+                ]} pagination={false}/>
+            </div>
+            <Roommates/>
+        </>
+    )
+}
+
 function PaymentButton() {
-    const {selectedSlot, fetchCurrentSlot} = useStore();
+    const {selectedSlot} = useStore();
+    const {fetch: fetchCurrentSlot} = currentSlotStore();
     const onClick = async () => {
         const res = await axiosClient({
             url: "/booking",
@@ -130,40 +149,39 @@ function PaymentButton() {
 }
 
 function ConfirmSelect() {
-    const {selectedSlot, selectedRoom, nextSemester} = useStore();
-    return <div className={"mt-5"}>
-        <Card>
-            <Descriptions title={"Xác nhận"} layout={"vertical"} items={[
-                {
-                    label: "Dorm",
-                    children: <span>{selectedRoom.dorm.dormName}</span>
-                },
-                {
-                    label: "Phòng",
-                    children: <span>{selectedRoom.roomNumber}</span>
-                },
-                {
-                    label: "Slot",
-                    children: <span>{selectedSlot.slotName}</span>
-                },
-                {
-                    label: "Giá",
-                    children: <span>{formatPrice(selectedRoom.pricing.price)}</span>
-                },
-                {
-                    label: "Kỳ",
-                    children: <Tag>{nextSemester.name}</Tag>
-                },
-                {
-                    label: "Ngày bắt đầu",
-                    children: <span>{formatDate(nextSemester.startDate)}</span>
-                },
-                {
-                    label: "Ngày kết thúc",
-                    children: <span>{formatDate(nextSemester.endDate)}</span>
-                },
-            ]}/>
-        </Card>
+    const {selectedSlot, selectedRoom} = useStore();
+    const nextSemester = nextSemesterStore(state => state.data);
+    return <div className={"section"}>
+        <Descriptions title={"Xác nhận"} layout={"vertical"} items={[
+            {
+                label: "Dorm",
+                children: <span>{selectedRoom.dorm.dormName}</span>
+            },
+            {
+                label: "Phòng",
+                children: <span>{selectedRoom.roomNumber}</span>
+            },
+            {
+                label: "Slot",
+                children: <span>{selectedSlot.slotName}</span>
+            },
+            {
+                label: "Giá",
+                children: <span>{formatPrice(selectedRoom.pricing.price)}</span>
+            },
+            {
+                label: "Kỳ",
+                children: <Tag>{nextSemester?.name}</Tag>
+            },
+            {
+                label: "Ngày bắt đầu",
+                children: <span>{formatDate(nextSemester?.startDate)}</span>
+            },
+            {
+                label: "Ngày kết thúc",
+                children: <span>{formatDate(nextSemester?.endDate)}</span>
+            },
+        ]}/>
         <div className={"mt-5"}>
             <PaymentButton/>
         </div>
@@ -191,8 +209,7 @@ function SlotItem({data}) {
 function SelectSlot() {
     const {selectedRoom} = useStore();
 
-    return <div className={"mt-5"}>
-        <Divider/>
+    return <div className={"section"}>
         <div className={"font-medium mb-3"}>Chọn slot</div>
         <div className={"flex gap-3"}>
             {selectedRoom.slots.map(slot => <SlotItem data={slot}/>)}
@@ -234,59 +251,65 @@ function MatchingRoom({data}) {
     </div>
 }
 
-function CreateBooking() {
-    const [loading, setLoading] = useState(true);
-    const [isNoSurvey, setIsNoSurvey] = useState(false);
-    const {matchingRooms, fetchMatchingRooms, fetchNextSemester, fetchEWPrice, selectedRoom, selectedSlot} = useStore();
+const matchingRoomsStore = createApiStore("GET", "/rooms-matching");
+const nextSemesterStore = createApiStore("GET", "/semesters/next");
 
-    const {notification} = App.useApp();
+function CreateBooking() {
+    const {isLoading, data: matchingRooms, fetch: fetchMatchingRooms, isSuccess, isError, error} = matchingRoomsStore()
+    const {fetch: fetchNextSemester} = nextSemesterStore()
+    const {selectedRoom, selectedSlot} = useStore()
 
     useEffect(() => {
-        fetchMatchingRooms().catch((err) => {
-            const errCode = err.response?.data?.message || err.message;
-            if (errCode === 'NO_SURVEY') {
-                setIsNoSurvey(true)
-                return;
-            }
-            notification.error({message: "Lỗi", description: errCode});
-        }).finally(() => setLoading(false))
-        fetchNextSemester();
-    }, [fetchEWPrice, fetchMatchingRooms, fetchNextSemester, notification]);
+        fetchMatchingRooms().then();
+        fetchNextSemester().then();
+    }, [fetchMatchingRooms, fetchNextSemester,]);
 
     return <>
-        <div>
-            {loading && <>
-                <Skeleton active={loading} />
+        <div className={"section"}>
+            <div className={"font-medium text-lg"}>Đặt phòng</div>
+        </div>
+        <div className={"section"}>
+            {!isSuccess && !isError && <>
+                <Skeleton active={isLoading}/>
             </>}
-            {!loading && isNoSurvey && <>
-                <Alert type={"error"} message={"Lỗi"} closable={true}
+            {isError && error === "SURVEY_NOT_FOUND" && <>
+                <Alert showIcon type={"error"} message={"Lỗi"} closable={true}
                        description={"Bạn không thể đặt phòng nếu chưa hoàn thành khảo sát"}/>
             </>}
-            {!loading && !isNoSurvey && <>
+            {isError && error === "BOOKING_DATE_NOT_START" && <>
+                <Alert showIcon type={"error"} message={"Lỗi"} closable={true}
+                       description={"Chưa đến thời gian đặt phòng"}/>
+            </>}
+            {isSuccess && <>
                 <div className={"font-medium mb-3"}>Top 5 phòng phù hợp nhất</div>
                 <div className={"grid lg:grid-cols-3 gap-5"}>
                     {matchingRooms.map(data => <MatchingRoom key={data.id} data={data}/>)}
                 </div>
-                {selectedRoom && <SelectSlot/>}
-                {selectedRoom && selectedSlot && <ConfirmSelect/>}
             </>}
+        </div>
+        <div className={"grid gap-3 md:grid-cols-2"}>
+            {selectedRoom && <SelectSlot/>}
+            {selectedRoom && selectedSlot && <ConfirmSelect/>}
         </div>
     </>
 }
 
+const currentSlotStore = createApiStore("GET", "/slots/current");
+
 export default function BookingPage() {
-    const [loading, setLoading] = useState(true);
-    const {fetchCurrentSlot, currentSlot} = useStore();
+    const isError = currentSlotStore(state => state.isError)
+    const isSuccess = currentSlotStore(state => state.isSuccess)
+    const data = currentSlotStore(state => state.data)
+    const fetch = currentSlotStore(state => state.fetch)
+
     useEffect(() => {
-        fetchCurrentSlot().finally(() => {
-            setLoading(false);
-        })
-    }, [fetchCurrentSlot]);
+        fetch().then()
+    }, [fetch]);
 
     return <AppLayout activeSidebar={"booking"}>
-        <Card title={"Đặt phòng"} className={"flex-grow"}>
-            {!loading && !currentSlot && <CreateBooking/>}
-            {!loading && currentSlot && <CurrentSlot/>}
-        </Card>
+        <div className={"flex-grow flex gap-3 flex-col"}>
+            {isError || (isSuccess && !data) && <CreateBooking/>}
+            {isSuccess && data && <CurrentSlot/>}
+        </div>
     </AppLayout>
 }

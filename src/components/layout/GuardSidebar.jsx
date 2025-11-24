@@ -39,7 +39,7 @@ const items = [
     {
         key: "electric-water",
         icon: <ThunderboltOutlined />,
-        label: <Link to={"/pages/guard/electric-water"}>Điện nước</Link>,
+        label: <Link to={"/pages/guard/ew"}>Điện nước</Link>,
     }
 ];
 

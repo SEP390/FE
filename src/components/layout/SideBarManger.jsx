@@ -13,9 +13,12 @@ import {
     WarningOutlined,
 } from "@ant-design/icons";
 // CHUẨN HÓA IMPORTS: Import Layout và Menu từ 'antd'
-import {Layout, Menu} from "antd";
+import {Drawer, Layout, Menu} from "antd";
 import {Link} from "react-router-dom";
 import {Bed} from "lucide-react";
+import {useMobile} from "../../hooks/useMobile.js";
+import {useEffect} from "react";
+import {useCollapsed} from "../../hooks/useCollapsed.js";
 
 // Lấy Sider từ Layout đã import
 const {Sider} = Layout;
@@ -33,9 +36,14 @@ const managerItems = [
         key: "manager-students",
     },
     {
-        label: <Link to={"/pages/manager/electric-water/pricing"}>Giá điện nước</Link>,
+        label: <Link to={"/pages/manager/ew"}>Quản lý điện nước</Link>,
         icon: <ThunderboltOutlined/>,
-        key: "electric-water-pricing",
+        key: "manager-ew",
+    },
+    {
+        label: <Link to={'/pages/manager/invoice'}>Quản lí hóa đơn</Link>,
+        icon: <ReadOutlined/>,
+        key: 'manager-invoice'
     },
     {
         label: <Link to={"/manager/requests"}>Quản lí yêu cầu</Link>,
@@ -43,9 +51,9 @@ const managerItems = [
         key: "manager-requests",
     },
     {
-        label: <Link to={"/pages/manager/checkout"}>Quản lí checkout</Link>,
+        label: <Link to={"/pages/manager/slot-usage"}>Quản lí slot</Link>,
         icon: <ContainerOutlined/>,
-        key: "manager-checkout",
+        key: "manager-slot",
     },
     {
         label: <Link to={"/manager/rooms"}>Thông tin phòng</Link>,
@@ -92,31 +100,55 @@ const managerItems = [
         icon: <CoffeeOutlined/>,
         key: "holiday"
     },
-    {
-        label: <Link to={'/pages/manager/invoice'}>Quản lí hóa đơn</Link>,
-        icon: <ThunderboltOutlined/>,
-        key: 'manager-invoices'
-    }
 ];
 
-export function SideBarManager({collapsed, active}) {
+
+export function SideBarManager({active}) {
+    const {isMobile} = useMobile();
+    const collapsed = useCollapsed(state => state.collapsed)
+    const setCollapsed = useCollapsed(state => state.setCollapsed)
+    useEffect(() => {
+        if (!isMobile) {
+            setCollapsed && setCollapsed(false)
+        } else {
+            setCollapsed && setCollapsed(true)
+        }
+    }, [isMobile, setCollapsed]);
     return (
-        <Sider
-            trigger={null}
-            collapsible
-            collapsed={collapsed}
-            theme="light"
-            className={"relative bg-white border-r border-gray-200 scrollbar-* flex flex-col overflow-auto"}
-        >
-            <div className="sticky bg-white border-b border-r border-gray-100 top-0 py-4 z-99 flex items-center justify-center">
-                <Bed size={32}/>
-            </div>
-            <Menu
-                mode="inline"
-                selectedKeys={[active]}
-                className={"border-0 !z-0"}
-                items={managerItems}
-            />
-        </Sider>
+        <>
+            <Sider
+                trigger={null}
+                collapsible
+                collapsedWidth={isMobile ? 0 : 80}
+                collapsed={isMobile ? true : collapsed}
+                theme="light"
+                className={"relative bg-white border-r border-gray-200 scrollbar-* flex flex-col overflow-auto"}
+            >
+                <div
+                    className="sticky bg-white border-b border-r border-gray-100 top-0 py-4 z-99 flex items-center justify-center">
+                    <Bed size={32}/>
+                </div>
+                <Menu
+                    mode="inline"
+                    selectedKeys={[active]}
+                    className={"border-0 !z-0"}
+                    items={managerItems}
+                />
+            </Sider>
+            {isMobile && (
+                <>
+                    <Drawer width={300} placement={"left"} onClose={() => {
+                        setCollapsed && setCollapsed(true)
+                    }} open={!collapsed}>
+                        <Menu
+                            mode="inline"
+                            selectedKeys={[active]}
+                            className={"!border-0"}
+                            items={managerItems}
+                        />
+                    </Drawer>
+                </>
+            )}
+        </>
     );
 }
