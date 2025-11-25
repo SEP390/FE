@@ -1,13 +1,13 @@
 import {LayoutManager} from "../../../../components/layout/LayoutManager.jsx";
-import {Button, Form, Input, Select} from "antd";
+import {App, Button, Form, Input, Select} from "antd";
 import {ChevronLeft, Minus, Plus} from "lucide-react";
 import {useNavigate, useSearchParams} from "react-router-dom";
-import {useApi} from "../../../../hooks/useApi.js";
-import {useEffect} from "react";
 import useErrorNotification from "../../../../hooks/useErrorNotification.js";
 import PriceInput from "../../../../components/PriceInput.jsx";
 import {RoomSelect} from "../../../../components/RoomSelect.jsx";
 import {ResidentSelect} from "../../../../components/ResidentSelect.jsx";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
+import axiosClient from "../../../../api/axiosClient/axiosClient.js";
 
 function BackButton() {
     const navigate = useNavigate();
@@ -21,19 +21,27 @@ function BackButton() {
 }
 
 export default function ManagerCreateInvoice() {
-    const {post, data, error, isLoading} = useApi()
-    const onFinish = (value) => {
-        post("/invoices", value)
-    }
-    const navigate = useNavigate();
-
+    const queryClient = useQueryClient()
+    const navigate = useNavigate()
     const [params] = useSearchParams()
+    const {notification} = App.useApp()
+    const {mutate, error} = useMutation({
+        mutationFn: (val) => axiosClient.post("/invoices", val).then(res => res.data),
+        onSuccess: () => {
+            notification.success({message: "Tạo hóa đơn thành công"})
+            navigate("/pages/manager/invoice")
+            queryClient.invalidateQueries({
+                queryKey: ["invoices"]
+            })
+        }
+    })
 
-    useEffect(() => {
-        if (data) navigate("/pages/manager/invoice")
-    }, [data, navigate]);
+    const onFinish = (val) => {
+        mutate(val)
+    }
 
     useErrorNotification(error)
+
     return <LayoutManager header={<span className={"font-medium text-lg"}>Tạo hóa đơn</span>}>
         <div className={"rounded-lg h-full flex flex-col gap-3"}>
             <div className={"p-5 bg-white rounded-lg border border-gray-200 flex gap-3 items-center flex-wrap"}>

@@ -5,11 +5,12 @@ import {RoomFilter} from "../../../components/RoomSelect.jsx";
 import {SemesterFilter} from "../../../components/SemesterSelect.jsx";
 import {DateRangeFilter} from "../../../components/DateRangeSelect.jsx";
 import {useNavigate} from "react-router-dom";
-import {DollarSign, Plus} from "lucide-react";
+import {CalendarDays, DollarSign, Droplet, House, Plus} from "lucide-react";
 import {create} from "zustand";
 import {useQuery} from "@tanstack/react-query";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
 import {formatDate} from "../../../util/formatTime.js";
+import {ThunderboltOutlined} from "@ant-design/icons";
 
 const getEWIndex = createApiStore("GET", "/ew/room")
 
@@ -72,7 +73,8 @@ export default function ManageEW() {
                 <Table className={"overflow-auto"} bordered dataSource={data ? data.content : []} columns={[
                     {
                         title: "Phòng",
-                        dataIndex: ["room", "roomNumber"]
+                        dataIndex: ["room", "roomNumber"],
+                        render: (val) => <span className={"flex gap-1 items-center"}><House size={14}/>{val}</span>
                     },
                     {
                         title: "Kỳ",
@@ -82,27 +84,32 @@ export default function ManageEW() {
                     {
                         title: "Số điện",
                         dataIndex: "electric",
-                        render: (val) => <span>{val} kW</span>
+                        render: (val) => <span
+                            className={"flex gap-1 items-center"}><ThunderboltOutlined/>{val} kW</span>,
                     },
                     {
                         title: "Số nước",
                         dataIndex: "water",
-                        render: (val) => <span>{val} m<sup>3</sup></span>
+                        render: (val) => <span className={"flex gap-1 items-center"}><Droplet
+                            size={14}/>{val}<span>m<sup>3</sup></span></span>,
                     },
                     {
                         title: "Sử dụng điện",
                         dataIndex: "electricUsed",
-                        render: (val) => <span>{val} kW</span>
+                        render: (val) => <span
+                            className={"flex gap-1 items-center"}><ThunderboltOutlined/>{val} kW</span>,
                     },
                     {
                         title: "Sử dụng nước",
                         dataIndex: "waterUsed",
-                        render: (val) => <span>{val} m<sup>3</sup></span>
+                        render: (val) => <span className={"flex gap-1 items-center"}><Droplet
+                            size={14}/>{val}<span>m<sup>3</sup></span></span>,
                     },
                     {
                         title: "Ngày nhập",
                         dataIndex: "createDate",
-                        render: formatDate
+                        render: (val) => <span className={"flex gap-1 items-center"}><CalendarDays
+                            size={14}/>{formatDate(val)}</span>,
                     },
                 ]}/>
             </div>

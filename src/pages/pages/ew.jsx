@@ -8,6 +8,8 @@ import axiosClient from "../../api/axiosClient/axiosClient.js";
 import useErrorNotification from "../../hooks/useErrorNotification.js";
 import {create} from "zustand";
 import {formatDate} from "../../util/formatTime.js";
+import {ThunderboltOutlined} from "@ant-design/icons";
+import {CalendarDays, Droplet} from "lucide-react";
 
 function CountLabel({value, label}) {
     return <div className={"section text-center"}>
@@ -34,11 +36,13 @@ function CurrentUsage() {
 
 const useFilterStore = create(set => ({
     page: 0,
-    setPage: (page) => set({page}),
     sort: "startDate,DESC",
     semesterId: null,
     setSemesterId: (semesterId) => set({semesterId}),
-    setSort: (sort) => set({sort}),
+    onChange: ({current}, filter, {field, order}) => set({
+        page: current - 1,
+        sort: field ? `${field},${order === "ascend" ? "ASC" : "DESC"}` : "startDate,DESC"
+    }),
     startDate: null,
     endDate: null,
     setDateRange: (val) => {
@@ -54,7 +58,7 @@ const useFilterStore = create(set => ({
 }))
 
 export default function UserEWUsage() {
-    const {page, setPage, semesterId, setSemesterId, sort, startDate, endDate, setDateRange} = useFilterStore();
+    const {page, onChange, semesterId, setSemesterId, sort, startDate, endDate, setDateRange} = useFilterStore();
     const {data, error} = useQuery({
         queryKey: ["user-ew", page, semesterId, sort, startDate, endDate],
         queryFn: () => axiosClient.get("/user/ew", {
@@ -82,12 +86,15 @@ export default function UserEWUsage() {
                     {
                         title: "Số điện",
                         dataIndex: "electric",
-                        render: (val) => <span>{val} kW</span>
+                        render: (val) => <span
+                            className={"flex gap-1 items-center"}><ThunderboltOutlined/>{val} kW</span>,
+                        sorter: true,
                     },
                     {
                         title: "Số nước",
                         dataIndex: "water",
-                        render: (val) => <span>{val} m<sup>3</sup></span>
+                        render: (val) => <span className={"flex gap-1 items-center"}><Droplet size={14}/>{val}<span>m<sup>3</sup></span></span>,
+                        sorter: true,
                     },
                     {
                         title: "Kỳ",
@@ -97,12 +104,14 @@ export default function UserEWUsage() {
                     {
                         title: "Từ ngày",
                         dataIndex: "startDate",
-                        render: formatDate
+                        render: (val) => <span className={"flex gap-1 items-center"}><CalendarDays size={14}/>{formatDate(val)}</span>,
+                        sorter: true,
                     },
                     {
                         title: "Đến ngày",
                         dataIndex: "endDate",
-                        render: formatDate
+                        render: (val) => <span className={"flex gap-1 items-center"}><CalendarDays size={14}/>{formatDate(val)}</span>,
+                        sorter: true,
                     },
                     {
                         title: "Trạng thái",
@@ -112,7 +121,7 @@ export default function UserEWUsage() {
                             if (!value) return <Tag color={"error"}>Chưa thanh toán</Tag>
                         }
                     },
-                ]} pagination={{
+                ]} onChange={onChange} pagination={{
                     current: page + 1,
                     total: data?.page?.totalElements,
                 }}/>

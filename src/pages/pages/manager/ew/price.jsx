@@ -9,6 +9,7 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import axiosClient from "../../../../api/axiosClient/axiosClient.js";
 import useErrorNotification from "../../../../hooks/useErrorNotification.js";
 import {formatTime} from "../../../../util/formatTime.js";
+import {Clock} from "lucide-react";
 
 const getCurrentPriceApi = createApiStore("GET", "/ew/price");
 const updatePriceApi = createApiStore("POST", "/ew/price");
@@ -81,7 +82,7 @@ function UpdatePriceForm() {
         {currentPriceErrorCode === "PRICE_NOT_FOUND" && (
             <>
                 <div className={"mb-3"}>
-                    <Alert showIcon type="error" message={"Chưa có dữ liệu"} />
+                    <Alert showIcon type="error" message={"Chưa có dữ liệu"}/>
                 </div>
             </>
         )}
@@ -122,18 +123,18 @@ function UpdatePriceForm() {
                 <InputNumber suffix={<span>m<sup>3</sup></span>} className={"!w-full"}
                              placeholder={"Số nước miễn phí"}/>
             </Form.Item>
+            {currentPrice?.createTime && (
+                <>
+                    <Form.Item label={"Cập nhật gần nhất"}>
+                        <span className={"flex gap-1 items-center"}><Clock size={14}/>{formatTime(currentPrice.createTime)}</span>
+                    </Form.Item>
+                </>
+            )}
             <Form.Item label={null}>
                 <Button loading={isLoading} type="primary" htmlType="submit">
                     Cập nhật
                 </Button>
             </Form.Item>
-            {currentPrice?.createTime && (
-                <>
-                    <Form.Item label={null}>
-                        <span className={"ml-3"}>Lần cập nhật gần nhất: {formatTime(currentPrice.createTime)}</span>
-                    </Form.Item>
-                </>
-            )}
         </Form>
     </div>
 }

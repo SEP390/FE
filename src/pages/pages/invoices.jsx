@@ -13,6 +13,7 @@ import axiosClient from "../../api/axiosClient/axiosClient.js";
 import {InvoiceTypeTag} from "../../components/InvoiceTypeTag.jsx";
 import {InvoiceStatusTag} from "../../components/InvoiceStatusTag.jsx";
 import {cn} from "../../util/cn.js";
+import {Clock} from "lucide-react";
 
 function AppCard({title, className, children}) {
     return <div className={cn("border border-gray-200 rounded-lg", className)}>
@@ -27,13 +28,12 @@ function UserInvoiceCount() {
         queryFn: () => axiosClient.get("/user/invoices/count").then(res => res.data),
     })
 
-    return <div className={"section"}>
-        <div className={"grid grid-cols-3 gap-3"}>
-            <InvoiceCountLabel label={"Tổng số hóa đơn"} count={data?.totalCount}/>
-            <InvoiceCountLabel label={"Tổng số chưa thanh toán"} count={data?.totalPending}/>
-            <InvoiceCountLabel label={"Tổng số đã thanh toán"} count={data?.totalSuccess}/>
-        </div>
+    return <div className={"grid grid-cols-3 gap-3"}>
+        <InvoiceCountLabel label={"Tổng số hóa đơn"} count={data?.totalCount}/>
+        <InvoiceCountLabel label={"Tổng số chưa thanh toán"} count={data?.totalPending}/>
+        <InvoiceCountLabel label={"Tổng số đã thanh toán"} count={data?.totalSuccess}/>
     </div>
+
 }
 
 
@@ -75,6 +75,7 @@ const useFilterStore = create(set => ({
     setType: (type) => set({type}),
     setStatus: (status) => set({status}),
     setSort: (sort) => set({sort}),
+    onChange: ({current}, filter, {field, order}) => set({page: current - 1, sort: field ? `${field},${order === "ascend" ? "ASC": "DESC"}` : "createTime,DESC"})
 }))
 
 
@@ -90,7 +91,7 @@ function InvoiceDetailModal() {
                         <AppCard title={"Hóa đơn"} className={"flex-grow"}>
                             <div className={"text-blue-600 hover:text-blue-400 hover:cursor-pointer"}>{invoice.id}</div>
                             <div className={"text-gray-500"}>{formatTime(invoice.createTime)}</div>
-                            <div className={"text-blue-600"}><InvoiceStatusTag value={invoice?.status} /></div>
+                            <div className={"text-blue-600"}><InvoiceStatusTag value={invoice?.status}/></div>
                         </AppCard>
                     </div>
                     <div className={"flex-grow flex flex-col gap-3"}>
@@ -145,7 +146,7 @@ function InvoiceDetailModal() {
 }
 
 export default function InvoicesPage() {
-    const {page, type, status, sort, setType, setStatus, setPage, setSort} = useFilterStore()
+    const {page, type, status, sort, setType, setStatus, onChange} = useFilterStore()
     const {data, error} = useQuery({
         queryKey: ["user-invoices", page, type, status, sort],
         queryFn: () => axiosClient({
@@ -175,13 +176,15 @@ export default function InvoicesPage() {
                 <Table className={"overflow-auto"} bordered dataSource={data ? data.content : []} columns={[
                     {
                         title: "Ngày tạo",
-                        dataIndex: ["createTime"],
-                        render: (val) => formatTime(val),
+                        dataIndex: "createTime",
+                        render: (val) => <span className={"flex gap-1 items-center"}><Clock size={14} />{formatTime(val)}</span>,
+                        sorter: true,
                     },
                     {
                         title: "Giá",
-                        dataIndex: ["price"],
+                        dataIndex: "price",
                         render: (val) => formatPrice(val),
+                        sorter: true,
                     },
                     {
                         title: "Nội dung",
@@ -212,9 +215,7 @@ export default function InvoicesPage() {
                             </>
                         )
                     }
-                ]} onChange={({current}) => {
-                    setPage(current - 1)
-                }} pagination={{
+                ]} onChange={onChange} pagination={{
                     current: page + 1,
                     pageSize: 5,
                     total: data?.page?.totalElements
