@@ -1,14 +1,15 @@
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import {PageHeader} from "../../components/PageHeader.jsx";
 import {Table, Tag} from "antd";
-import {createApiStore} from "../../util/createApiStore.js";
-import {useViewEffect} from "../../hooks/useViewEffect.js";
 import {SemesterFilter} from "../../components/SemesterSelect.jsx";
 import {DateRangeFilter} from "../../components/DateRangeSelect.jsx";
+import {useQuery} from "@tanstack/react-query";
+import axiosClient from "../../api/axiosClient/axiosClient.js";
+import useErrorNotification from "../../hooks/useErrorNotification.js";
+import {create} from "zustand";
+import {formatDate} from "../../util/formatTime.js";
 
-const userUsage = createApiStore("GET", "/user/ew/count")
-
-function CountLabel({ value, label }) {
+function CountLabel({value, label}) {
     return <div className={"section text-center"}>
         <div className={"text-lg font-medium"}>{value}</div>
         <div>{label}</div>
@@ -16,19 +17,54 @@ function CountLabel({ value, label }) {
 }
 
 function CurrentUsage() {
-    const {data} = useViewEffect(userUsage)
+    const {data, error} = useQuery({
+        queryKey: ["user-ew-count"],
+        queryFn: () => axiosClient.get("/user/ew/count").then(res => res.data)
+    })
+
+    useErrorNotification(error)
 
     return <div className={"flex gap-3 *:flex-grow flex-wrap"}>
-        <CountLabel value={data?.electric} label={"Số điện đã dùng kỳ này"} />
-        <CountLabel value={data?.water} label={"Số nước đã dùng kỳ này"} />
-        <CountLabel value={data?.electricOverflow} label={"Số điện vượt mức kỳ này"} />
-        <CountLabel value={data?.waterOverflow} label={"Số nước vượt mức kỳ này"} />
+        <CountLabel value={data?.electric} label={"Số điện đã dùng kỳ này"}/>
+        <CountLabel value={data?.water} label={"Số nước đã dùng kỳ này"}/>
+        <CountLabel value={data?.electricOverflow} label={"Số điện vượt mức kỳ này"}/>
+        <CountLabel value={data?.waterOverflow} label={"Số nước vượt mức kỳ này"}/>
     </div>
 }
 
-const userEWUsageStore = createApiStore("GET", "/user/ew")
+const useFilterStore = create(set => ({
+    page: 0,
+    setPage: (page) => set({page}),
+    sort: "startDate,DESC",
+    semesterId: null,
+    setSemesterId: (semesterId) => set({semesterId}),
+    setSort: (sort) => set({sort}),
+    startDate: null,
+    endDate: null,
+    setDateRange: (val) => {
+        if (val) {
+            set({
+                startDate: val[0].format("YYYY-MM-DD"),
+                endDate: val[1].format("YYYY-MM-DD"),
+            })
+        } else {
+            set({startDate: null, endDate: null})
+        }
+    }
+}))
+
 export default function UserEWUsage() {
-    const {data} = useViewEffect(userEWUsageStore)
+    const {page, setPage, semesterId, setSemesterId, sort, startDate, endDate, setDateRange} = useFilterStore();
+    const {data, error} = useQuery({
+        queryKey: ["user-ew", page, semesterId, sort, startDate, endDate],
+        queryFn: () => axiosClient.get("/user/ew", {
+            params: {
+                page, sort, semesterId, startDate, endDate
+            }
+        }).then(res => res.data)
+    })
+
+    useErrorNotification(error)
 
     return <AppLayout activeSidebar={"ew"}>
         <div className={"flex flex-col gap-3"}>
@@ -37,8 +73,8 @@ export default function UserEWUsage() {
             <div className={"section"}>
                 <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
                 <div className={"flex gap-3"}>
-                    <SemesterFilter/>
-                    <DateRangeFilter/>
+                    <SemesterFilter onChange={setSemesterId}/>
+                    <DateRangeFilter onChange={setDateRange}/>
                 </div>
             </div>
             <div className={"section flex-grow"}>
@@ -46,22 +82,27 @@ export default function UserEWUsage() {
                     {
                         title: "Số điện",
                         dataIndex: "electric",
+                        render: (val) => <span>{val} kW</span>
                     },
                     {
                         title: "Số nước",
                         dataIndex: "water",
+                        render: (val) => <span>{val} m<sup>3</sup></span>
                     },
                     {
                         title: "Kỳ",
                         dataIndex: ["semester", "name"],
+                        render: (val) => <Tag>{val}</Tag>
                     },
                     {
                         title: "Từ ngày",
                         dataIndex: "startDate",
+                        render: formatDate
                     },
                     {
                         title: "Đến ngày",
                         dataIndex: "endDate",
+                        render: formatDate
                     },
                     {
                         title: "Trạng thái",
@@ -71,7 +112,10 @@ export default function UserEWUsage() {
                             if (!value) return <Tag color={"error"}>Chưa thanh toán</Tag>
                         }
                     },
-                ]}/>
+                ]} pagination={{
+                    current: page + 1,
+                    total: data?.page?.totalElements,
+                }}/>
             </div>
         </div>
     </AppLayout>

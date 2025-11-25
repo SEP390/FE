@@ -9,6 +9,6 @@ export function DateRangeSelect(props) {
 export function DateRangeFilter({ value, onChange }) {
     return <div className={"flex flex-col gap-2"}>
         <div className={"text-sm font-medium"}>Khoảng thời gian</div>
-        <DateRangeSelect value={value} onChange={onChange} />
+        <DateRangeSelect format={"DD/MM/YYYY"} value={value} onChange={onChange} />
     </div>
 }

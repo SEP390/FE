@@ -1,16 +1,19 @@
 import {useEffect, useState} from "react";
 import {Select, Tag} from "antd";
 import {useApi} from "../hooks/useApi.js";
+import {useQuery} from "@tanstack/react-query";
+import axiosClient from "../api/axiosClient/axiosClient.js";
 
 export function SemesterSelect(props) {
-    const {get, data} = useApi();
     const [search, setSearch] = useState("");
-
-    useEffect(() => {
-        get("/semesters", {
-            name: search
-        })
-    }, [get, search]);
+    const {data} = useQuery({
+        queryKey: ["semesters", search],
+        queryFn: () => axiosClient.get("semesters", {
+            params: {
+                name: search,
+            }
+        }).then(res => res.data)
+    })
 
     const options = data ? data.content.map(item => ({
         label: item.name,
