@@ -9,6 +9,9 @@ import {Bed} from "lucide-react";
 import {formatDate} from "../../util/formatTime.js";
 import {createApiStore} from "../../util/createApiStore.js";
 import {useViewEffect} from "../../hooks/useViewEffect.js";
+import {useApi} from "../../hooks/useApi.js";
+import useErrorNotification from "../../hooks/useErrorNotification.js";
+import {useQuery} from "@tanstack/react-query";
 
 const useStore = create(set => ({
     recentRoom: null,
@@ -149,8 +152,12 @@ function PaymentButton() {
 }
 
 function ConfirmSelect() {
+    const {data: nextSemester} = useQuery({
+        queryKey: ["next-semester"],
+        queryFn: () => axiosClient.get("/semesters/next")
+    })
     const {selectedSlot, selectedRoom} = useStore();
-    const nextSemester = nextSemesterStore(state => state.data);
+
     return <div className={"section"}>
         <Descriptions title={"Xác nhận"} layout={"vertical"} items={[
             {
@@ -251,18 +258,15 @@ function MatchingRoom({data}) {
     </div>
 }
 
-const matchingRoomsStore = createApiStore("GET", "/rooms-matching");
-const nextSemesterStore = createApiStore("GET", "/semesters/next");
-
 function CreateBooking() {
-    const {isLoading, data: matchingRooms, fetch: fetchMatchingRooms, isSuccess, isError, error} = matchingRoomsStore()
-    const {fetch: fetchNextSemester} = nextSemesterStore()
+    const {isLoading, data, isSuccess, isError, error} = useQuery({
+        queryKey: ["rooms-matching"],
+        queryFn: () => axiosClient.get("/rooms-matching").then(res => res.data),
+        retry: false
+    })
     const {selectedRoom, selectedSlot} = useStore()
 
-    useEffect(() => {
-        fetchMatchingRooms().then();
-        fetchNextSemester().then();
-    }, [fetchMatchingRooms, fetchNextSemester,]);
+    const errorCode = error?.response?.data?.message || error?.message;
 
     return <>
         <div className={"section"}>
@@ -272,18 +276,18 @@ function CreateBooking() {
             {!isSuccess && !isError && <>
                 <Skeleton active={isLoading}/>
             </>}
-            {isError && error === "SURVEY_NOT_FOUND" && <>
+            {isError && <>
                 <Alert showIcon type={"error"} message={"Lỗi"} closable={true}
-                       description={"Bạn không thể đặt phòng nếu chưa hoàn thành khảo sát"}/>
-            </>}
-            {isError && error === "BOOKING_DATE_NOT_START" && <>
-                <Alert showIcon type={"error"} message={"Lỗi"} closable={true}
-                       description={"Chưa đến thời gian đặt phòng"}/>
+                       description={{
+                           SURVEY_NOT_FOUND: "Bạn không thể đặt phòng nếu chưa hoàn thành khảo sát",
+                           BOOKING_DATE_NOT_START: "Chưa đến thời gian đặt phòng",
+                           TIME_CONFIG_NOT_FOUND: "Chưa đến thời gian đặt phòng"
+                       }[errorCode] || errorCode}/>
             </>}
             {isSuccess && <>
                 <div className={"font-medium mb-3"}>Top 5 phòng phù hợp nhất</div>
                 <div className={"grid lg:grid-cols-3 gap-5"}>
-                    {matchingRooms.map(data => <MatchingRoom key={data.id} data={data}/>)}
+                    {data.map(data => <MatchingRoom key={data.id} data={data}/>)}
                 </div>
             </>}
         </div>
@@ -297,14 +301,10 @@ function CreateBooking() {
 const currentSlotStore = createApiStore("GET", "/slots/current");
 
 export default function BookingPage() {
-    const isError = currentSlotStore(state => state.isError)
-    const isSuccess = currentSlotStore(state => state.isSuccess)
-    const data = currentSlotStore(state => state.data)
-    const fetch = currentSlotStore(state => state.fetch)
-
-    useEffect(() => {
-        fetch().then()
-    }, [fetch]);
+    const {data, isError, isSuccess} = useQuery({
+        queryKey: ["current-slot"],
+        queryFn: () => axiosClient.get("/slots/current").then(res => res.data)
+    })
 
     return <AppLayout activeSidebar={"booking"}>
         <div className={"flex-grow flex gap-3 flex-col"}>

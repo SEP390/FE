@@ -13,13 +13,17 @@ import {createApiStore} from "../../util/createApiStore.js";
 import {useViewEffect} from "../../hooks/useViewEffect.js";
 import {InvoiceCountLabel} from "../../components/InvoiceCountLabel.jsx";
 import {useUpdateEffect} from "../../hooks/useUpdateEffect.js";
+import {useMutation, useQuery} from "@tanstack/react-query";
+import axiosClient from "../../api/axiosClient/axiosClient.js";
 
-const userInvoicesStore = createApiStore("GET", "/user/invoices")
 const invoicePaymentStore = createApiStore("GET", "/invoices/{id}/payment")
 const userInvoiceCountStore = createApiStore("GET", "/user/invoices/count")
 
 function UserInvoiceCount() {
-    const {data} = userInvoiceCountStore()
+    const {data} = useQuery({
+        queryKey: ["user-invoice-count"],
+        queryFn: () => axiosClient.get("/user/invoices/count").then(res => res.data),
+    })
 
     useViewEffect(userInvoiceCountStore)
 
@@ -72,13 +76,17 @@ const usePageStore = create(set => ({
 }))
 
 export default function InvoicesPage() {
-    const {mutate, data, error} = useApiStore(userInvoicesStore);
-
     const {page, setPage} = usePageStore()
-
-    useEffect(() => {
-        mutate({page})
-    }, [mutate, page]);
+    const {data, error} = useQuery({
+        queryKey: ["user-invoices", page],
+        queryFn: () => axiosClient({
+            method: "GET",
+            url: "/user/invoices",
+            params: {
+                page
+            }
+        }).then(res => res.data)
+    })
 
     useErrorNotification(error);
 

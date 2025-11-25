@@ -1,30 +1,54 @@
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import {PageHeader} from "../../../components/PageHeader.jsx";
-import {useViewEffect} from "../../../hooks/useViewEffect.js";
 import {createApiStore} from "../../../util/createApiStore.js";
-import {App, Button, Popconfirm, Table} from 'antd'
+import {Button, Popconfirm, Table, Tag} from 'antd'
 import {ResidentFilter} from "../../../components/ResidentSelect.jsx";
 import {RoomFilter} from "../../../components/RoomSelect.jsx";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
 import {useNavigate} from "react-router-dom";
+import {formatTime} from "../../../util/formatTime.js";
+import {useMutation, useQuery} from "@tanstack/react-query";
+import useErrorNotification from "../../../hooks/useErrorNotification.js";
+import {create} from "zustand";
 
 const slotHistoryStore = createApiStore("GET", "/slot-history")
 
-export default function SlotUsageManage() {
-    const {data, fetch} = useViewEffect(slotHistoryStore)
-    const navigate = useNavigate();
-    const {notification} = App.useApp();
-    const onCheckout = (slotHistory) => {
-        axiosClient({
-            method: "POST",
-            url: "/slots/checkout/" + slotHistory.slotId,
-        }).then((res) => {
-            console.log(res)
-            fetch()
-        }).catch(err => {
-            notification.error({message: err?.response?.data?.message || err.message})
-        })
+function CheckoutButton({slotHistory}) {
+    const {mutate, error} = useMutation({
+        mutationFn: ({id}) => axiosClient.post(`/slots/checkout/${id}`)
+    })
+
+    useErrorNotification(error)
+
+    const onConfirm = () => {
+        mutate({id: slotHistory.id})
     }
+    return <Popconfirm onConfirm={onConfirm} title={"Xác nhận checkout"}>
+        <Button type={"link"}>Checkout</Button>
+    </Popconfirm>
+}
+
+function SwapSlotButton({userId}) {
+    const navigate = useNavigate()
+    return <Button onClick={() => navigate(`/pages/manager/swap?userId=${userId}`)} type={"link"}>Đổi phòng</Button>
+}
+
+const useFilterStore = create(set => ({
+    page: 0,
+    setPage: (page) => set({page})
+}))
+
+export default function SlotUsageManage() {
+    const {page, setPage} = useFilterStore();
+
+    const {data} = useQuery({
+        queryKey: ["slot-history", page],
+        queryFn: () => axiosClient.get("/slot-history", {
+            params: {
+                page
+            }
+        }).then(res => res.data)
+    })
 
     return <LayoutManager active={"slot"}>
         <div className={"flex flex-col gap-3"}>
@@ -49,6 +73,7 @@ export default function SlotUsageManage() {
                     {
                         title: "Kỳ",
                         dataIndex: ["semester", "name"],
+                        render: (val) => <Tag>{val}</Tag>
                     },
                     {
                         title: "Dorm",
@@ -65,25 +90,27 @@ export default function SlotUsageManage() {
                     {
                         title: "Checkin",
                         dataIndex: ["checkin"],
+                        render: val => val && formatTime(val)
                     },
                     {
                         title: "Checkout",
                         dataIndex: ["checkout"],
+                        render: val => val && formatTime(val)
                     },
                     {
                         title: "Hành động",
                         render: (val, row) => {
                             return [
-                                !row.checkout &&
-                                <Popconfirm onConfirm={() => onCheckout(row)} title={"Xác nhận checkout"}>
-                                    <Button type={"link"}>Checkout</Button>
-                                </Popconfirm>,
-                                !row.checkout && <Button onClick={() => navigate("/pages/manager/swap?userId=" + row.user.id)} type={"link"}>Đổi phòng</Button>
+                                !row.checkout && <CheckoutButton slotHistory={row}/>,
+                                !row.checkout && <SwapSlotButton userId={row.user.id}/>
                             ];
                         }
                     }
-                ]} pagination={{
-                    total: data?.page.totalElements
+                ]} onChange={({current}) => {
+                    setPage(current - 1)
+                }} pagination={{
+                    current: page + 1,
+                    total: data?.page?.totalElements
                 }}/>
             </div>
         </div>

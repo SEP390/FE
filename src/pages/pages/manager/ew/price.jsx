@@ -1,13 +1,14 @@
 import {LayoutManager} from "../../../../components/layout/LayoutManager.jsx";
 import {useEffect} from "react";
 import {formatPrice} from "../../../../util/formatPrice.js";
-import {Button, Form, InputNumber} from "antd";
+import {Alert, App, Button, Form, InputNumber} from "antd";
 import PriceInput from "../../../../components/PriceInput.jsx";
 import {createApiStore} from "../../../../util/createApiStore.js";
-import {useViewEffect} from "../../../../hooks/useViewEffect.js";
-import {useUpdateEffect} from "../../../../hooks/useUpdateEffect.js";
-import {ChevronLeft} from "lucide-react";
 import {GoBack} from "../../../../components/GoBack.jsx";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import axiosClient from "../../../../api/axiosClient/axiosClient.js";
+import useErrorNotification from "../../../../hooks/useErrorNotification.js";
+import {formatTime} from "../../../../util/formatTime.js";
 
 const getCurrentPriceApi = createApiStore("GET", "/ew/price");
 const updatePriceApi = createApiStore("POST", "/ew/price");
@@ -20,41 +21,70 @@ function ItemLabel({label, value, prefix}) {
 }
 
 function CurrentPrice() {
-    const data = getCurrentPriceApi(state => state.data);
-
-    useViewEffect(getCurrentPriceApi)
+    const {data} = useQuery({
+        queryKey: ["ew-price"],
+        queryFn: () => axiosClient.get("/ew/price").then(res => res.data),
+        retry: false
+    })
 
     return <div className={"flex gap-3 *:flex-grow flex-wrap"}>
-        <ItemLabel value={formatPrice(data?.electricPrice)} label={"Giá điện hiện tại"}/>
-        <ItemLabel value={formatPrice(data?.waterPrice)} label={"Giá nước hiện tại"}/>
-        <ItemLabel value={data?.maxElectricIndex} label={"Số điện miễn phí"} prefix={<span>kWG</span>}/>
-        <ItemLabel value={data?.maxWaterIndex} label={"Số nước miễn phí"} prefix={<span>m<sup>3</sup></span>}/>
+        <ItemLabel value={data?.electricPrice ? formatPrice(data?.electricPrice) : 0} label={"Giá điện hiện tại"}/>
+        <ItemLabel value={data?.waterPrice ? formatPrice(data?.waterPrice) : 0} label={"Giá nước hiện tại"}/>
+        <ItemLabel value={data?.maxElectricIndex ? data.maxElectricIndex : 0} label={"Số điện miễn phí"}
+                   prefix={<span>kWG</span>}/>
+        <ItemLabel value={data?.maxWaterIndex ? data.maxWaterIndex : 0} label={"Số nước miễn phí"}
+                   prefix={<span>m<sup>3</sup></span>}/>
     </div>
 }
 
 function UpdatePriceForm() {
-    const currentPrice = getCurrentPriceApi(state => state.data);
-    const fetchCurrentPrice = getCurrentPriceApi(state => state.fetch);
-    const updatePrice = updatePriceApi(state => state.mutate);
-    const isLoading = updatePriceApi(state => state.isLoading);
+    const queryClient = useQueryClient();
+
+    const {data: currentPrice, error: currentPriceError} = useQuery({
+        queryKey: ["ew-price"],
+        queryFn: () => axiosClient.get("/ew/price").then(res => res.data),
+        retry: false,
+    })
+
+    console.log(currentPriceError)
+
+    const {notification} = App.useApp();
+
+    const {mutate, error, isLoading} = useMutation({
+        mutationKey: ["update-ew-price"],
+        mutationFn: (data) => axiosClient.post("/ew/price", data),
+        onSuccess: () => {
+            notification.success({message: "Cập nhập thành công!"});
+            queryClient.invalidateQueries({
+                queryKey: ["ew-price"],
+            })
+        },
+
+    })
 
     const [form] = Form.useForm();
 
-    useUpdateEffect(updatePriceApi, "Cập nhật thành công", {
-        "MAX_ELECTRIC_INDEX_MIN": "Số điện nước miễn phí phải > 0",
-        "MAX_WATER_INDEX_MIN": "Số điện nước miễn phí phải > 0",
-    })
+    useErrorNotification(error)
 
     useEffect(() => {
         form && form.setFieldsValue(currentPrice)
     }, [currentPrice, form]);
 
     const onFinish = (value) => {
-        updatePrice(value).then(fetchCurrentPrice)
+        mutate(value);
     }
+
+    const currentPriceErrorCode = currentPriceError?.response?.data?.message || currentPriceError?.message;
 
     return <div className={"flex-grow bg-white rounded-lg border border-gray-200 p-5"}>
         <div className={"font-medium mb-3"}>Cập nhật giá mới</div>
+        {currentPriceErrorCode === "PRICE_NOT_FOUND" && (
+            <>
+                <div className={"mb-3"}>
+                    <Alert showIcon type="error" message={"Chưa có dữ liệu"} />
+                </div>
+            </>
+        )}
         <Form
             form={form}
             name="basic"
@@ -89,13 +119,21 @@ function UpdatePriceForm() {
                 name="maxWaterIndex"
                 rules={[{required: true, message: 'Bạn phải nhập nội dung'}]}
             >
-                <InputNumber suffix={<span>m<sup>3</sup></span>} className={"!w-full"} placeholder={"Số nước miễn phí"}/>
+                <InputNumber suffix={<span>m<sup>3</sup></span>} className={"!w-full"}
+                             placeholder={"Số nước miễn phí"}/>
             </Form.Item>
             <Form.Item label={null}>
                 <Button loading={isLoading} type="primary" htmlType="submit">
                     Cập nhật
                 </Button>
             </Form.Item>
+            {currentPrice?.createTime && (
+                <>
+                    <Form.Item label={null}>
+                        <span className={"ml-3"}>Lần cập nhật gần nhất: {formatTime(currentPrice.createTime)}</span>
+                    </Form.Item>
+                </>
+            )}
         </Form>
     </div>
 }
@@ -104,7 +142,8 @@ export default function ManageEWPrice() {
     return <LayoutManager>
         <div className={"flex flex-col gap-3"}>
             <div className={"section flex items-center gap-3"}>
-                <GoBack url={"/pages/manager/ew"} /><div className={"text-lg font-medium"}>Quản lý giá điện nước</div>
+                <GoBack url={"/pages/manager/ew"}/>
+                <div className={"text-lg font-medium"}>Quản lý giá điện nước</div>
             </div>
             <CurrentPrice/>
             <UpdatePriceForm/>

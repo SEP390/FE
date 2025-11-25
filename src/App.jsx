@@ -2,9 +2,11 @@ import {BrowserRouter, Route, Routes} from 'react-router-dom';
 import routes from './routes';
 import {AuthProvider} from "./providers/AuthProvider.jsx";
 import {App as AntDesignApp, ConfigProvider} from 'antd';
-
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+const queryClient = new QueryClient()
 function App() {
     return (
+        <QueryClientProvider client={queryClient}>
         <ConfigProvider>
             <AntDesignApp>
                 <AuthProvider>
@@ -22,6 +24,7 @@ function App() {
                 </AuthProvider>
             </AntDesignApp>
         </ConfigProvider>
+        </QueryClientProvider>
     );
 }
 
