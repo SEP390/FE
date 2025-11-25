@@ -25,8 +25,15 @@ const generateFloorOptions = (totalFloors) => {
     return options;
 };
 
-// === CỘT BẢNG PHÒNG CHÍNH (CHỈ XEM) ===
+// === CỘT BẢNG PHÒNG CHÍNH (ĐÃ ĐỒNG BỘ VỚI MANAGER) ===
 const roomColumns = [
+    {
+        // === THÊM MỚI: SỐ THỨ TỰ ===
+        title: 'STT',
+        key: 'stt',
+        render: (text, record, index) => index + 1, // STT được tính dựa trên vị trí trong data source
+        width: 60,
+    },
     {
         title: 'Tòa nhà',
         dataIndex: ['dorm', 'dormName'],
@@ -43,30 +50,19 @@ const roomColumns = [
         title: 'Số phòng',
         dataIndex: 'roomNumber',
         key: 'roomNumber',
-        render: (text) => <span style={{ fontWeight: 'bold' }}>{text || 'N/A'}</span>,
+        // ĐÃ SỬA: Bỏ style bold để đồng bộ font
+        render: (text) => <span>{text || 'N/A'}</span>,
     },
     {
-        title: 'Số người (Hiện tại/Tối đa)',
-        key: 'occupancy',
+        // ĐÃ SỬA: Chỉ hiển thị Số slot Tối đa (bỏ logic tính Số người hiện tại)
+        title: 'Số slot tối đa',
+        key: 'maxOccupancy',
         render: (text, record) => {
             const totalSlot = record?.totalSlot ?? record?.pricing?.totalSlot ?? 0;
-            // Đếm trực tiếp các slot có trạng thái KHÁC "AVAILABLE"
-            const currentResidents = record?.slots?.filter(slot => slot?.status !== "AVAILABLE").length ?? 0;
-            return <span>{currentResidents} / {totalSlot}</span>;
+            return <span>{totalSlot}</span>;
         },
     },
-    {
-        title: 'Trạng thái',
-        key: 'status',
-        render: (text, record) => {
-            const totalSlot = record?.totalSlot ?? record?.pricing?.totalSlot ?? 0;
-            const availableSlotCount = record?.slots?.filter(slot => slot?.status === "AVAILABLE").length ?? 0;
-            const isFull = totalSlot > 0 && availableSlotCount === 0;
-
-            const statusText = isFull ? 'Đã đầy' : 'Còn chỗ';
-            return <Tag color={isFull ? 'red' : 'green'}>{statusText.toUpperCase()}</Tag>;
-        }
-    },
+    // *** ĐÃ BỎ CỘT 'Trạng thái' ***
     {
         title: 'Hành động',
         key: 'action',
@@ -164,14 +160,15 @@ export function RoomInfoGuard() {
         setFilterFloor(undefined); // Reset tầng khi chọn tòa nhà mới
     };
 
-    // Cột động: Loại bỏ nút Sửa, chỉ giữ lại nút Xem chi tiết
+    // Cột động: Loại bỏ logic thêm filters cho cột Tòa nhà (đồng bộ với Manager)
     const finalRoomColumns = roomColumns.map(col => {
-        if (col.key === 'dormName') return { ...col, filters: buildings.map(b => ({ text: b.dormName, value: b.id })) };
+        // *** ĐÃ BỎ LOGIC THÊM FILTERS CHO CỘT 'Tòa nhà' (key === 'dormName') ***
+
         if (col.key === 'action') return {
             ...col,
             render: (text, record) => (
                 <Space size="middle">
-                    {/* NÚT XEM CHI TIẾT DẠNG ICON */}
+                    {/* NÚT XEM CHI TIẾT DẠNG ICON (Chỉ giữ lại nút xem) */}
                     {/* Link đến trang chi tiết phòng cho Bảo vệ (Giả định path là /guard/room-detail) */}
                     <Link to={`/guard/room-detail/${record.id}`}>
                         <EyeOutlined
@@ -182,6 +179,8 @@ export function RoomInfoGuard() {
                 </Space>
             )
         };
+        // Cần đảm bảo cột Tòa nhà không bị trả về filters
+        // Vì không có logic if (col.key === 'dormName') ở đây, nó sẽ tự động không thêm filters.
         return col;
     });
 
