@@ -83,9 +83,7 @@ function Roommates() {
     </div>
 }
 
-function CurrentSlot() {
-    const data = currentSlotStore(state => state.data);
-
+function CurrentSlot({ data }) {
     return (<>
             <div className={"section"}>
                 <div className={"font-medium mb-3"}>Phòng hiện tại</div>
@@ -123,7 +121,7 @@ function CurrentSlot() {
                     {
                         title: "Hành động",
                         render: (val, row) => {
-                            if (row.status === "LOCK") return [<PaymentAction/>, <CancelAction/>]
+                            if (row?.status === "LOCK") return [<PaymentAction/>, <CancelAction/>]
                         }
                     },
                 ]} pagination={false}/>
@@ -309,7 +307,7 @@ export default function BookingPage() {
     return <AppLayout activeSidebar={"booking"}>
         <div className={"flex-grow flex gap-3 flex-col"}>
             {isError || (isSuccess && !data) && <CreateBooking/>}
-            {isSuccess && data && <CurrentSlot/>}
+            {isSuccess && data && <CurrentSlot data={data}/>}
         </div>
     </AppLayout>
 }
