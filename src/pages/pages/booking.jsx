@@ -23,6 +23,7 @@ const useStore = create(set => ({
 }))
 
 function ExtendAction() {
+    const queryClient = useQueryClient();
     const {notification} = App.useApp();
     const {mutate} = useMutation({
         mutationFn: () => axiosClient.get("/booking/extend").then(res => res.data),
@@ -32,6 +33,9 @@ function ExtendAction() {
         },
         onSuccess: data => {
             console.log(data)
+            queryClient.invalidateQueries({
+                queryKey: ["current-slot"]
+            })
         }
     })
 

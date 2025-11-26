@@ -1,5 +1,5 @@
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
-import {Button, Modal, Popconfirm, Table, Tag} from "antd";
+import {App, Button, Modal, Popconfirm, Table, Tag} from "antd";
 import {formatPrice} from "../../../util/formatPrice.js";
 import {Plus} from "lucide-react";
 import {useNavigate} from "react-router-dom";
@@ -31,6 +31,7 @@ const renderInvoiceStatus = (val) => {
 
 function CancelAction({invoice}) {
     const queryClient = useQueryClient();
+    const {notification} = App.useApp()
     const {error, mutate, isLoading} = useMutation({
         mutationKey: ["cancel-invoice"],
         mutationFn: ({id}) => axiosClient({
@@ -38,7 +39,10 @@ function CancelAction({invoice}) {
             url: `/invoices/${id}`,
             data: {status: "CANCEL"}
         }).then(res => res.data),
-        onSuccess: () => queryClient.invalidateQueries({queryKey: ["invoices"]})
+        onSuccess: () => {
+            notification.error({message: "Hủy thành công"})
+            queryClient.invalidateQueries({queryKey: ["invoices"]})
+        }
     })
 
     useErrorNotification(error);

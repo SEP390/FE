@@ -1,28 +1,26 @@
 import {Select} from "antd";
-import {useEffect, useState} from "react";
-import {useApi} from "../hooks/useApi.js";
+import {useState} from "react";
+import {useQuery} from "@tanstack/react-query";
+import axiosClient from "../api/axiosClient/axiosClient.js";
 
 export function RoomSelect(props) {
-    const {get, data} = useApi();
     const [search, setSearch] = useState("");
-    const [options, setOptions] = useState([]);
     const {value} = props;
+    const {data} = useQuery({
+        queryKey: ["rooms", search, value],
+        queryFn: () => axiosClient.get("/rooms", {
+            params: {
+                roomNumber: search ? search : undefined,
+                id: value && !search ? value : undefined,
+            }
+        }).then(res => res.data)
+    })
 
-    useEffect(() => {
-        if (data) {
-            setOptions(data.content.map(item => ({
-                label: `${item.dorm.dormName} - ${item.roomNumber}`,
-                value: item.id,
-            })))
-        }
-    }, [data]);
+    const options = data ? data.content.map(item => ({
+        label: `${item.dorm.dormName} - ${item.roomNumber}`,
+        value: item.id,
+    })) : null;
 
-    useEffect(() => {
-        get("/rooms", {
-            roomNumber: search ? search : undefined,
-            id: value && !search ? value : undefined,
-        })
-    }, [get, search, value]);
 
     return <Select autoClearSearchValue={false} {...props} className={"w-45"}
                    allowClear filterOption={false}

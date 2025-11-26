@@ -37,7 +37,7 @@ export default function GuardCheckinPage() {
         }
     })
     const {data} = useQuery({
-        queryKey: ["checkin"],
+        queryKey: ["checkin", page, userId, roomId],
         queryFn: () => axiosClient.get("/slots", {
             params: {
                 status: "CHECKIN", page, userId, roomId

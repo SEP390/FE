@@ -1,22 +1,26 @@
-import {useApi} from "../hooks/useApi.js";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {Select} from "antd";
+import {useQuery} from "@tanstack/react-query";
+import axiosClient from "../api/axiosClient/axiosClient.js";
 
 export function ResidentSelect({value, onChange}) {
-    const {get, data} = useApi();
     const [search, setSearch] = useState("");
 
-    useEffect(() => {
-        get("/residents/search", {
-            userCode: !value ? search : undefined,
-            id: value ? value : undefined,
-        })
-    }, [get, search, value]);
+    const {data} = useQuery({
+        queryKey: ["residents", search, value],
+        queryFn: () => axiosClient.get("/residents/search", {
+            params: {
+                userCode: !value ? search : undefined,
+                id: value ? value : undefined,
+            }
+        }).then(res => res.data)
+    })
 
     const options = data ? data.content.map(item => ({
         label: `${item.userCode} - ${item.fullName}`,
         value: item.id,
     })) : null
+
     return <Select value={value} onChange={onChange} className={"w-45"} allowClear filterOption={false}
                    options={options} showSearch onSearch={setSearch}
                    placeholder={"Chọn sinh viên"}/>
