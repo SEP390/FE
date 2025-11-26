@@ -1,12 +1,17 @@
 import {LayoutGuard} from "../../../../components/layout/LayoutGuard.jsx";
 import {PageHeader} from "../../../../components/PageHeader.jsx";
-import {Button, Form, InputNumber, Table} from "antd";
+import {Button, Form, InputNumber, Table, Tag} from "antd";
 import {RoomSelect} from "../../../../components/RoomSelect.jsx";
 import {create} from "zustand";
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
 import {useApiStore} from "../../../../hooks/useApiStore.js";
 import {useUpdateEffect} from "../../../../hooks/useUpdateEffect.js";
 import {createApiStore} from "../../../../util/createApiStore.js";
+import {ThunderboltOutlined} from "@ant-design/icons";
+import {CalendarDays, Droplet, House} from "lucide-react";
+import {formatDate} from "../../../../util/formatTime.js";
+import {useMutation, useQuery} from "@tanstack/react-query";
+import axiosClient from "../../../../api/axiosClient/axiosClient.js";
 
 const createEWRoomStore = createApiStore("POST", "/ew/room")
 const ewRoomStore = createApiStore("GET", "/ew/room")
@@ -17,45 +22,65 @@ const useStore = create(set => ({
 }))
 
 function RecentRecord() {
-    const {roomId, setRoomId} = useStore();
-    const {mutate, data} = useApiStore(ewRoomStore)
+    const {roomId} = useStore();
 
-    useEffect(() => {
-        mutate({ roomId })
-    }, [mutate, roomId]);
+    const [page, setPage] = useState(0);
+
+    const {data} = useQuery({
+        queryKey: ["ew-room", roomId, page],
+        queryFn: () => axiosClient.get("/ew/room", {
+            params: {roomId, sort: "createDate,DESC", page},
+        }).then(res => res.data)
+    });
+
+    const onChange = ({current}, filter, sorter) => {
+        setPage(current - 1)
+    }
 
     return <div className={"section"}>
         <div className={"font-medium mb-3"}>Các lần nhập gần nhất</div>
         <Table bordered dataSource={data ? data.content : []} columns={[
             {
                 title: "Phòng",
-                dataIndex: ["room", "roomNumber"]
+                dataIndex: ["room", "roomNumber"],
+                render: (val) => <span className={"flex gap-1 items-center"}><House size={14}/>{val}</span>
             },
             {
                 title: "Kỳ",
-                dataIndex: ["semester", "name"]
+                dataIndex: ["semester", "name"],
+                render: (val) => <Tag>{val}</Tag>
             },
             {
                 title: "Số điện",
-                dataIndex: "electric"
+                dataIndex: "electric",
+                render: (val) => <span
+                    className={"flex gap-1 items-center"}><ThunderboltOutlined/>{val} kW</span>,
             },
             {
                 title: "Số nước",
-                dataIndex: "water"
+                dataIndex: "water",
+                render: (val) => <span className={"flex gap-1 items-center"}><Droplet size={14}/>{val}<span>m<sup>3</sup></span></span>,
             },
             {
                 title: "Sử dụng điện",
-                dataIndex: "electricUsed"
+                dataIndex: "electricUsed",
+                render: (val) => <span
+                    className={"flex gap-1 items-center"}><ThunderboltOutlined/>{val} kW</span>,
             },
             {
                 title: "Sử dụng nước",
-                dataIndex: "waterUsed"
+                dataIndex: "waterUsed",
+                render: (val) => <span className={"flex gap-1 items-center"}><Droplet size={14}/>{val}<span>m<sup>3</sup></span></span>,
             },
             {
                 title: "Ngày nhập",
-                dataIndex: "createDate"
+                dataIndex: "createDate",
+                render: (val) => <span className={"flex gap-1 items-center"}><CalendarDays size={14}/>{formatDate(val)}</span>,
             },
-        ]}/>
+        ]} pagination={{
+            current: page + 1,
+            total: data?.page?.totalElements,
+        }} onChange={onChange}/>
     </div>
 }
 

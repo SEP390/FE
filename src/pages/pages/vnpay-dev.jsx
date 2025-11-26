@@ -1,27 +1,30 @@
 import {App, Button, Card, Table, Tag} from 'antd';
-import {useApi} from "../../hooks/useApi.js";
-import {useEffect} from "react";
+import {useState} from "react";
 import axiosClient from "../../api/axiosClient/axiosClient.js";
-export default function VNPayDev() {
-    const {get, data} = useApi();
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import useErrorNotification from "../../hooks/useErrorNotification.js";
 
-    useEffect(() => {
-        get("/invoices")
-    }, [get]);
-    
+export default function VNPayDev() {
+    const queryClient = useQueryClient();
+    const [page, setPage] = useState(0)
+    const {data} = useQuery({
+        queryKey: ["invoices", page],
+        queryFn: () => axiosClient.get("/invoices", {
+            params: {page}
+        }).then(res => res.data),
+    })
     const {notification} = App.useApp();
+    const {mutate, error} = useMutation({
+        mutationFn: ({id, status}) => axiosClient.post(`/invoices/${id}`, {status}),
+        onSuccess: () => {
+            notification.success({message: "Cập nhật thành công!"})
+            queryClient.invalidateQueries({queryKey: ["invoices"]})
+        },
+    })
+    useErrorNotification(error);
 
     const updateStatus = (id, status) => {
-        axiosClient({
-            method: "POST",
-            url: "/invoices/" + id,
-            data: {
-                status
-            }
-        }).then(res => {
-            get("/invoices")
-            notification.info({message: "Updated"})
-        })
+        mutate({ id, status })
     }
 
     return <>
@@ -45,14 +48,13 @@ export default function VNPayDev() {
                         title: "Action",
                         render: (val, row) => {
                             return [
-                                <Button onClick={() => updateStatus(row.id, "SUCCESS")} type={"link"}>Thành công</Button>,
+                                <Button onClick={() => updateStatus(row.id, "SUCCESS")} type={"link"}>Thành
+                                    công</Button>,
                                 <Button onClick={() => updateStatus(row.id, "CANCEL")} type={"link"}>Hủy</Button>
                             ]
                         }
                     },
-                ]} pagination={{
-
-                }} bordered/>
+                ]} pagination={{}} bordered/>
             </Card>
         </div>
     </>
