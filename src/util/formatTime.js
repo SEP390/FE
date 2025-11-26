@@ -3,6 +3,7 @@
  * @returns {string}
  */
 export function formatTime(time) {
+    if (!time) return ""
     return Intl.DateTimeFormat('vi-VN', {
         year: 'numeric',
         month: 'numeric',
@@ -18,6 +19,7 @@ export function formatTime(time) {
  * @returns {string}
  */
 export function formatDate(time) {
+    if (!time) return ""
     return Intl.DateTimeFormat('vi-VN', {
         year: 'numeric',
         month: 'numeric',

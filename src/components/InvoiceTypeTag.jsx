@@ -5,7 +5,9 @@ const invoiceTypes = {
     EW: "Điện nước",
     OTHER: "Khác",
     VIOLATION: "Vi phạm",
-    COMPENSATE: "Đền bù"
+    COMPENSATE: "Đền bù",
+    SWAP: "Đổi phòng",
+    EXTEND: "Gia hạn",
 }
 
 export function InvoiceTypeTag({ value }) {

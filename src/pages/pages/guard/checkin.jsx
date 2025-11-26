@@ -1,37 +1,52 @@
 import {LayoutGuard} from "../../../components/layout/LayoutGuard.jsx";
 import {App, Button, Popconfirm, Table} from "antd";
-import {useEffect, useState} from "react";
 import {ResidentFilter} from "../../../components/ResidentSelect.jsx";
 import {PageHeader} from "../../../components/PageHeader.jsx";
 import {RoomFilter} from "../../../components/RoomSelect.jsx";
-import {useApiStore} from "../../../hooks/useApiStore.js";
-import {createApiStore} from "../../../util/createApiStore.js";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {create} from "zustand";
 
-const guardCheckinSlotsStore = createApiStore("GET", "/slots", {status: "CHECKIN "})
+const useFilterStore = create(set => ({
+    page: 0,
+    userId: null,
+    roomId: null,
+    setUserId: (userId) => set({userId}),
+    setRoomId: (roomId) => set({roomId}),
+    onChange: ({current}, filter, {field, order}) => set({page: current - 1})
+}))
 
 export default function GuardCheckinPage() {
-    const {mutate, fetch, data, isLoading} = useApiStore(guardCheckinSlotsStore)
-    const [page, setPage] = useState(0);
+    const queryClient = useQueryClient();
     const {notification} = App.useApp();
-    const onCheckin = (slot) => {
-        axiosClient({
+    const {page, userId, roomId, setUserId, setRoomId} = useFilterStore();
+    const {mutate, isLoading} = useMutation({
+        mutationFn: ({slotId}) => axiosClient({
             method: "POST",
             url: "/checkin",
-            data: {
-                slotId: slot.id
-            }
-        }).then((res) => {
-            console.log(res)
-            fetch()
-        }).catch(err => {
+            data: {slotId}
+        }).then(res => res.data),
+        onSuccess: (res) => {
+            notification.success({message: "Checkin thành công"})
+            queryClient.invalidateQueries({
+                queryKey: ["checkin"]
+            })
+        },
+        onError: (err) => {
             notification.error({message: err?.response?.data?.message || err.message})
-        })
+        }
+    })
+    const {data} = useQuery({
+        queryKey: ["checkin"],
+        queryFn: () => axiosClient.get("/slots", {
+            params: {
+                status: "CHECKIN", page, userId, roomId
+            }
+        }).then(res => res.data)
+    })
+    const onCheckin = (slot) => {
+        mutate({slotId: slot.id})
     }
-
-    useEffect(() => {
-        mutate({page, status: "CHECKIN"})
-    }, [mutate, page])
 
     return <LayoutGuard active={"guard-checkin"}>
         <div className={"flex flex-col gap-3"}>
@@ -39,8 +54,8 @@ export default function GuardCheckinPage() {
             <div className={"section"}>
                 <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
                 <div className={"flex gap-3"}>
-                    <ResidentFilter/>
-                    <RoomFilter/>
+                    <ResidentFilter value={userId} onChange={setUserId}/>
+                    <RoomFilter value={roomId} onChange={setRoomId}/>
                 </div>
             </div>
             <div className={"section"}>
@@ -68,7 +83,8 @@ export default function GuardCheckinPage() {
                     {
                         title: "Hành động",
                         render: (val, row) => {
-                            return <Popconfirm onConfirm={() => onCheckin(row)} title={"Xác nhận"}><Button type={"link"}>Checkin</Button></Popconfirm>
+                            return <Popconfirm onConfirm={() => onCheckin(row)} title={"Xác nhận"}><Button
+                                type={"link"}>Checkin</Button></Popconfirm>
                         }
                     }
                 ]} pagination={{
