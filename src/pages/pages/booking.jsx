@@ -9,6 +9,7 @@ import {formatDate} from "../../util/formatTime.js";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import CreateBookingY2 from "./booking/y2.jsx";
 
 dayjs.extend(isBetween);
 
@@ -69,7 +70,7 @@ function RoommateModal() {
 
     const {data} = useQuery({
         queryKey: ["roommate", id],
-        queryFn: () => axiosClient.get(`/roommate/${id}`).then(res => res.data),
+        queryFn: () => id && axiosClient.get(`/roommate/${id}`).then(res => res.data),
     })
 
     return <Modal title={"Thông tin chi tiết"} open={isOpen} onCancel={close} onOk={close} footer={null}>

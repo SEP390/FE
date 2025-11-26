@@ -1,27 +1,35 @@
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import {PageHeader} from "../../../components/PageHeader.jsx";
 import {createApiStore} from "../../../util/createApiStore.js";
-import {Button, Popconfirm, Table, Tag} from 'antd'
+import {App, Button, Popconfirm, Table, Tag} from 'antd'
 import {ResidentFilter} from "../../../components/ResidentSelect.jsx";
 import {RoomFilter} from "../../../components/RoomSelect.jsx";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
 import {useNavigate} from "react-router-dom";
 import {formatTime} from "../../../util/formatTime.js";
-import {useMutation, useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import useErrorNotification from "../../../hooks/useErrorNotification.js";
 import {create} from "zustand";
 
 const slotHistoryStore = createApiStore("GET", "/slot-history")
 
 function CheckoutButton({slotHistory}) {
+    const queryClient = useQueryClient();
+    const {notification} = App.useApp();
     const {mutate, error} = useMutation({
-        mutationFn: ({id}) => axiosClient.post(`/slots/checkout/${id}`)
+        mutationFn: ({id}) => axiosClient.post(`/slots/checkout/${id}`),
+        onSuccess: () => {
+            notification.success({message: "Checkout thành công"})
+            queryClient.invalidateQueries({
+                queryKey: ["slot-history"]
+            })
+        },
     })
 
     useErrorNotification(error)
 
     const onConfirm = () => {
-        mutate({id: slotHistory.id})
+        mutate({id: slotHistory.slotId})
     }
     return <Popconfirm onConfirm={onConfirm} title={"Xác nhận checkout"}>
         <Button type={"link"}>Checkout</Button>

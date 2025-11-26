@@ -10,6 +10,8 @@ import {useEffect, useRef, useState} from "react";
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import {create} from 'zustand'
+import {useQuery} from "@tanstack/react-query";
+import axiosClient from "../../api/axiosClient/axiosClient.js";
 
 const dorms = [
     {
@@ -141,6 +143,19 @@ function DormMarker({title, position}) {
 }
 
 function OpenStreetMap() {
+    const setEndPoint = useWaypointsStore(state => state.setEndPoint);
+    const {data} = useQuery({
+        queryKey: "current-slot",
+        queryFn: () => axiosClient.get("/slots/current").then(res => res.data)
+    })
+
+    useEffect(() => {
+        if (data) {
+            console.log(data.room.dorm.dormName)
+            const dorm = dorms.find(d => d.title === data.room.dormName)
+            if (dorm) setEndPoint(dorm.position)
+        }
+    }, [data, setEndPoint]);
     const position = [21.012745, 105.525717];
     return (
         <MapContainer
