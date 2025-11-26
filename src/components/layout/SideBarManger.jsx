@@ -15,7 +15,7 @@ import {
 // CHUẨN HÓA IMPORTS: Import Layout và Menu từ 'antd'
 import {Drawer, Layout, Menu} from "antd";
 import {Link} from "react-router-dom";
-import {Bed} from "lucide-react";
+import {Bed, Clock} from "lucide-react";
 import {useMobile} from "../../hooks/useMobile.js";
 import {useEffect} from "react";
 import {useCollapsed} from "../../hooks/useCollapsed.js";
@@ -39,6 +39,11 @@ const managerItems = [
         label: <Link to={"/pages/manager/ew"}>Quản lý điện nước</Link>,
         icon: <ThunderboltOutlined/>,
         key: "manager-ew",
+    },
+    {
+        label: <Link to={"/pages/manager/time-config"}>Quản lý thời gian đặt phòng</Link>,
+        icon: <Clock size={14}/>,
+        key: "manager-time-config",
     },
     {
         label: <Link to={'/pages/manager/invoice'}>Quản lí hóa đơn</Link>,

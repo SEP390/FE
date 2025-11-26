@@ -1,40 +1,42 @@
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
-import {Alert, Button, Form} from "antd";
+import {Alert, App, Button, Form} from "antd";
 import {DateRangeSelect} from "../../../components/DateRangeSelect.jsx";
-import {createApiStore} from "../../../util/createApiStore.js";
-import {useViewEffect} from "../../../hooks/useViewEffect.js";
 import {useEffect} from "react";
-import {useUpdateEffect} from "../../../hooks/useUpdateEffect.js";
 import dayjs from "dayjs";
 import {formatTime} from "../../../util/formatTime.js";
-
-const getCurrentTimeConfigApi = createApiStore("GET", "/time-config/current")
-const updateTimeConfigApi = createApiStore("POST", "/time-config")
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import axiosClient from "../../../api/axiosClient/axiosClient.js";
 
 export default function TimeConfigManager() {
-    const currentTimeConfig = getCurrentTimeConfigApi(state => state.data)
-    const currentTimeConfigError = getCurrentTimeConfigApi(state => state.error)
-    const getCurrentTimeConfig = getCurrentTimeConfigApi(state => state.fetch)
-    const updateTimeConfig = updateTimeConfigApi(state => state.mutate)
+    const queryClient = useQueryClient()
+    const {data: current, error: currentError} = useQuery({
+        queryKey: ["current-time-config"],
+        queryFn: () => axiosClient.get("/time-config/current").then(res => res.data),
+        retry: false,
+    })
+    const {notification} = App.useApp()
+    const {mutate} = useMutation({
+        mutationFn: (val) => axiosClient.post("/time-config", val).then(res => res.data),
+        onSuccess: () => {
+            notification.success({message: "Cập nhật thành công"})
+            queryClient.invalidateQueries({
+                queryKey: ["current-time-config"]
+            })
+        }
+    })
 
     const [form] = Form.useForm()
 
     useEffect(() => {
-        getCurrentTimeConfig().then()
-    }, [getCurrentTimeConfig])
-
-    useUpdateEffect(updateTimeConfigApi)
-
-    useEffect(() => {
-        if (form && currentTimeConfig) {
-            const {startBookingDate, endBookingDate, startExtendDate, endExtendDate} = currentTimeConfig
+        if (form && current) {
+            const {startBookingDate, endBookingDate, startExtendDate, endExtendDate} = current
             form.resetFields()
             form.setFieldsValue({
                 booking: [dayjs(startBookingDate), dayjs(endBookingDate)],
                 extend: [dayjs(startExtendDate), dayjs(endExtendDate)]
             })
         }
-    }, [currentTimeConfig, form]);
+    }, [current, form]);
 
     const onFinish = async (value) => {
         const startBookingDate = value.booking[0].format('YYYY-MM-DD')
@@ -44,8 +46,7 @@ export default function TimeConfigManager() {
         const payload = {
             startBookingDate, endBookingDate, startExtendDate, endExtendDate,
         }
-        await updateTimeConfig(payload)
-        await getCurrentTimeConfig()
+        mutate(payload)
     }
 
     return <LayoutManager>
@@ -54,10 +55,11 @@ export default function TimeConfigManager() {
                 <div className={"font-medium text-lg"}>Quản lý thời gian đặt phòng</div>
             </div>
             <div className={"section"}>
-                {currentTimeConfigError === "TIME_CONFIG_NOT_FOUND" && (
+                {currentError?.response?.data?.message === "TIME_CONFIG_NOT_FOUND" && (
                     <>
                         <div className={"md:w-80 mb-3"}>
-                            <Alert type={"error"} showIcon message={"Hiện tại chưa có dữ liệu, tạo bằng form bên dưới"} />
+                            <Alert type={"error"} showIcon
+                                   message={"Hiện tại chưa có dữ liệu, tạo bằng form bên dưới"}/>
                         </div>
                     </>
                 )}
@@ -75,9 +77,9 @@ export default function TimeConfigManager() {
                     <Form.Item>
                         <div className={"flex gap-5"}>
                             <Button type="primary" htmlType="submit">Cập nhật</Button>
-                            {currentTimeConfig && (
+                            {current && (
                                 <>
-                                    <span>Lần cuối cập nhật: {formatTime(currentTimeConfig.createTime)}</span>
+                                    <span>Lần cuối cập nhật: {formatTime(current.createTime)}</span>
                                 </>
                             )}
                         </div>

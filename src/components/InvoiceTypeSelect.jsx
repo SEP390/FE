@@ -15,6 +15,18 @@ export function InvoiceTypeSelect(props) {
             value: "VIOLATION",
         },
         {
+            label: "Gia hạn",
+            value: "EXTEND",
+        },
+        {
+            label: "Đổi phòng",
+            value: "SWAP",
+        },
+        {
+            label: "Đền bù",
+            value: "COMPENSATE",
+        },
+        {
             label: "Khác",
             value: "OTHER",
         },
