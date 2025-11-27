@@ -1,6 +1,5 @@
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import {Button, Table, Tag} from 'antd'
-import {createApiStore} from "../../../util/createApiStore.js";
 import {RoomFilter} from "../../../components/RoomSelect.jsx";
 import {SemesterFilter} from "../../../components/SemesterSelect.jsx";
 import {DateRangeFilter} from "../../../components/DateRangeSelect.jsx";
@@ -11,8 +10,6 @@ import {useQuery} from "@tanstack/react-query";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
 import {formatDate} from "../../../util/formatTime.js";
 import {ThunderboltOutlined} from "@ant-design/icons";
-
-const getEWIndex = createApiStore("GET", "/ew/room")
 
 function CreateElectricInvoiceButton() {
     const navigate = useNavigate();

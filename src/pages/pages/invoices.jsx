@@ -1,4 +1,4 @@
-import {Button, Modal, Table} from "antd";
+import {Button, Modal, Table, Tag} from "antd";
 import {create} from 'zustand'
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import {formatPrice} from "../../util/formatPrice.js";
@@ -14,6 +14,7 @@ import {InvoiceTypeTag} from "../../components/InvoiceTypeTag.jsx";
 import {InvoiceStatusTag} from "../../components/InvoiceStatusTag.jsx";
 import {cn} from "../../util/cn.js";
 import {Clock} from "lucide-react";
+import {DateRangeFilter} from "../../components/DateRangeSelect.jsx";
 
 function AppCard({title, className, children}) {
     return <div className={cn("border border-gray-200 rounded-lg", className)}>
@@ -71,6 +72,15 @@ const useFilterStore = create(set => ({
     status: null,
     page: 0,
     sort: "createTime,DESC",
+    startDate: null,
+    endDate: null,
+    setDateRange: (val) => {
+        if (val) {
+            set({ startDate: val[0].format("YYYY-MM-DD"), endDate: val[1].format("YYYY-MM-DD") });
+        } else {
+            set({ startDate: null, endDate: null, })
+        }
+    },
     setPage: (page) => set({page}),
     setType: (type) => set({type}),
     setStatus: (status) => set({status}),
@@ -119,6 +129,10 @@ function InvoiceDetailModal() {
                                                 <div className={"font-medium"}>Slot</div>
                                                 <div>{invoice.slotInvoice.slotName}</div>
                                             </div>
+                                            <div className={"flex flex-col gap-1"}>
+                                                <div className={"font-medium"}>Kỳ</div>
+                                                <div><Tag>{invoice.slotInvoice.semester.name}</Tag></div>
+                                            </div>
                                         </div>
                                     </>
                                 )}
@@ -146,14 +160,14 @@ function InvoiceDetailModal() {
 }
 
 export default function InvoicesPage() {
-    const {page, type, status, sort, setType, setStatus, onChange} = useFilterStore()
+    const {page, type, status, sort, setType, setStatus, onChange, startDate, endDate, setDateRange} = useFilterStore()
     const {data, error} = useQuery({
-        queryKey: ["user-invoices", page, type, status, sort],
+        queryKey: ["user-invoices", page, type, status, sort, startDate, endDate],
         queryFn: () => axiosClient({
             method: "GET",
             url: "/user/invoices",
             params: {
-                page, type, status, size: 5, sort
+                page, type, status, size: 5, sort, startDate, endDate
             }
         }).then(res => res.data)
     })
@@ -170,6 +184,7 @@ export default function InvoicesPage() {
                 <div className={"flex gap-3 flex-wrap"}>
                     <InvoiceTypeFilter onChange={setType}/>
                     <InvoiceStatusFilter onChange={setStatus}/>
+                    <DateRangeFilter onChange={setDateRange}/>
                 </div>
             </div>
             <div className={"section"}>

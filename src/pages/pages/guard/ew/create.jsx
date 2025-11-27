@@ -10,8 +10,9 @@ import {createApiStore} from "../../../../util/createApiStore.js";
 import {ThunderboltOutlined} from "@ant-design/icons";
 import {CalendarDays, Droplet, House} from "lucide-react";
 import {formatDate} from "../../../../util/formatTime.js";
-import {useMutation, useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import axiosClient from "../../../../api/axiosClient/axiosClient.js";
+import useErrorNotification from "../../../../hooks/useErrorNotification.js";
 
 const createEWRoomStore = createApiStore("POST", "/ew/room")
 const ewRoomStore = createApiStore("GET", "/ew/room")
@@ -85,15 +86,31 @@ function RecentRecord() {
 }
 
 export default function GuardCreateEW() {
+    const queryClient = useQueryClient()
     const {roomId, setRoomId} = useStore();
     const {fetch} = ewRoomStore()
     const [form] = Form.useForm()
 
-    const {mutate, data} = useUpdateEffect(createEWRoomStore, "Thành công")
+    const {mutate, error} = useMutation({
+        mutationFn: (val) => axiosClient.post("/ew/room", val),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["ew-room"]
+            })
+        }
+    })
+
+    useErrorNotification(error)
 
     useEffect(() => {
-        console.log(roomId)
-    }, [roomId]);
+        if (form && roomId) {
+            axiosClient.get("/ew/room/latest", {
+                params: { roomId }
+            }).then(res => res.data).then(data => {
+                form.setFieldsValue({roomId, ...data})
+            })
+        }
+    }, [form, roomId]);
 
     const onFinish = (value) => {
         mutate(value).then(fetch)

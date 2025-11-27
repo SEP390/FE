@@ -3,16 +3,12 @@ import {useEffect} from "react";
 import {formatPrice} from "../../../../util/formatPrice.js";
 import {Alert, App, Button, Form, InputNumber} from "antd";
 import PriceInput from "../../../../components/PriceInput.jsx";
-import {createApiStore} from "../../../../util/createApiStore.js";
 import {GoBack} from "../../../../components/GoBack.jsx";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import axiosClient from "../../../../api/axiosClient/axiosClient.js";
 import useErrorNotification from "../../../../hooks/useErrorNotification.js";
 import {formatTime} from "../../../../util/formatTime.js";
 import {Clock} from "lucide-react";
-
-const getCurrentPriceApi = createApiStore("GET", "/ew/price");
-const updatePriceApi = createApiStore("POST", "/ew/price");
 
 function ItemLabel({label, value, prefix}) {
     return <div className={"p-5 rounded-lg border border-gray-200 bg-white flex flex-col justify-center items-center"}>
@@ -126,7 +122,8 @@ function UpdatePriceForm() {
             {currentPrice?.createTime && (
                 <>
                     <Form.Item label={"Cập nhật gần nhất"}>
-                        <span className={"flex gap-1 items-center"}><Clock size={14}/>{formatTime(currentPrice.createTime)}</span>
+                        <span className={"flex gap-1 items-center"}><Clock
+                            size={14}/>{formatTime(currentPrice.createTime)}</span>
                     </Form.Item>
                 </>
             )}

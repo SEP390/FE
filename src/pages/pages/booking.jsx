@@ -10,6 +10,9 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import CreateBookingY2 from "./booking/y2.jsx";
+import {PageHeader} from "../../components/PageHeader.jsx";
+import {Link} from "react-router-dom";
+import useErrorNotification from "../../hooks/useErrorNotification.js";
 
 dayjs.extend(isBetween);
 
@@ -44,7 +47,7 @@ function ExtendAction() {
 
 function PaymentAction() {
     const queryClient = useQueryClient()
-    const {mutate} = useMutation({
+    const {mutate, error} = useMutation({
         mutationFn: () => axiosClient({
             url: "/booking/payment",
             method: "POST",
@@ -56,6 +59,7 @@ function PaymentAction() {
             })
         }
     })
+    useErrorNotification(error)
     const onClick = async () => {
         mutate()
     }
@@ -133,7 +137,11 @@ function Roommates() {
     </div>
 }
 
-function CurrentSlot({data}) {
+function CurrentSlot() {
+    const {data, isError, error, isSuccess, isLoading} = useQuery({
+        queryKey: ["current-slot"],
+        queryFn: () => axiosClient.get("/slots/current").then(res => res.data),
+    })
     return (<>
             <div className={"section"}>
                 <div className={"font-medium mb-3"}>Phòng hiện tại</div>
@@ -188,7 +196,7 @@ function CurrentSlot({data}) {
 
 function PaymentButton() {
     const queryClient = useQueryClient()
-    const {mutate} = useMutation({
+    const {mutate, error} = useMutation({
         mutationFn: ({slotId}) => axiosClient({
             url: "/booking",
             method: "POST",
@@ -201,6 +209,7 @@ function PaymentButton() {
             })
         }
     })
+    useErrorNotification(error)
     const {selectedSlot} = useStore();
     const onClick = async () => {
         mutate({slotId: selectedSlot.id})
@@ -278,7 +287,7 @@ function SelectSlot() {
 
     return <div className={"section"}>
         <div className={"font-medium mb-3"}>Chọn slot</div>
-        <div className={"flex gap-3"}>
+        <div className={"flex gap-3 flex-wrap"}>
             {selectedRoom.slots.map(slot => <SlotItem key={slot.id} data={slot}/>)}
         </div>
     </div>
@@ -363,6 +372,13 @@ function CreateBookingY1({timeConfig}) {
                            BOOKING_DATE_NOT_START: "Chưa đến thời gian đặt phòng",
                            TIME_CONFIG_NOT_FOUND: "Chưa đến thời gian đặt phòng"
                        }[errorCode] || errorCode}/>
+                {errorCode === "SURVEY_NOT_FOUND" && (
+                    <>
+                        <div className={"mt-5"}>
+                            <Link to={"/survey"}><Button>Chuyển trang sang điền khảo sát</Button></Link>
+                        </div>
+                    </>
+                )}
             </>}
             {isSuccess && <>
                 <div className={"font-medium mb-3"}>Top 5 phòng phù hợp nhất</div>
@@ -416,7 +432,7 @@ function CreateBooking() {
 }
 
 export default function BookingPage() {
-    const {data, isError, isSuccess} = useQuery({
+    const {data, isError, error, isSuccess, isLoading} = useQuery({
         queryKey: ["current-slot"],
         queryFn: () => axiosClient.get("/slots/current").then(res => res.data),
         retry: false,
@@ -425,7 +441,15 @@ export default function BookingPage() {
     return <AppLayout activeSidebar={"booking"}>
         <RoommateModal/>
         <div className={"flex-grow flex gap-3 flex-col"}>
-            {(isError || (isSuccess && !data)) && <CreateBooking/>}
+            {isError && (
+                <>
+                    <PageHeader title={"Đặt phòng"}/>
+                    <div className={"section"}>
+                        <Alert showIcon closable type={"error"} message={"Lỗi"} description={error.message}/>
+                    </div>
+                </>
+            )}
+            {isSuccess && !data && <CreateBooking/>}
             {isSuccess && data && <CurrentSlot data={data}/>}
         </div>
     </AppLayout>

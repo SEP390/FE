@@ -1,6 +1,5 @@
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import {PageHeader} from "../../../components/PageHeader.jsx";
-import {createApiStore} from "../../../util/createApiStore.js";
 import {App, Button, Popconfirm, Table, Tag} from 'antd'
 import {ResidentFilter} from "../../../components/ResidentSelect.jsx";
 import {RoomFilter} from "../../../components/RoomSelect.jsx";
@@ -10,8 +9,6 @@ import {formatTime} from "../../../util/formatTime.js";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import useErrorNotification from "../../../hooks/useErrorNotification.js";
 import {create} from "zustand";
-
-const slotHistoryStore = createApiStore("GET", "/slot-history")
 
 function CheckoutButton({slotHistory}) {
     const queryClient = useQueryClient();

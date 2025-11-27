@@ -4,7 +4,6 @@ import {useApi} from "../../hooks/useApi.js";
 import {Button, Descriptions, Result, Skeleton, Tag} from "antd";
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import {formatPrice} from "../../util/formatPrice.js";
-import {createApiStore} from "../../util/createApiStore.js";
 
 function BookingDetail({data}) {
     return <div className={"w-100 mx-auto"}><Descriptions layout={"vertical"} items={[
