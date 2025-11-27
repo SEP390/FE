@@ -13,6 +13,7 @@ import ktx2 from "../assets/images/dormimg2.png";
 import ktx3 from "../assets/images/dormimg3.png";
 import banner1 from "../assets/images/banner1.png";
 import banner2 from "../assets/images/banner2.png";
+import {UserPlus} from "lucide-react";
 
 export function GuestPage() {
     const infoRef = useRef(null); // Thêm ref cho phần Giới thiệu
@@ -40,12 +41,8 @@ export function GuestPage() {
                     ]}
                 />
                 <div className="flex gap-2">
-                    <Button type="default" icon={<LoginOutlined />}>
-                        <Link to={"/login"}>Đăng Nhập</Link>
-                    </Button>
-                    <Button>
-                        <Link to={"/register"}>Đăng Ký</Link>
-                    </Button>
+                    <Link to={"/login"}><Button type="default" icon={<LoginOutlined />}>Đăng Nhập</Button></Link>
+                    <Link to={"/register"}><Button type="default" icon={<UserPlus size={14} />}>Đăng ký</Button></Link>
                 </div>
             </Header>
 
