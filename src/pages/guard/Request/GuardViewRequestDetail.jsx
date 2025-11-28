@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Input, message, Select } from "antd";
+import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Input, Select, App } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
@@ -12,25 +12,25 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 export function GuardViewRequestDetail() {
+    const { notification } = App.useApp();
     const { requestId } = useParams();
     const navigate = useNavigate();
     const [collapsed, setCollapsed] = useState(false);
     const [requestData, setRequestData] = useState(null);
     const [residentInfo, setResidentInfo] = useState(null);
     const [form] = Form.useForm();
-    const [isUpdating, setIsUpdating] = useState(false);
 
-    // API hooks
+    // API hooks for getting request
     const {
         get: getRequest,
-        put: updateRequest,
         data: requestResponse,
         isSuccess: isRequestSuccess,
-        isComplete: isRequestComplete,
         isLoading: isRequestLoading
     } = useApi();
 
+    // API hooks for updating request
     const {
+        put: updateRequest,
         data: updateResponse,
         isSuccess: isUpdateSuccess,
         isComplete: isUpdateComplete,
@@ -42,16 +42,20 @@ export function GuardViewRequestDetail() {
         get: getUserById,
         data: userResponse,
         isSuccess: isUserSuccess,
-        isComplete: isUserComplete,
         isLoading: isUserLoading
     } = useApi();
 
-    // Fetch request details on mount
-    useEffect(() => {
+    // Fetch request details
+    const fetchRequestDetails = () => {
         if (requestId) {
             console.log("Fetching request details for ID:", requestId);
             getRequest(`/requests/${requestId}`);
         }
+    };
+
+    // Fetch request details on mount
+    useEffect(() => {
+        fetchRequestDetails();
     }, [requestId]);
 
     // Handle request data response
@@ -75,14 +79,14 @@ export function GuardViewRequestDetail() {
                 });
             }
         }
-    }, [isRequestSuccess, requestResponse]);
+    }, [isRequestSuccess, requestResponse, form]);
 
     // Fetch resident info by userId once request data is available
     useEffect(() => {
         if (requestData?.userId) {
             getUserById(`/users/residents/${requestData.userId}`);
         }
-    }, [requestData, getUserById]);
+    }, [requestData]);
 
     // Handle user info response
     useEffect(() => {
@@ -105,20 +109,31 @@ export function GuardViewRequestDetail() {
     // Handle update response
     useEffect(() => {
         if (isUpdateSuccess && updateResponse) {
-            message.success("Cập nhật trạng thái request thành công!");
-            setIsUpdating(false);
-            // Refresh request data
-            getRequest(`/requests/${requestId}`);
+            notification.success({
+                message: 'Cập nhật thành công',
+                description: 'Trạng thái request đã được cập nhật thành công!',
+                placement: 'topRight',
+                duration: 3
+            });
+
+            // Refresh request data after successful update
+            setTimeout(() => {
+                fetchRequestDetails();
+            }, 500);
         }
-    }, [isUpdateSuccess, updateResponse]);
+    }, [isUpdateSuccess, updateResponse, notification]);
 
     // Handle update error
     useEffect(() => {
         if (isUpdateComplete && !isUpdateSuccess) {
-            message.error("Có lỗi xảy ra khi cập nhật request!");
-            setIsUpdating(false);
+            notification.error({
+                message: 'Cập nhật thất bại',
+                description: 'Có lỗi xảy ra khi cập nhật request. Vui lòng thử lại!',
+                placement: 'topRight',
+                duration: 3
+            });
         }
-    }, [isUpdateComplete, isUpdateSuccess]);
+    }, [isUpdateComplete, isUpdateSuccess, notification]);
 
     // Status color mapping
     const statusColor = (status) => {
@@ -171,7 +186,6 @@ export function GuardViewRequestDetail() {
 
     // Handle form submission
     const handleUpdateRequest = async (values) => {
-        setIsUpdating(true);
         console.log("Updating request with values:", values);
 
         const updatePayload = {
@@ -190,20 +204,24 @@ export function GuardViewRequestDetail() {
         <Layout style={{ minHeight: "100vh" }}>
             <GuardSidebar collapsed={collapsed} active="guard-requests" />
             <Layout>
-                <AppHeader toggleSideBar={toggleSideBar} />
-                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-                    <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: "16px" }}>
-                        <Button
-                            icon={<ArrowLeftOutlined />}
-                            onClick={() => navigate("/guard/requests")}
-                        >
-                            Quay lại
-                        </Button>
-                        <Title level={2} style={{ margin: 0 }}>
-                            {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
-                        </Title>
-                    </div>
+                <AppHeader
+                    toggleSideBar={toggleSideBar}
+                    header={
+                        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                            <Button
+                                icon={<ArrowLeftOutlined />}
+                                onClick={() => navigate("/guard/requests")}
+                            >
+                                Quay lại
+                            </Button>
+                            <Title level={2} style={{ margin: 0 }}>
+                                {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
+                            </Title>
+                        </div>
+                    }
+                />
 
+                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
                     {isRequestLoading && (
                         <div style={{ textAlign: "center", padding: "60px 0" }}>
                             <Spin size="large" />
@@ -313,11 +331,20 @@ export function GuardViewRequestDetail() {
                                 </div>
                             </Card>
 
-                            {/* Response Message */}
-                            {(requestData.responseMessageByEmployee || requestData.responseMessage || requestData.ResponseMessage) && (
-                                <Card title="Tin nhắn phản hồi" className="mt-6">
-                                    <div className="bg-blue-50 p-4 rounded-lg">
-                                        <p className="whitespace-pre-wrap">{requestData.responseMessageByEmployee || requestData.responseMessage || requestData.ResponseMessage}</p>
+                            {/* Response Message from Employee */}
+                            {requestData.responseMessageByEmployee && (
+                                <Card title="Phản hồi từ nhân viên (Bảo vệ)" className="mt-6">
+                                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                        <p className="whitespace-pre-wrap text-blue-800">{requestData.responseMessageByEmployee}</p>
+                                    </div>
+                                </Card>
+                            )}
+
+                            {/* Response Message from Manager */}
+                            {requestData.responseMessageByManager && (
+                                <Card title="Phản hồi từ quản lý" className="mt-6">
+                                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                        <p className="whitespace-pre-wrap text-green-800">{requestData.responseMessageByManager}</p>
                                     </div>
                                 </Card>
                             )}
@@ -328,4 +355,3 @@ export function GuardViewRequestDetail() {
         </Layout>
     );
 }
-

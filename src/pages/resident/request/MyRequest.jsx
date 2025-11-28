@@ -1,21 +1,20 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { AppLayout } from "../../../components/layout/AppLayout.jsx";
-import { Card, Table, Button, Tag, Spin, Alert, Empty, Select, Radio, Space, Row, Col, Statistic, Badge,message  } from "antd";
-import { useNavigate } from "react-router-dom";
+import React, {useEffect, useMemo, useRef, useState} from "react";
+import {AppLayout} from "../../../components/layout/AppLayout.jsx";
+import {Alert, App, Badge, Button, Card, Col, Empty, Row, Select, Space, Spin, Statistic, Table, Tag} from "antd";
+import {useLocation, useNavigate} from "react-router-dom";
 import {
-    PlusOutlined,
-    FilterOutlined,
-    ClockCircleOutlined,
     CheckCircleOutlined,
+    ClearOutlined,
+    ClockCircleOutlined,
     CloseCircleOutlined,
     FileTextOutlined,
-    ClearOutlined
+    FilterOutlined,
+    PlusOutlined
 } from "@ant-design/icons";
-import { useApi } from "../../../hooks/useApi.js";
+import {useApi} from "../../../hooks/useApi.js";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
-import { useLocation } from "react-router-dom";
 
-const { Option } = Select;
+const {Option} = Select;
 
 export function MyRequest() {
     const navigate = useNavigate();
@@ -31,7 +30,7 @@ export function MyRequest() {
     const [typeFilter, setTypeFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
 
-    const { get, data: requestsData, isSuccess: isRequestsSuccess, isComplete: isRequestsComplete } = useApi();
+    const {get, data: requestsData, isSuccess: isRequestsSuccess, isComplete: isRequestsComplete} = useApi();
 
     // Check resident status on mount
     useEffect(() => {
@@ -173,6 +172,7 @@ export function MyRequest() {
     }, [filteredData]);
 
 // Hiển thị thông báo thành công khi tạo request xong
+    const {message} = App.useApp()
     useEffect(() => {
         if (location.state?.showSuccessMessage && !hasShownMessage.current) {
             console.log("✅ Showing success message");
@@ -182,7 +182,7 @@ export function MyRequest() {
             hasShownMessage.current = true;
 
             // Clear state
-            navigate(location.pathname, { replace: true, state: {} });
+            navigate(location.pathname, {replace: true, state: {}});
         }
     }, [location.state, navigate, location.pathname]);
 
@@ -201,7 +201,7 @@ export function MyRequest() {
             d.status === "REJECTED" || d.status === "CANCELLED"
         ).length;
 
-        return { processing, completed, rejected, total: filteredData.length };
+        return {processing, completed, rejected, total: filteredData.length};
     }, [filteredData]);
 
     const columns = [
@@ -213,7 +213,7 @@ export function MyRequest() {
             sorter: (a, b) => a.requestType.localeCompare(b.requestType),
             render: (type) => (
                 <Space>
-                    <FileTextOutlined style={{ color: '#004aad' }} />
+                    <FileTextOutlined style={{color: '#004aad'}}/>
                     <span>{formatRequestType(type)}</span>
                 </Space>
             ),
@@ -238,8 +238,8 @@ export function MyRequest() {
                 return (
                     <Space direction="vertical" size={0}>
                         <span>{d.toLocaleDateString('vi-VN')}</span>
-                        <span style={{ fontSize: '12px', color: '#999' }}>
-                            {d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        <span style={{fontSize: '12px', color: '#999'}}>
+                            {d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}
                         </span>
                     </Space>
                 );
@@ -277,7 +277,7 @@ export function MyRequest() {
                     type="primary"
                     size="small"
                     onClick={() => navigate(`/resident-request-detail/${record.requestId}`)}
-                    style={{ backgroundColor: '#004aad' }}
+                    style={{backgroundColor: '#004aad'}}
                 >
                     Chi tiết
                 </Button>
@@ -293,7 +293,7 @@ export function MyRequest() {
                 <AppLayout>
                     <div className="p-4">
                         <Card>
-                            <Empty description="Đang kiểm tra trạng thái..." />
+                            <Empty description="Đang kiểm tra trạng thái..."/>
                         </Card>
                     </div>
                 </AppLayout>
@@ -314,8 +314,8 @@ export function MyRequest() {
                             action={
                                 <Button
                                     type="primary"
-                                    onClick={() => navigate("/booking")}
-                                    style={{ backgroundColor: '#004aad' }}
+                                    onClick={() => navigate("/pages/booking")}
+                                    style={{backgroundColor: '#004aad'}}
                                 >
                                     Đăng ký phòng
                                 </Button>
@@ -332,7 +332,7 @@ export function MyRequest() {
     return (
         <Spin spinning={isLoading}>
             <AppLayout>
-                <div className="p-6" style={{ background: '#f5f5f5', minHeight: '100vh' }}>
+                <div className="p-6" style={{background: '#f5f5f5', minHeight: '100vh'}}>
                     {/* Header with gradient */}
                     <div
                         style={{
@@ -355,7 +355,7 @@ export function MyRequest() {
                             <Button
                                 type="primary"
                                 size="large"
-                                icon={<PlusOutlined />}
+                                icon={<PlusOutlined/>}
                                 onClick={() => navigate("/create-request")}
                                 style={{
                                     backgroundColor: 'white',
@@ -384,10 +384,10 @@ export function MyRequest() {
                                 }}
                             >
                                 <Statistic
-                                    title={<span style={{ color: '#666', fontSize: '14px' }}>Tổng yêu cầu</span>}
+                                    title={<span style={{color: '#666', fontSize: '14px'}}>Tổng yêu cầu</span>}
                                     value={stats.total}
-                                    prefix={<FileTextOutlined style={{ color: '#004aad' }} />}
-                                    valueStyle={{ color: '#004aad', fontWeight: 'bold' }}
+                                    prefix={<FileTextOutlined style={{color: '#004aad'}}/>}
+                                    valueStyle={{color: '#004aad', fontWeight: 'bold'}}
                                 />
                             </Card>
                         </Col>
@@ -401,10 +401,10 @@ export function MyRequest() {
                                 }}
                             >
                                 <Statistic
-                                    title={<span style={{ color: '#666', fontSize: '14px' }}>Đang xử lý</span>}
+                                    title={<span style={{color: '#666', fontSize: '14px'}}>Đang xử lý</span>}
                                     value={stats.processing}
-                                    prefix={<ClockCircleOutlined style={{ color: '#1890ff' }} />}
-                                    valueStyle={{ color: '#1890ff', fontWeight: 'bold' }}
+                                    prefix={<ClockCircleOutlined style={{color: '#1890ff'}}/>}
+                                    valueStyle={{color: '#1890ff', fontWeight: 'bold'}}
                                 />
                             </Card>
                         </Col>
@@ -418,10 +418,10 @@ export function MyRequest() {
                                 }}
                             >
                                 <Statistic
-                                    title={<span style={{ color: '#666', fontSize: '14px' }}>Hoàn thành</span>}
+                                    title={<span style={{color: '#666', fontSize: '14px'}}>Hoàn thành</span>}
                                     value={stats.completed}
-                                    prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-                                    valueStyle={{ color: '#52c41a', fontWeight: 'bold' }}
+                                    prefix={<CheckCircleOutlined style={{color: '#52c41a'}}/>}
+                                    valueStyle={{color: '#52c41a', fontWeight: 'bold'}}
                                 />
                             </Card>
                         </Col>
@@ -435,10 +435,10 @@ export function MyRequest() {
                                 }}
                             >
                                 <Statistic
-                                    title={<span style={{ color: '#666', fontSize: '14px' }}>Từ chối</span>}
+                                    title={<span style={{color: '#666', fontSize: '14px'}}>Từ chối</span>}
                                     value={stats.rejected}
-                                    prefix={<CloseCircleOutlined style={{ color: '#ff4d4f' }} />}
-                                    valueStyle={{ color: '#ff4d4f', fontWeight: 'bold' }}
+                                    prefix={<CloseCircleOutlined style={{color: '#ff4d4f'}}/>}
+                                    valueStyle={{color: '#ff4d4f', fontWeight: 'bold'}}
                                 />
                             </Card>
                         </Col>
@@ -453,12 +453,12 @@ export function MyRequest() {
                         }}
                         title={
                             <Space>
-                                <FilterOutlined style={{ color: '#004aad' }} />
-                                <span style={{ color: '#004aad', fontWeight: '600' }}>Bộ lọc</span>
+                                <FilterOutlined style={{color: '#004aad'}}/>
+                                <span style={{color: '#004aad', fontWeight: '600'}}>Bộ lọc</span>
                                 {hasActiveFilters && (
                                     <Badge
                                         count="Đang lọc"
-                                        style={{ backgroundColor: '#52c41a' }}
+                                        style={{backgroundColor: '#52c41a'}}
                                     />
                                 )}
                             </Space>
@@ -466,7 +466,7 @@ export function MyRequest() {
                         extra={
                             hasActiveFilters && (
                                 <Button
-                                    icon={<ClearOutlined />}
+                                    icon={<ClearOutlined/>}
                                     onClick={() => {
                                         setTimeFilter("all");
                                         setTypeFilter("all");
@@ -492,7 +492,7 @@ export function MyRequest() {
                                     <Select
                                         value={timeFilter}
                                         onChange={setTimeFilter}
-                                        style={{ width: "100%" }}
+                                        style={{width: "100%"}}
                                         placeholder="Chọn khoảng thời gian"
                                         size="large"
                                     >
@@ -516,7 +516,7 @@ export function MyRequest() {
                                     <Select
                                         value={typeFilter}
                                         onChange={setTypeFilter}
-                                        style={{ width: "100%" }}
+                                        style={{width: "100%"}}
                                         placeholder="Chọn loại yêu cầu"
                                         size="large"
                                     >
@@ -542,7 +542,7 @@ export function MyRequest() {
                                     <Select
                                         value={statusFilter}
                                         onChange={setStatusFilter}
-                                        style={{ width: "100%" }}
+                                        style={{width: "100%"}}
                                         placeholder="Chọn trạng thái"
                                         size="large"
                                     >
@@ -564,7 +564,7 @@ export function MyRequest() {
                             borderRadius: '12px',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
                         }}
-                        bodyStyle={{ padding: 0 }}
+                        bodyStyle={{padding: 0}}
                     >
                         <Table
                             dataSource={filteredData}
@@ -574,10 +574,10 @@ export function MyRequest() {
                                 pageSize: 10,
                                 showSizeChanger: true,
                                 showTotal: (total) => `Tổng ${total} yêu cầu`,
-                                style: { padding: '16px' }
+                                style: {padding: '16px'}
                             }}
-                            scroll={{ x: 800 }}
-                            locale={{ emptyText: "Không tìm thấy yêu cầu nào" }}
+                            scroll={{x: 800}}
+                            locale={{emptyText: "Không tìm thấy yêu cầu nào"}}
                             loading={isLoading}
                             style={{
                                 borderRadius: '12px',

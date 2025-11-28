@@ -249,12 +249,12 @@ export function ResidentRequestDetail() {
                             </div>
                         </Card>
 
-                        {/* Response Message Card - only show when ACCEPTED or REJECTED */}
-                        {(requestData.responseMessage || requestData.ResponseMessage) && ["ACCEPTED", "REJECTED"].includes((requestData.responseStatus || requestData.requestStatus)) && (
+                        {/* Response Message from Manager */}
+                        {requestData.responseMessageByManager && (
                             <Card title="Phản hồi từ quản lý" className="shadow-sm">
-                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                    <p className="whitespace-pre-wrap text-blue-800 leading-relaxed">
-                                        {requestData.responseMessage || requestData.ResponseMessage}
+                                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                    <p className="whitespace-pre-wrap text-green-800 leading-relaxed">
+                                        {requestData.responseMessageByManager}
                                     </p>
                                 </div>
                             </Card>
