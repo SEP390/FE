@@ -154,7 +154,9 @@ const SemesterPage = () => {
                                    title: "Kỳ",
                                    dataIndex: "name",
                                    render: (val, row) => {
-                                       if (isEditable(row.id)) return <Form.Item name={"name"} className={"!m-0"}>
+                                       if (isEditable(row.id)) return <Form.Item rules={[
+                                           { required: true, message: "Nhập tên kỳ"}
+                                       ]} name={"name"} className={"!m-0"}>
                                            <Input className={"!w-20"}/>
                                        </Form.Item>
                                        return <Tag>{val}</Tag>
@@ -163,7 +165,9 @@ const SemesterPage = () => {
                                {
                                    title: "Khoảng thời gian",
                                    render: (val, row) => {
-                                       if (isEditable(row.id)) return <Form.Item name={"range"}
+                                       if (isEditable(row.id)) return <Form.Item rules={[
+                                           {required: true, message: "Nhập khoảng thời gian"}
+                                       ]} name={"range"}
                                                                                  className={"!m-0"}><DateRangeSelect
                                            format={"DD/MM/YYYY"}/>
                                        </Form.Item>
