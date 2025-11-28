@@ -1,343 +1,195 @@
-import React, {useEffect, useState} from 'react';
-import {create} from 'zustand';
-import {App, Button, Card, DatePicker, Form, Input, Popconfirm, Space, Table,} from 'antd';
-import {CalendarDays, Pencil, Plus, Save, Trash, XCircle,} from 'lucide-react';
-import dayjs from 'dayjs';
+import React, {createContext, useContext, useEffect} from 'react';
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
+import {PageHeader} from "../../../components/PageHeader.jsx";
+import {SemesterFilter} from "../../../components/SemesterSelect.jsx";
+import {App, Button, Form, Input, Popconfirm, Table, Tag} from "antd";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
+import {create} from "zustand";
+import {formatDate} from "../../../util/formatTime.js";
+import {DateRangeSelect} from "../../../components/DateRangeSelect.jsx";
+import {CloseOutlined} from "@ant-design/icons";
+import {Pen, Plus, Save, Trash} from "lucide-react";
+import dayjs from "dayjs";
 
-const errors = {
-    "SEMESTER_NAME_EXISTED": "Kỳ đã tồn tại"
-}
+const FormContext = createContext(null);
 
-function getErrorMessage(err) {
-    if (err.response.data?.message != null) {
-        const key = err.response.data.message;
-        return errors[key] || key;
-    }
-    return err.message;
-}
-
-async function fetchData(set, method, url, data) {
-    console.log(method, url, data)
-    set({loading: true});
-    try {
-        const res = await axiosClient({method, url, data, params: method === "GET" ? data : null})
-        if (res.status === 200) {
-            console.log(res.data)
-            return res.data;
-        }
-    } catch (error) {
-        console.log(error)
-        set({error: getErrorMessage(error)})
-    } finally {
-        set({loading: false});
-    }
-}
-
-const useSemesterStore = create((set, get) => ({
+const useEditableStore = create((set, get) => ({
     page: 0,
-    setPage: (page) => set({page}),
-    total: 0,
-    semesters: [],
-    loading: false,
-    error: null,
-    fetchSemesters: async () => {
-        const page = get().page;
-        const data = await fetchData(set, "GET", "/semesters", {
-            page, size: 5
-        })
-        set({semesters: data.content || [], total: data.page?.totalElements})
-    },
-    createSemester: (semester) => fetchData(set, "POST", "/semesters", semester),
-    updateSemester: (id, data) => fetchData(set, "POST", `/semesters/${id}`, data),
-    deleteSemester: (id) => fetchData(set, "DELETE", `/semesters/${id}`, null),
-}));
+    onChange: ({current}) => set({page: current - 1, editable: []}),
+    editable: [],
+    edit: (id) => set((state) => ({...state, editable: [...state.editable, id]})),
+    isEditable: (id) => get().editable.indexOf(id) !== -1,
+    cancel: (id) => set(state => ({...state, editable: state.editable.filter(item => item !== id)})),
+    cancelAll: () => set({editable: []}),
+    add: () => set(state => ({...state, editable: [...state.editable, `new_${new Date().getTime()}`]}))
+}))
 
-const EditableCell = ({
-                          editing,
-                          dataIndex,
-                          title,
-                          inputType,
-                          record,
-                          index,
-                          children,
-                          ...restProps
-                      }) => {
-    const getInput = () => {
-        if (inputType === 'date') {
-            return (
-                <DatePicker
-                    className="w-full"
-                    format="YYYY-MM-DD"
-                    suffixIcon={<CalendarDays size={16} className="text-gray-400"/>}
-                />
-            );
+function DeleteButton({id}) {
+    const queryClient = useQueryClient();
+    const {notification} = App.useApp()
+    const {mutate} = useMutation({
+        mutationFn: ({ id }) => axiosClient.delete(`/semesters/${id}`).then(res => res.data),
+        onSuccess: (data) => {
+            console.log(data)
+            notification.success({ message: `Xóa thành công`})
+            queryClient.invalidateQueries({
+                queryKey: ["semesters"]
+            })
+        },
+        onError: (err) => {
+            notification.error({message: "Không thể xóa, kỳ đang trong sử dụng"})
         }
-        return <Input/>;
-    };
+    })
+    return <Popconfirm title="Xác nhận xóa?" onConfirm={() => mutate({id})}>
+        <Button icon={<Trash size={14}/>}></Button>
+    </Popconfirm>
+}
 
-    return (
-        <td {...restProps}>
-            {editing ? (
-                <Form.Item
-                    name={dataIndex}
-                    style={{margin: 0}}
-                    rules={[
-                        {
-                            required: true,
-                            message: `${title} không được trống!`,
-                        },
-                    ]}
-                >
-                    {getInput()}
-                </Form.Item>
-            ) : (
-                children
-            )}
-        </td>
-    );
-};
+function CancelButton({id}) {
+    const cancel = useEditableStore(state => state.cancel)
+    return <Button onClick={() => cancel(id)} type={"default"} variant={"outlined"} icon={<CloseOutlined/>}></Button>
+}
+
+function EditButton({id}) {
+    const edit = useEditableStore(state => state.edit)
+    return <Button onClick={() => edit(id)} type={"default"} variant={"outlined"} icon={<Pen size={16}/>}></Button>
+}
+
+function FormRow({record, ...props}) {
+    const {editable, cancel} = useEditableStore()
+    const id = props["data-row-key"];
+    const [form] = Form.useForm();
+    const queryClient = useQueryClient();
+    const {notification} = App.useApp()
+    const {mutate: updateSemester} = useMutation({
+        mutationFn: ({ id, value }) => axiosClient.post(`/semesters/${id}`, value).then(res => res.data),
+        onSuccess: (data) => {
+            cancel(id)
+            console.log(data)
+            notification.success({ message: `Cập nhật thành công`})
+            queryClient.invalidateQueries({
+                queryKey: ["semesters"]
+            })
+        }
+    })
+    const {mutate: createSemester} = useMutation({
+        mutationFn: ({ value }) => axiosClient.post("/semesters", value).then(res => res.data),
+        onSuccess: (data) => {
+            cancel(id)
+            console.log(data)
+            notification.success({ message: `Tạo kỳ thành công`})
+            queryClient.invalidateQueries({
+                queryKey: ["semesters"]
+            })
+        }
+    })
+    const onFinish = (val) => {
+        const value = {
+            name: val.name,
+            startDate: val.range && val.range[0].format("YYYY-MM-DD"),
+            endDate: val.range && val.range[1].format("YYYY-MM-DD"),
+        }
+        if (id.startsWith("new_")) {
+            createSemester({ value })
+        } else {
+            updateSemester({ id, value })
+        }
+    }
+    useEffect(() => {
+        if (record && form && id && !id.startsWith("new_") && editable.indexOf(id) !== -1) {
+            form.setFieldsValue({
+                name: record.name,
+                range: [
+                    dayjs(record.startDate),
+                    dayjs(record.endDate)
+                ]
+            })
+        }
+    }, [editable, form, id, record]);
+    return <Form form={form} onFinish={onFinish} component={false}>
+        <FormContext.Provider value={form}>
+            <tr {...props}/>
+        </FormContext.Provider>
+    </Form>
+}
+
+function SubmitButton() {
+    const form = useContext(FormContext);
+    return <Button icon={<Save size={14}/>} onClick={() => form.submit()}></Button>
+}
 
 const SemesterPage = () => {
-    const [form] = Form.useForm();
-    const [editingKey, setEditingKey] = useState('');
-    const {
-        semesters,
-        loading,
-        fetchSemesters,
-        createSemester,
-        updateSemester,
-        error,
-        deleteSemester,
-        page,
-        setPage,
-        total
-    } = useSemesterStore();
-
-    const {notification} = App.useApp();
-
-    useEffect(() => {
-        fetchSemesters();
-    }, [fetchSemesters]);
-
-    useEffect(() => {
-        if (error) notification.error({message: "Có lỗi xảy ra", description: error});
-    }, [error, notification]);
-
-    const isEditing = (record) => record.id === editingKey;
-
-    const edit = (record) => {
-        // Convert ISO strings to dayjs objects for the DatePicker
-        form.setFieldsValue({
-            ...record,
-            startDate: record.startDate ? dayjs(record.startDate) : null,
-            endDate: record.endDate ? dayjs(record.endDate) : null,
-        });
-        setEditingKey(record.id);
-    };
-
-    const onChange = (page) => {
-        cancel();
-        setPage(page - 1)
-        fetchSemesters();
-    }
-
-    const cancel = () => {
-        // If we were adding a new row, remove it from the table on cancel
-        if (editingKey.startsWith('new_')) {
-            useSemesterStore.setState((state) => ({
-                semesters: state.semesters.filter((s) => s.id !== editingKey),
-            }));
-        }
-        setEditingKey('');
-    };
-
-    const deleteRow = async (id) => {
-        await deleteSemester(id)
-        await fetchSemesters()
-    }
-
-    const save = async (id) => {
-        try {
-            const row = await form.validateFields();
-            console.log(row)
-            const data = {
-                name: row.name,
-                startDate: row.startDate.format('YYYY-MM-DD'),
-                endDate: row.endDate.format('YYYY-MM-DD'),
-            };
-
-            console.log(id, data)
-
-            const isNew = id.toString().startsWith('new_');
-
-            if (isNew) {
-                await createSemester(data);
-            } else {
-                await updateSemester(id, data);
-            }
-            setEditingKey('');
-            await fetchSemesters();
-        } catch (errInfo) {
-        }
-    };
-
-    const handleAdd = () => {
-        // Check if already adding
-        if (editingKey.startsWith('new_')) {
-            return;
-        }
-
-        const newId = `new_${Date.now()}`; // Temporary ID
-        const newRecord = {
-            id: newId,
-            name: '',
-            startDate: null,
-            endDate: null,
-        };
-
-        // Add new blank row to the top of the local state
-        useSemesterStore.setState((state) => ({
-            semesters: [newRecord, ...state.semesters],
-        }));
-
-        // Set the form fields and enter edit mode
-        form.setFieldsValue(newRecord);
-        setEditingKey(newId);
-    };
-
-    const columns = [
-        {
-            title: 'Kỳ',
-            dataIndex: 'name',
-            editable: true,
-            sorter: (a, b) => a.name.localeCompare(b.name),
-        },
-        {
-            title: 'Ngày bắt đầu',
-            dataIndex: 'startDate',
-            editable: true,
-            inputType: 'date',
-            render: (text) => (text ? dayjs(text).format('YYYY-MM-DD') : ''),
-            sorter: (a, b) => new Date(a.startDate) - new Date(b.startDate),
-        },
-        {
-            title: 'Ngày kết thúc',
-            dataIndex: 'endDate',
-            editable: true,
-            inputType: 'date',
-            render: (text) => (text ? dayjs(text).format('YYYY-MM-DD') : ''),
-            sorter: (a, b) => new Date(a.endDate) - new Date(b.endDate),
-        },
-        {
-            title: 'Hành động',
-            dataIndex: 'actions',
-            width: 120,
-            render: (_, record) => {
-                const editable = isEditing(record);
-                return editable ? (
-                    <Space>
-                        <Popconfirm
-                            title="Xác nhận lưu?"
-                            onConfirm={() => save(record.id)}
-                        >
-                            <Button
-                                type="primary"
-                                shape="circle"
-                                icon={<Save size={16}/>}
-                                title="Lưu"
-                            />
-                        </Popconfirm>
-                        <Button
-                            shape="circle"
-                            onClick={cancel}
-                            icon={<XCircle size={16}/>}
-                            title="Hủy"
-                        />
-                    </Space>
-                ) : (
-                    <Space>
-                        <Button
-                            type="text"
-                            disabled={editingKey !== ''}
-                            onClick={() => edit(record)}
-                            icon={<Pencil size={16}/>}
-                            className="flex items-center justify-center"
-                            title="Edit"
-                        />
-                        <Popconfirm
-                            title="Xác nhận xóa?"
-                            onConfirm={() => deleteRow(record.id)}
-                        >
-                            <Button
-                                variant={"filled"}
-                                color={"danger"}
-                                shape="circle"
-                                icon={<Trash size={16}/>}
-                                title="Xóa"
-                            />
-                        </Popconfirm>
-                    </Space>)
+    const {page, onChange, edit, cancel, isEditable, add, editable} = useEditableStore()
+    const {data} = useQuery({
+        queryKey: ["semesters", page],
+        queryFn: () => axiosClient.get("/semesters", {
+            params: {
+                page, size: 5
             },
-        },
-    ];
+        }).then(res => res.data)
+    })
 
-    // Merge columns with editing logic
-    const mergedColumns = columns.map((col) => {
-        if (!col.editable) {
-            return col;
-        }
-        return {
-            ...col,
-            onCell: (record) => ({
-                record,
-                inputType: col.inputType === 'date' ? 'date' : 'text',
-                dataIndex: col.dataIndex,
-                title: col.title,
-                editing: isEditing(record),
-            }),
-        };
-    });
-
+    const dataSource = editable.filter(item => item.startsWith("new_")).map(item => ({ id: item })).concat(data ? data.content : [])
     return (
         <LayoutManager>
-            <Card title={"Quản lý kỳ"} className="h-full mx-auto bg-white p-6 rounded-lg shadow-md overflow-auto">
-                <div className="flex justify-end items-center mb-3">
-                    <Button
-                        type="primary"
-                        onClick={handleAdd}
-                        disabled={editingKey !== ''}
-                        icon={<Plus size={16}/>}
-                        className="flex items-center"
-                    >
-                        Thêm
-                    </Button>
+            <div className={"flex gap-3 flex-col"}>
+                <PageHeader title={"Quản lý kỳ"}/>
+                <div className={"section flex justify-between items-end"}>
+                    <div>
+                        <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
+                        <div className={"flex gap-3 flex-wrap"}>
+                            <SemesterFilter/>
+                        </div>
+                    </div>
+                    <div>
+                        <Button onClick={() => add()} icon={<Plus size={14}/>}>Thêm</Button>
+                    </div>
                 </div>
-
-                <Form form={form} component={false}>
-                    <Table
-                        components={{
-                            body: {
-                                cell: EditableCell,
-                            },
-                        }}
-                        bordered
-                        dataSource={semesters}
-                        columns={mergedColumns}
-                        rowClassName="editable-row"
-                        rowKey="id"
-                        loading={loading}
-                        pagination={{
-                            current: page + 1,
-                            total: total,
-                            onChange: onChange,
-                            pageSize: 5,
-                        }}
-                    />
-                </Form>
-            </Card>
-
+                <div className={"section"}>
+                    <Table onRow={record => ({record})} rowKey={"id"} components={{body: {row: FormRow}}} bordered
+                           dataSource={dataSource}
+                           columns={[
+                               {
+                                   title: "Kỳ",
+                                   dataIndex: "name",
+                                   render: (val, row) => {
+                                       if (isEditable(row.id)) return <Form.Item name={"name"} className={"!m-0"}>
+                                           <Input className={"!w-20"}/>
+                                       </Form.Item>
+                                       return <Tag>{val}</Tag>
+                                   }
+                               },
+                               {
+                                   title: "Khoảng thời gian",
+                                   render: (val, row) => {
+                                       if (isEditable(row.id)) return <Form.Item name={"range"}
+                                                                                 className={"!m-0"}><DateRangeSelect
+                                           format={"DD/MM/YYYY"}/>
+                                       </Form.Item>
+                                       return `${formatDate(row.startDate)} - ${formatDate(row.endDate)}`;
+                                   }
+                               },
+                               {
+                                   title: "Hành động",
+                                   render: (val, row) => (
+                                       <>
+                                           <div className={"flex gap-2"}>
+                                               {!isEditable(row.id) && <EditButton id={row.id}/>}
+                                               {!isEditable(row.id) && <DeleteButton id={row.id}/>}
+                                               {isEditable(row.id) && <SubmitButton />}
+                                               {isEditable(row.id) && <CancelButton id={row.id}/>}
+                                           </div>
+                                       </>
+                                   )
+                               }
+                           ]} pagination={{
+                        current: page + 1,
+                        pageSize: 5,
+                        total: data?.page?.totalElements,
+                    }} onChange={onChange}/>
+                </div>
+            </div>
         </LayoutManager>
     );
 };
