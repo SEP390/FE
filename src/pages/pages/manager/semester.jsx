@@ -125,7 +125,7 @@ const SemesterPage = () => {
         queryKey: ["semesters", page],
         queryFn: () => axiosClient.get("/semesters", {
             params: {
-                page, size: 5
+                page, size: 5, sort: "startDate,DESC"
             },
         }).then(res => res.data)
     })
