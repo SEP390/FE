@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
-import { Layout, Typography, Card, Table, Button, Tag,Alert, Select, Input, Space, DatePicker } from "antd";
+import { AppHeader } from "../../../components/layout/AppHeader.jsx";
+import { Layout, Typography, Card, Table, Button, Tag, Alert, Select, Input, Space, DatePicker } from "antd";
 import { useNavigate } from "react-router-dom";
 import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
 import dayjs from "dayjs";
 
-const { Header, Content } = Layout;
+const { Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 export function ManagerRequests() {
     const navigate = useNavigate();
-    const [collapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
     const [dataSource, setDataSource] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [statusFilter, setStatusFilter] = useState("all");
@@ -59,9 +60,7 @@ export function ManagerRequests() {
             console.log("Data array length:", dataArray.length);
 
             if (dataArray.length > 0) {
-                // Map dữ liệu từ backend response
                 const formattedData = dataArray.map((item) => {
-                    // For anonymous requests, the structure might be different
                     if (showAnonymous) {
                         return {
                             key: item.requestId || item.id,
@@ -74,7 +73,6 @@ export function ManagerRequests() {
                         };
                     }
 
-                    // For regular requests
                     return {
                         key: item.requestId,
                         requestId: item.requestId,
@@ -124,13 +122,11 @@ export function ManagerRequests() {
         }
     };
 
-    // Reset quick filter khi user chọn date range thủ công
     const handleDateRangeChange = (dates) => {
         setDateRange(dates);
         if (!dates) {
             setQuickDateFilter("all");
         } else {
-            // Kiểm tra xem date range có khớp với quick filter nào không
             const startDate = dayjs(dates[0]).startOf('day');
             const endDate = dayjs(dates[1]).startOf('day');
             const today = dayjs().startOf('day');
@@ -147,7 +143,6 @@ export function ManagerRequests() {
             } else if (startDate.isSame(threeMonthsAgo, 'day') && endDate.isSame(today, 'day')) {
                 setQuickDateFilter("3months");
             }
-            // Nếu không khớp với quick filter nào, giữ nguyên giá trị hiện tại
         }
     };
 
@@ -155,27 +150,21 @@ export function ManagerRequests() {
     useEffect(() => {
         let filtered = [...dataSource];
 
-        // No need to filter by type if we're showing anonymous requests
-        // as we're already getting only anonymous requests from the API
         if (!showAnonymous) {
-            // Filter by status
             if (statusFilter !== "all") {
                 filtered = filtered.filter(item => item.status === statusFilter);
             }
 
-            // Filter by type (only if not showing anonymous requests)
             if (typeFilter !== "all") {
                 filtered = filtered.filter(item => item.requestType === typeFilter);
             }
 
-            // Filter by search text (user name)
             if (searchText) {
                 filtered = filtered.filter(item =>
                     item.userName && item.userName.toLowerCase().includes(searchText.toLowerCase())
                 );
             }
         } else {
-            // For anonymous requests, only filter by search text if needed
             if (searchText) {
                 filtered = filtered.filter(item =>
                     (item.content && item.content.toLowerCase().includes(searchText.toLowerCase())) ||
@@ -184,7 +173,6 @@ export function ManagerRequests() {
             }
         }
 
-        // Filter by date range
         if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
             const startDate = dayjs(dateRange[0]).startOf('day');
             const endDate = dayjs(dateRange[1]).endOf('day');
@@ -192,7 +180,6 @@ export function ManagerRequests() {
             filtered = filtered.filter(item => {
                 if (!item.createdDate) return false;
                 const itemDate = dayjs(item.createdDate);
-                // Kiểm tra xem ngày của item có nằm trong khoảng từ startDate đến endDate không (bao gồm cả 2 đầu)
                 const isAfterOrSameStart = itemDate.isAfter(startDate, 'day') || itemDate.isSame(startDate, 'day');
                 const isBeforeOrSameEnd = itemDate.isBefore(endDate, 'day') || itemDate.isSame(endDate, 'day');
                 return isAfterOrSameStart && isBeforeOrSameEnd;
@@ -202,7 +189,6 @@ export function ManagerRequests() {
         setFilteredData(filtered);
     }, [dataSource, statusFilter, typeFilter, searchText, dateRange, showAnonymous]);
 
-    // Màu cho trạng thái
     const statusColor = (status) => {
         if (status === "APPROVED" || status === "COMPLETED" || status === "ACCEPTED") return "green";
         if (status === "PENDING" || status === "PROCESSING") return "blue";
@@ -210,7 +196,6 @@ export function ManagerRequests() {
         return "default";
     };
 
-    // Format status text
     const formatStatus = (status) => {
         const statusMap = {
             PENDING: "Đang xử lý",
@@ -224,7 +209,6 @@ export function ManagerRequests() {
         return statusMap[status] || status;
     };
 
-    // Format request type
     const formatRequestType = (type) => {
         const typeMap = {
             CHECKOUT: "Yêu cầu trả phòng",
@@ -239,11 +223,9 @@ export function ManagerRequests() {
         return typeMap[type] || type;
     };
 
-    // Get unique statuses and types for filter options
     const uniqueStatuses = [...new Set(dataSource.map(item => item.status))];
     const uniqueTypes = [...new Set(dataSource.map(item => item.requestType))];
 
-    // Cấu hình bảng
     const getTableColumns = () => {
         if (showAnonymous) {
             return [
@@ -373,10 +355,8 @@ export function ManagerRequests() {
     };
 
     const columns = getTableColumns();
-
     const isLoading = !isRequestsComplete;
 
-    // Statistics - tính theo dataSource để hiển thị tổng số requests (không bị filter)
     const totalRequests = dataSource.length;
     const pendingRequests = dataSource.filter(d => d.status === "PENDING" || d.status === "PROCESSING").length;
     const approvedRequests = dataSource.filter(d => d.status === "APPROVED" || d.status === "COMPLETED" || d.status === "ACCEPTED").length;
@@ -386,18 +366,14 @@ export function ManagerRequests() {
         <Layout style={{ minHeight: "100vh" }}>
             <SideBarManager collapsed={collapsed} active="manager-requests" />
             <Layout>
-                <Header
-                    style={{
-                        background: "#fff",
-                        padding: "0 24px",
-                        borderBottom: "1px solid #f0f0f0",
-                        height: 80,
-                    }}
-                >
-                    <Title level={2} style={{ margin: 0, lineHeight: "80px" }}>
-                        Quản lý yêu cầu sinh viên
-                    </Title>
-                </Header>
+                <AppHeader
+                    toggleSideBar={() => setCollapsed(!collapsed)}
+                    header={
+                        <Title level={2} style={{ margin: 0, display: "inline-block" }}>
+                            Quản lý yêu cầu sinh viên
+                        </Title>
+                    }
+                />
 
                 <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
                     {/* Statistics Cards */}
@@ -462,7 +438,6 @@ export function ManagerRequests() {
                                 style={{ width: 200 }}
                                 onChange={(value) => {
                                     setTypeFilter(value);
-                                    // Reset other filters when changing type
                                     if (value !== 'ANONYMOUS') {
                                         setSearchText('');
                                         setStatusFilter('all');

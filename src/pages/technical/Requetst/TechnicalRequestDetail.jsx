@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { SideBarTechnical } from "../../../components/layout/SideBarTechnical.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Select, Input, InputNumber, message, Modal } from "antd";
+import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Select, Input, InputNumber, Modal, App } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
 import { warehouseItemApi } from "../../../api/Warehouse/warehouseApi.js";
+import axios from "axios";
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -15,11 +16,11 @@ const { Option } = Select;
 export function TechnicalRequestDetail() {
     const { requestId } = useParams();
     const navigate = useNavigate();
+    const { message } = App.useApp();
     const [collapsed, setCollapsed] = useState(false);
     const [requestData, setRequestData] = useState(null);
     const [residentInfo, setResidentInfo] = useState(null);
     const [form] = Form.useForm();
-    const [isUpdating, setIsUpdating] = useState(false);
     const [reportVisible, setReportVisible] = useState(false);
     const [invoiceVisible, setInvoiceVisible] = useState(false);
     const [reportForm] = Form.useForm();
@@ -27,6 +28,9 @@ export function TechnicalRequestDetail() {
     const [warehouseItems, setWarehouseItems] = useState([]);
     const [loadingWarehouse, setLoadingWarehouse] = useState(false);
     const [exportingStock, setExportingStock] = useState(false);
+    const [creatingReport, setCreatingReport] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [currentReportId, setCurrentReportId] = useState(null);
     const activeKey = 'technical-requests';
 
     const isAcceptedStatus = (requestData?.responseStatus || requestData?.requestStatus) === "ACCEPTED";
@@ -34,27 +38,17 @@ export function TechnicalRequestDetail() {
     // API hooks
     const {
         get: getRequest,
-        put: updateRequest,
         data: requestResponse,
         isSuccess: isRequestSuccess,
-        isComplete: isRequestComplete,
         isLoading: isRequestLoading
     } = useApi();
 
     const {
+        put: updateRequest,
         data: updateResponse,
         isSuccess: isUpdateSuccess,
         isComplete: isUpdateComplete,
         isLoading: isUpdateLoading
-    } = useApi();
-
-    // API hook to create report
-    const {
-        post: createReport,
-        data: reportCreateResponse,
-        isSuccess: isReportCreateSuccess,
-        isComplete: isReportCreateComplete,
-        isLoading: isReportCreateLoading
     } = useApi();
 
     // API hook to get user by id
@@ -62,7 +56,6 @@ export function TechnicalRequestDetail() {
         get: getUserById,
         data: userResponse,
         isSuccess: isUserSuccess,
-        isComplete: isUserComplete,
         isLoading: isUserLoading
     } = useApi();
 
@@ -89,13 +82,15 @@ export function TechnicalRequestDetail() {
         }
     };
 
-    // Fetch request details on mount
+    // Fetch request details on mount and when refreshKey changes
     useEffect(() => {
         if (requestId) {
             console.log("Fetching request details for ID:", requestId);
+            setRequestData(null);
+            setResidentInfo(null);
             getRequest(`/requests/${requestId}`);
         }
-    }, [requestId]);
+    }, [requestId, refreshKey]);
 
     // Fetch warehouse items when opening export modal
     useEffect(() => {
@@ -132,7 +127,7 @@ export function TechnicalRequestDetail() {
         if (requestData?.userId) {
             getUserById(`/users/residents/${requestData.userId}`);
         }
-    }, [requestData, getUserById]);
+    }, [requestData?.userId]);
 
     // Handle user info response
     useEffect(() => {
@@ -156,19 +151,16 @@ export function TechnicalRequestDetail() {
     useEffect(() => {
         if (isUpdateSuccess && updateResponse) {
             message.success("Cập nhật trạng thái request thành công!");
-            setIsUpdating(false);
-            // Refresh request data
-            getRequest(`/requests/${requestId}`);
+            setRefreshKey(prev => prev + 1);
         }
-    }, [isUpdateSuccess, updateResponse, requestId, getRequest]);
+    }, [isUpdateSuccess, updateResponse]);
 
     // Handle update error
     useEffect(() => {
-        if (isUpdateComplete && !isUpdateSuccess) {
+        if (isUpdateComplete && !isUpdateSuccess && updateResponse) {
             message.error("Có lỗi xảy ra khi cập nhật request!");
-            setIsUpdating(false);
         }
-    }, [isUpdateComplete, isUpdateSuccess]);
+    }, [isUpdateComplete, isUpdateSuccess, updateResponse]);
 
     // Status color mapping
     const statusColor = (status) => {
@@ -222,7 +214,6 @@ export function TechnicalRequestDetail() {
 
     // Handle form submission
     const handleUpdateRequest = async (values) => {
-        setIsUpdating(true);
         console.log("Updating request with values:", values);
 
         const updatePayload = {
@@ -230,37 +221,20 @@ export function TechnicalRequestDetail() {
             responseMessage: values.responseMessage
         };
 
-        updateRequest(`/requests/${requestId}`, updatePayload);
+        await updateRequest(`/requests/${requestId}`, updatePayload);
     };
 
     const toggleSideBar = () => {
         setCollapsed(!collapsed);
     };
 
-    // Handle create report response
-    useEffect(() => {
-        if (isReportCreateSuccess && reportCreateResponse) {
-            message.success("Tạo report thành công!");
-            setReportVisible(false);
-            reportForm.resetFields();
-        }
-    }, [isReportCreateSuccess, reportCreateResponse, reportForm]);
-
-    useEffect(() => {
-        if (isReportCreateComplete && !isReportCreateSuccess) {
-            message.error("Tạo report thất bại, vui lòng thử lại!");
-        }
-    }, [isReportCreateComplete, isReportCreateSuccess]);
-
     const handleOpenReport = () => {
         setReportVisible(true);
-        // preset room name when opening
-        if (requestData?.roomName) {
-            reportForm.setFieldsValue({ roomName: requestData.roomName });
-        }
+        reportForm.resetFields();
     };
 
-    const handleOpenInvoice = () => {
+    const handleOpenInvoice = (reportId = null) => {
+        setCurrentReportId(reportId);
         setInvoiceVisible(true);
         invoiceForm.resetFields();
     };
@@ -287,14 +261,15 @@ export function TechnicalRequestDetail() {
                 itemId: values.warehouseItemId,
                 transactionQuantity: values.quantity,
                 transactionType: 'EXPORT',
-                note: values.reason || `Xuất kho cho request ${requestData?.requestId}`,
-                reportId: null,
-                requestId: requestData?.requestId || null
+                note: values.reason || `Xuất kho cho ${currentReportId ? `report ${currentReportId}` : `request ${requestData?.requestId}`}`,
+                reportId: currentReportId || null,
+                requestId: currentReportId ? null : (requestData?.requestId || null)
             });
 
             message.success("Xuất kho thành công!");
             setInvoiceVisible(false);
             invoiceForm.resetFields();
+            setCurrentReportId(null);
         } catch (error) {
             console.error('Full error:', error);
 
@@ -312,13 +287,42 @@ export function TechnicalRequestDetail() {
         }
     };
 
-    const handleSubmitReport = (values) => {
-        // Tạo content như GuardCreateReport - backend sẽ tự động lấy thông tin employee từ token
-        const targetLabel = "Phòng";
-        const requestLine = requestData?.requestId ? `\nRequest ID: ${requestData.requestId}` : "";
-        const content = `Report từ kỹ thuật\nPhòng: ${requestData?.roomName || values.roomName || "N/A"}\nĐối tượng: ${targetLabel}${requestLine}\n\nGhi chú:\n${values.note || ""}`;
+    const handleSubmitReport = async (values) => {
+        try {
+            setCreatingReport(true);
+            const token = localStorage.getItem("token");
 
-        createReport(`/reports`, { content });
+            const response = await axios.post(
+                "http://localhost:8080/api/reports",
+                {
+                    content: values.content,
+                    createAt: new Date().toISOString(),
+                    reportType: values.reportType
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+            message.success("Tạo báo cáo thành công!");
+            setReportVisible(false);
+            reportForm.resetFields();
+
+            // Lấy reportId từ response để có thể sử dụng
+            const createdReportId = response.data?.reportId || response.data?.data?.reportId;
+            console.log("Created report ID:", createdReportId);
+
+            // Refresh để hiển thị report mới
+            setRefreshKey(prev => prev + 1);
+        } catch (err) {
+            console.error(err);
+            message.error("Tạo báo cáo thất bại!");
+        } finally {
+            setCreatingReport(false);
+        }
     };
 
     return (
@@ -342,7 +346,7 @@ export function TechnicalRequestDetail() {
                                 Tạo report
                             </Button>
                             {isAcceptedStatus && (
-                                <Button style={{ marginLeft: 8 }} onClick={handleOpenInvoice}>
+                                <Button style={{ marginLeft: 8 }} onClick={() => handleOpenInvoice()}>
                                     Tạo đơn xuất kho
                                 </Button>
                             )}
@@ -457,11 +461,20 @@ export function TechnicalRequestDetail() {
                                 </div>
                             </Card>
 
-                            {/* Response Message */}
-                            {(requestData.responseMessageByEmployee || requestData.responseMessage || requestData.ResponseMessage) && (
-                                <Card title="Tin nhắn phản hồi" className="mt-6">
+                            {/* Response Message from Manager */}
+                            {(requestData.responseMessage || requestData.ResponseMessage) && (
+                                <Card title="Tin nhắn phản hồi từ Manager" className="mt-6">
                                     <div className="bg-blue-50 p-4 rounded-lg">
-                                        <p className="whitespace-pre-wrap">{requestData.responseMessageByEmployee || requestData.responseMessage || requestData.ResponseMessage}</p>
+                                        <p className="whitespace-pre-wrap">{requestData.responseMessage || requestData.ResponseMessage}</p>
+                                    </div>
+                                </Card>
+                            )}
+
+                            {/* Response Message from Employee */}
+                            {requestData.responseMessageByEmployee && (
+                                <Card title="Tin nhắn phản hồi từ Employee" className="mt-6">
+                                    <div className="bg-green-50 p-4 rounded-lg">
+                                        <p className="whitespace-pre-wrap">{requestData.responseMessageByEmployee}</p>
                                     </div>
                                 </Card>
                             )}
@@ -470,33 +483,40 @@ export function TechnicalRequestDetail() {
 
                     {/* Create Report Modal */}
                     <Modal
-                        title="Tạo report"
+                        title="Tạo báo cáo"
                         open={reportVisible}
                         onCancel={() => setReportVisible(false)}
                         footer={null}
                         destroyOnClose
                     >
                         <Form
-                            layout="vertical"
                             form={reportForm}
-                            initialValues={{ roomName: requestData?.roomName }}
+                            layout="vertical"
                             onFinish={handleSubmitReport}
                         >
-                            <Form.Item label="Phòng" name="roomName">
-                                <Input placeholder="Tên phòng" disabled value={requestData?.roomName} />
+                            <Form.Item
+                                label="Loại báo cáo"
+                                name="reportType"
+                                rules={[{ required: true, message: "Vui lòng chọn loại báo cáo" }]}
+                            >
+                                <Select placeholder="Chọn loại báo cáo">
+                                    <Select.Option value="VIOLATION">Vi phạm nội quy</Select.Option>
+                                    <Select.Option value="MAINTENANCE_REQUEST">Yêu cầu bảo trì</Select.Option>
+                                    <Select.Option value="SECURITY_ISSUE">Vấn đề an ninh</Select.Option>
+                                </Select>
                             </Form.Item>
 
                             <Form.Item
-                                label="Ghi chú"
-                                name="note"
-                                rules={[{ required: true, message: "Vui lòng nhập nội dung ghi chú" }]}
+                                label="Nội dung báo cáo"
+                                name="content"
+                                rules={[{ required: true, message: "Vui lòng nhập nội dung báo cáo" }]}
                             >
-                                <TextArea rows={5} placeholder="Nhập nội dung ghi chú" />
+                                <TextArea rows={6} placeholder="Nhập nội dung báo cáo..." />
                             </Form.Item>
 
                             <Form.Item>
-                                <Button type="primary" htmlType="submit" loading={isReportCreateLoading} block>
-                                    Tạo report
+                                <Button type="primary" htmlType="submit" loading={creatingReport} block>
+                                    Gửi báo cáo
                                 </Button>
                             </Form.Item>
                         </Form>
@@ -506,7 +526,10 @@ export function TechnicalRequestDetail() {
                     <Modal
                         title="Tạo đơn xuất kho"
                         open={invoiceVisible}
-                        onCancel={() => setInvoiceVisible(false)}
+                        onCancel={() => {
+                            setInvoiceVisible(false);
+                            setCurrentReportId(null);
+                        }}
                         footer={null}
                         destroyOnClose
                     >
@@ -557,7 +580,13 @@ export function TechnicalRequestDetail() {
                                 label="Lý do xuất"
                                 name="reason"
                             >
-                                <TextArea rows={3} placeholder={`Xuất kho cho request ${requestData?.requestId || ''}`} />
+                                <TextArea
+                                    rows={3}
+                                    placeholder={currentReportId
+                                        ? `Xuất kho cho report ${currentReportId}`
+                                        : `Xuất kho cho request ${requestData?.requestId || ''}`
+                                    }
+                                />
                             </Form.Item>
 
                             <Form.Item>

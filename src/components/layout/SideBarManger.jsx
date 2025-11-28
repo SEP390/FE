@@ -25,11 +25,7 @@ const {Sider} = Layout;
 
 
 const managerItems = [
-    {
-        label: <Link to={"/manager"}>Home</Link>,
-        icon: <HomeOutlined/>,
-        key: "manager-home",
-    },
+
     {
         label: <Link to={"/manager/residents"}>Quản lí sinh viên</Link>,
         icon: <UserOutlined/>,
@@ -80,11 +76,7 @@ const managerItems = [
         icon: <TeamOutlined/>,
         key: "manager-staff",
     },
-    {
-        label: <Link to={"/manager/attendance"}>Quản lí chấm công</Link>,
-        icon: <CheckSquareOutlined/>,
-        key: "manager-attendance",
-    },
+
     {
         label: <Link to={"/manager/reports"}>Quản lí báo cáo</Link>,
         icon: <WarningOutlined/>,

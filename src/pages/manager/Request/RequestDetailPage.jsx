@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
+import { AppHeader } from "../../../components/layout/AppHeader.jsx";
 import { Layout, Typography, Card, Button, Tag, Form, Select, Input, message, Space, Spin, Descriptions } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
 
-const { Header, Content } = Layout;
+const { Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
@@ -13,7 +14,7 @@ const { TextArea } = Input;
 export function RequestDetailPage() {
     const { requestId } = useParams();
     const navigate = useNavigate();
-    const [collapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
     const [form] = Form.useForm();
     const [requestData, setRequestData] = useState(null);
     const [residentInfo, setResidentInfo] = useState(null);
@@ -182,28 +183,22 @@ export function RequestDetailPage() {
         <Layout style={{ minHeight: "100vh" }}>
             <SideBarManager collapsed={collapsed} active="manager-requests" />
             <Layout>
-                <Header
-                    style={{
-                        background: "#fff",
-                        padding: "0 24px",
-                        borderBottom: "1px solid #f0f0f0",
-                        height: 80,
-                        display: "flex",
-                        alignItems: "center",
-                    }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px", width: "100%" }}>
-                        <Button
-                            icon={<ArrowLeftOutlined />}
-                            onClick={() => navigate("/manager/requests")}
-                        >
-                            Quay lại
-                        </Button>
-                        <Title level={2} style={{ margin: 0 }}>
-                            {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
-                        </Title>
-                    </div>
-                </Header>
+                <AppHeader
+                    toggleSideBar={() => setCollapsed(!collapsed)}
+                    header={
+                        <Space>
+                            <Button
+                                icon={<ArrowLeftOutlined />}
+                                onClick={() => navigate("/manager/requests")}
+                            >
+                                Quay lại
+                            </Button>
+                            <Title level={2} style={{ margin: 0 }}>
+                                {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
+                            </Title>
+                        </Space>
+                    }
+                />
 
                 <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
                     {isRequestLoading && (
@@ -235,9 +230,9 @@ export function RequestDetailPage() {
                                             {formatRequestType(requestData.requestType)}
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Trạng thái">
-                                                <Tag color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
-                                                    {formatStatus(requestData.responseStatus || requestData.requestStatus)}
-                                                </Tag>
+                                            <Tag color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
+                                                {formatStatus(requestData.responseStatus || requestData.requestStatus)}
+                                            </Tag>
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Tên phòng">
                                             {requestData.roomName || 'N/A'}
