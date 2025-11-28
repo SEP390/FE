@@ -194,6 +194,11 @@ function ConfirmSelect() {
 }
 
 export function CreateBookingY1() {
+    const {data: userSlotHistory} = useQuery({
+        queryKey: ["user-slot-history"],
+        queryFn: () => axiosClient.get("/user/slot-history").then(res => res.data),
+        retry: false
+    })
     const {data: timeConfig, error: timeConfigError} = useQuery({
         queryKey: ["current-time-config"],
         queryFn: () => axiosClient.get("/time-config/current").then(res => res.data),
@@ -221,7 +226,11 @@ export function CreateBookingY1() {
 
     if (!timeConfig) return <></>
 
-    const {startBookingDate, endBookingDate} = timeConfig;
+    let {startBookingDate, endBookingDate} = timeConfig;
+    if (userSlotHistory && userSlotHistory.content.length > 0) {
+        startBookingDate = timeConfig.startExtendDate;
+        endBookingDate = timeConfig.endExtendDate;
+    }
     if (!dayjs().isBetween(startBookingDate, endBookingDate, 'day', '[]')) {
         return (
             <>
