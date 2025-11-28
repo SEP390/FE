@@ -20,10 +20,10 @@ const { Title, Text } = Typography;
 const BASE_URL = "http://localhost:8080/api";
 
 const postsurveyApi = {
-    submitAnswers: (ids, token) => {
+    submitAnswers: (optionIds, token) => {
         return axios.post(
             `${BASE_URL}/survey-select`,
-            { ids },
+            { optionIds },
             {
                 headers: {
                     "Content-Type": "application/json",
