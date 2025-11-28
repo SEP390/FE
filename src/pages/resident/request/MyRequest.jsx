@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { AppLayout } from "../../../components/layout/AppLayout.jsx";
-import { Card, Table, Button, Tag, Spin, Alert, Empty, Select, Radio, Space, Row, Col, Statistic, Badge } from "antd";
+import { Card, Table, Button, Tag, Spin, Alert, Empty, Select, Radio, Space, Row, Col, Statistic, Badge,message  } from "antd";
 import { useNavigate } from "react-router-dom";
 import {
     PlusOutlined,
@@ -24,6 +24,7 @@ export function MyRequest() {
     const [allData, setAllData] = useState([]);
     const [isResident, setIsResident] = useState(null);
     const [currentSlotData, setCurrentSlotData] = useState(null);
+    const hasShownMessage = useRef(false);
 
     // Filter states
     const [timeFilter, setTimeFilter] = useState("all");
@@ -171,18 +172,20 @@ export function MyRequest() {
         setDataSource(filteredData);
     }, [filteredData]);
 
-    // Hiển thị thông báo thành công khi tạo request xong
+// Hiển thị thông báo thành công khi tạo request xong
     useEffect(() => {
-        if (location.state?.showSuccessMessage) {
-            message.success({
-                content: 'Yêu cầu đã được tạo thành công!',
-                duration: 5, // 5 giây
-            });
+        if (location.state?.showSuccessMessage && !hasShownMessage.current) {
+            console.log("✅ Showing success message");
 
-            // Clear state để không hiện lại khi refresh
-            window.history.replaceState({}, document.title);
+            message.success('Yêu cầu đã được tạo thành công!');
+
+            hasShownMessage.current = true;
+
+            // Clear state
+            navigate(location.pathname, { replace: true, state: {} });
         }
-    }, [location]);
+    }, [location.state, navigate, location.pathname]);
+
 
     // Statistics calculations
     const stats = useMemo(() => {
