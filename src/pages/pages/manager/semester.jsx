@@ -16,6 +16,8 @@ const FormContext = createContext(null);
 
 const useEditableStore = create((set, get) => ({
     page: 0,
+    search: null,
+    setSearch: (search) => set({search}),
     onChange: ({current}) => set({page: current - 1, editable: []}),
     editable: [],
     edit: (id) => set((state) => ({...state, editable: [...state.editable, id]})),
@@ -71,6 +73,9 @@ function FormRow({record, ...props}) {
             queryClient.invalidateQueries({
                 queryKey: ["semesters"]
             })
+        },
+        onError: (err) => {
+            notification.error({message: err?.response?.data?.message})
         }
     })
     const {mutate: createSemester} = useMutation({
@@ -82,6 +87,9 @@ function FormRow({record, ...props}) {
             queryClient.invalidateQueries({
                 queryKey: ["semesters"]
             })
+        },
+        onError: (err) => {
+            notification.error({message: err?.response?.data?.message})
         }
     })
     const onFinish = (val) => {
@@ -120,7 +128,7 @@ function SubmitButton() {
 }
 
 const SemesterPage = () => {
-    const {page, onChange, edit, cancel, isEditable, add, editable} = useEditableStore()
+    const {search, setSearch, page, onChange, edit, cancel, isEditable, add, editable} = useEditableStore()
     const {data} = useQuery({
         queryKey: ["semesters", page],
         queryFn: () => axiosClient.get("/semesters", {
