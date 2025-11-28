@@ -15,6 +15,7 @@ import { AppLayout } from "../layout/AppLayout.jsx";
 import { surveyApi } from "../../api/surveyApi/surveyApi.js";
 import { useToken } from "../../hooks/useToken.js";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 const BASE_URL = "http://localhost:8080/api";
@@ -35,15 +36,14 @@ const postsurveyApi = {
 
     getSelectedAnswers: (token) => {
         return axios.get(`${BASE_URL}/survey-select/answer-selected`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
         });
     },
 };
 
 const Survey = () => {
     const { token } = useToken();
+    const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
     const [surveys, setSurveys] = useState([]);
@@ -52,6 +52,9 @@ const Survey = () => {
 
     const [hasDoneSurvey, setHasDoneSurvey] = useState(false);
     const [loadedInitialCheck, setLoadedInitialCheck] = useState(false);
+
+    // Nếu đã làm survey → chỉ xem, không cho sửa
+    const isReadOnly = hasDoneSurvey;
 
     // ---------------------- CHECK STATUS (ĐÃ LÀM CHƯA) ----------------------
     useEffect(() => {
@@ -74,7 +77,7 @@ const Survey = () => {
 
     // ---------------------- LOAD SURVEY + ANSWERS WHEN STARTED ----------------------
     useEffect(() => {
-        if (!started) return;
+        if (!started && !hasDoneSurvey) return;
 
         const loadSurveyData = async () => {
             setLoading(true);
@@ -94,7 +97,7 @@ const Survey = () => {
 
                 setSurveys(surveyList);
 
-                // Load selected answers to pre-fill
+                // Load selected answers
                 try {
                     const selectedRes = await postsurveyApi.getSelectedAnswers(token);
 
@@ -106,9 +109,7 @@ const Survey = () => {
 
                         setAnswers(saved);
                     }
-                } catch (err) {
-                    // Chưa làm khảo sát → không có dữ liệu
-                }
+                } catch (err) {}
             } catch (err) {
                 message.error("Lỗi khi tải khảo sát!");
             }
@@ -117,10 +118,11 @@ const Survey = () => {
         };
 
         loadSurveyData();
-    }, [started, token]);
+    }, [started, token, hasDoneSurvey]);
 
     // ---------------------- HANDLE SELECT ----------------------
     const handleSelectOption = (questionId, optionId) => {
+        if (isReadOnly) return; // khóa chỉnh sửa
         setAnswers((prev) => ({
             ...prev,
             [questionId]: optionId,
@@ -137,6 +139,7 @@ const Survey = () => {
 
     // ---------------------- SUBMIT SURVEY ----------------------
     const handleSubmit = async () => {
+        if (isReadOnly) return; // không cho gửi lại
         if (!canSubmit) {
             message.warning("Vui lòng trả lời đầy đủ tất cả câu hỏi!");
             return;
@@ -147,10 +150,9 @@ const Survey = () => {
             const selectedIds = Object.values(answers);
             const res = await postsurveyApi.submitAnswers(selectedIds, token);
 
-            if (res.status === 200) {
+            if (res.status === 201) {
                 message.success("Khảo sát đã được lưu!");
-                setAnswers({});
-                setStarted(false);
+                navigate("/pages/booking"); // redirect
             } else {
                 message.error("Không thể gửi khảo sát!");
             }
@@ -165,7 +167,7 @@ const Survey = () => {
     return (
         <AppLayout activeSidebar="survey">
             <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%" }}>
-                {!started ? (
+                {!started && !hasDoneSurvey ? (
                     <Card
                         bordered={false}
                         style={{
@@ -175,29 +177,10 @@ const Survey = () => {
                         }}
                         bodyStyle={{ padding: "32px 40px" }}
                     >
-                    <Title level={2}>Khảo sát của bạn</Title>
+                        <Title level={2}>Khảo sát của bạn</Title>
 
                         {!loadedInitialCheck ? (
                             <Text>Đang kiểm tra trạng thái khảo sát...</Text>
-                        ) : hasDoneSurvey ? (
-                            <>
-                                <Text type="secondary">
-                                    Bạn đã hoàn thành khảo sát.
-                                    Bấm vào nút bên dưới để chỉnh sửa.
-                                </Text>
-
-                                <div style={{ marginTop: 40 }}>
-                                    <Button
-                                        type="primary"
-                                        size="large"
-                                        shape="round"
-                                        onClick={() => setStarted(true)}
-                                        style={{ height: 48, fontWeight: 600, minWidth: 220 }}
-                                    >
-                                        Chỉnh sửa khảo sát
-                                    </Button>
-                                </div>
-                            </>
                         ) : (
                             <>
                                 <Text type="secondary">
@@ -228,10 +211,12 @@ const Survey = () => {
                         }}
                         bodyStyle={{ padding: "32px 40px" }}
                     >
-                    <Space direction="vertical" size={16} style={{ width: "100%" }}>
+                        <Space direction="vertical" size={16} style={{ width: "100%" }}>
                             <Title level={2}>Khảo sát</Title>
                             <Text type="secondary">
-                                Vui lòng chọn một đáp án cho mỗi câu hỏi.
+                                {isReadOnly
+                                    ? "Bạn đã hoàn thành khảo sát. Bạn chỉ có thể xem lại."
+                                    : "Vui lòng chọn một đáp án cho mỗi câu hỏi."}
                             </Text>
 
                             <Divider />
@@ -253,61 +238,64 @@ const Survey = () => {
                                         </Text>
                                     </div>
 
-                                    <Space
-                                        direction="vertical"
-                                        size="large"
-                                        style={{ width: "100%" }}
+                                    <div
+                                        style={{
+                                            opacity: isReadOnly ? 0.5 : 1,
+                                            pointerEvents: isReadOnly ? "none" : "auto",
+                                        }}
                                     >
-                                        {surveys.map((q, index) => (
-                                            <Card
-                                                key={q.id}
-                                                hoverable
-                                                size="small"
-                                                style={{
-                                                    borderRadius: 12,
-                                                    width: "100%",
-                                                }}
-                                                bodyStyle={{ padding: "22px 26px" }}
-                                            >
-                                            <Space
-                                                    direction="vertical"
-                                                    size="middle"
-                                                    style={{ width: "100%" }}
+                                        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+                                            {surveys.map((q, index) => (
+                                                <Card
+                                                    key={q.id}
+                                                    hoverable={!isReadOnly}
+                                                    size="small"
+                                                    style={{
+                                                        borderRadius: 12,
+                                                        width: "100%",
+                                                    }}
+                                                    bodyStyle={{ padding: "22px 26px" }}
                                                 >
-                                                    <Text strong style={{ fontSize: 16 }}>
-                                                        Câu {index + 1}: {q.questionContent}
-                                                    </Text>
-
-                                                    <Radio.Group
-                                                        onChange={(e) =>
-                                                            handleSelectOption(q.id, e.target.value)
-                                                        }
-                                                        value={answers[q.id]}
+                                                    <Space
+                                                        direction="vertical"
+                                                        size="middle"
                                                         style={{ width: "100%" }}
                                                     >
-                                                        <Space
-                                                            direction="vertical"
-                                                            size="middle"
-                                                            style={{ width: "100%" }}
+                                                        <Text strong style={{ fontSize: 16 }}>
+                                                            Câu {index + 1}: {q.questionContent}
+                                                        </Text>
+
+                                                        <Radio.Group
+                                                            onChange={(e) =>
+                                                                handleSelectOption(q.id, e.target.value)
+                                                            }
+                                                            value={answers[q.id]}
+                                                            disabled={isReadOnly}
                                                         >
-                                                            {(q.options || []).map((opt) => (
-                                                                <Radio
-                                                                    key={opt.id}
-                                                                    value={opt.id}
-                                                                    style={{
-                                                                        display: "block",
-                                                                        lineHeight: 1.6,
-                                                                    }}
-                                                                >
-                                                                    {opt.optionContent}
-                                                                </Radio>
-                                                            ))}
-                                                        </Space>
-                                                    </Radio.Group>
-                                                </Space>
-                                            </Card>
-                                        ))}
-                                    </Space>
+                                                            <Space
+                                                                direction="vertical"
+                                                                size="middle"
+                                                                style={{ width: "100%" }}
+                                                            >
+                                                                {(q.options || []).map((opt) => (
+                                                                    <Radio
+                                                                        key={opt.id}
+                                                                        value={opt.id}
+                                                                        style={{
+                                                                            display: "block",
+                                                                            lineHeight: 1.6,
+                                                                        }}
+                                                                    >
+                                                                        {opt.optionContent}
+                                                                    </Radio>
+                                                                ))}
+                                                            </Space>
+                                                        </Radio.Group>
+                                                    </Space>
+                                                </Card>
+                                            ))}
+                                        </Space>
+                                    </div>
 
                                     <Divider />
 
@@ -317,13 +305,17 @@ const Survey = () => {
                                         block
                                         shape="round"
                                         onClick={handleSubmit}
-                                        disabled={!canSubmit}
-                                        style={{ height: 48, fontWeight: 600 }}
+                                        disabled={isReadOnly || !canSubmit}
+                                        style={{
+                                            height: 48,
+                                            fontWeight: 600,
+                                            opacity: isReadOnly ? 0.5 : 1,
+                                        }}
                                     >
                                         Lưu khảo sát
                                     </Button>
 
-                                    {!canSubmit && (
+                                    {!canSubmit && !isReadOnly && (
                                         <Text
                                             type="secondary"
                                             style={{
