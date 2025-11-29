@@ -5,6 +5,8 @@ import {useEffect, useState} from "react";
 import {QuestionModal} from "../../../components/Survery/QuestionModal.jsx";
 import * as XLSX from "xlsx";
 import {saveAs} from "file-saver";
+import {AppHeader} from "../../../components/layout/AppHeader.jsx";
+import {useCollapsed} from "../../../hooks/useCollapsed.js";
 
 
 const {Header, Content} = Layout;
@@ -12,7 +14,8 @@ const {Title} = Typography;
 
 
 export function SurveyManagementPage() {
-    const [collapsed] = useState(false);
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [questions, setQuestions] = useState([]);
     const [filteredQuestion, setFilteredQuestion] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -179,23 +182,14 @@ export function SurveyManagementPage() {
             width: "15%",
         },
     ];
-
+    const toggleSideBar = () => {
+        setCollapsed(!collapsed);
+    }
     return (
         <Layout style={{minHeight: "100vh"}}>
             <SideBarManager collapsed={collapsed} active="manager-surveys"/>
             <Layout>
-                <Header
-                    style={{
-                        background: "#fff",
-                        padding: "0 24px",
-                        borderBottom: "1px solid #f0f0f0",
-                        height: 80,
-                    }}
-                >
-                    <Title level={2} style={{margin: 0, lineHeight: "80px"}}>
-                        Quản lý khảo sát
-                    </Title>
-                </Header>
+                <AppHeader header={"Quản lí khảo sát"} toggleSideBar={toggleSideBar}/>
 
                 <Content style={{margin: "24px", background: "#fff", padding: 24}}>
 

@@ -3,6 +3,8 @@ import {Layout, Typography, Table, Button, Space, message, Tag, Dropdown, Modal,
 import { EllipsisOutlined } from "@ant-design/icons";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import axios from "axios";
+import {useCollapsed} from "../../../hooks/useCollapsed.js";
+import {AppHeader} from "../../../components/layout/AppHeader.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -14,7 +16,8 @@ export function ReportManagePage() {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
     const [responseMessage, setResponseMessage] = useState("");
-
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     useEffect(() => {
         fetchReports();
     }, []);
@@ -157,23 +160,15 @@ export function ReportManagePage() {
         await updateReportStatus(selectedReport.reportId, "CONFIRMED", responseMessage);
         setModalVisible(false);
     };
+    const toggleSideBar = () => {
+        setCollapsed(!collapsed);
+    }
 
     return (
         <Layout className="!h-screen">
             <SideBarManager active="manager-reports" collapsed={false} />
             <Layout>
-                <Header
-                    style={{
-                        background: "#fff",
-                        padding: "0 24px",
-                        borderBottom: "1px solid #f0f0f0",
-                        height: 80,
-                    }}
-                >
-                    <Title level={2} style={{ margin: 0, lineHeight: "80px" }}>
-                        Quản lý báo cáo
-                    </Title>
-                </Header>
+                <AppHeader header={"Quản lí báo cáo"} toggleSideBar={toggleSideBar}/>
                 <Content className="!overflow-auto h-full p-5 flex flex-col bg-white">
                     <Table
                         rowKey="reportId"

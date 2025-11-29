@@ -5,6 +5,8 @@ import {EllipsisOutlined, PlusOutlined, SearchOutlined,} from "@ant-design/icons
 import { NewsDetailModal } from "../../../components/news/NewsDetailModal.jsx";
 import { useNavigate } from "react-router-dom";
 import { UpdateNewsModal } from "../../../components/news/UpdateNewsModal.jsx";
+import {AppHeader} from "../../../components/layout/AppHeader.jsx";
+import {useCollapsed} from "../../../hooks/useCollapsed.js";
 
 
 const { Header, Content } = Layout;
@@ -33,7 +35,8 @@ function normalizeSpaces(str = "") {
 }
 
 export function NewsManagePage() {
-    const [collapsed] = useState(false);
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [news, setNews] = useState([]);
     const [filteredNews, setFilteredNews] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -96,7 +99,9 @@ export function NewsManagePage() {
         setSelectedNews(record);
         setEditModalVisible(true);
     };
-
+    const toggleSideBar = () => {
+        setCollapsed(!collapsed);
+    }
 
     const handleToggleStatus = async (record) => {
         const newStatus = record.status === "VISIBLE" ? "HIDDEN" : "VISIBLE";
@@ -195,20 +200,9 @@ export function NewsManagePage() {
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
-            <SideBarManager collapsed={collapsed} active="manager-news" />
+            <SideBarManager  active="manager-news" />
             <Layout>
-                <Header
-                    style={{
-                        background: "#fff",
-                        padding: "0 24px",
-                        borderBottom: "1px solid #f0f0f0",
-                        height: 80,
-                    }}
-                >
-                    <Title level={2} style={{ margin: 0, lineHeight: "80px" }}>
-                        Quản lý tin tức
-                    </Title>
-                </Header>
+                <AppHeader header={"Quản lý tin tức"} toggleSideBar={toggleSideBar}/>
 
                 <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
                     <Space
