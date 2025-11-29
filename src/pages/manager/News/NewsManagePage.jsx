@@ -1,6 +1,6 @@
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { useEffect, useState } from "react";
-import {Layout, Typography, Table, Button, Tag, Dropdown, message, Modal, Space, Input,} from "antd";
+import {Layout, Typography, Table, Button, Tag, Dropdown, Modal, Space, Input, App,} from "antd";
 import {EllipsisOutlined, PlusOutlined, SearchOutlined,} from "@ant-design/icons";
 import { NewsDetailModal } from "../../../components/news/NewsDetailModal.jsx";
 import { useNavigate } from "react-router-dom";
@@ -45,6 +45,7 @@ export function NewsManagePage() {
     const [selectedNews, setSelectedNews] = useState(null);
     const navigate = useNavigate();
     const [editModalVisible, setEditModalVisible] = useState(false);
+    const { message } = App.useApp();
 
 
     // Fetch tin tức từ API có token auth
@@ -169,7 +170,9 @@ export function NewsManagePage() {
             title: "Nội dung",
             dataIndex: "content",
             key: "content",
-            render: (text) => truncateWords(text, 12),
+            width: 300,
+            ellipsis: true,
+            render: (text) => truncateWords(text, 10)
         },
         { title: "Ngày", dataIndex: "date", key: "date" },
         { title: "Giờ", dataIndex: "time", key: "time" },

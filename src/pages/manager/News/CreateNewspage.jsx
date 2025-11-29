@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Layout, Typography, Form, Input, Button, message, Card, Upload } from "antd";
+import {Layout, Typography, Form, Input, Button, Card, Upload, App} from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import * as mammoth from "mammoth";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
@@ -16,6 +16,7 @@ export function CreateNewsPage() {
     const [form] = Form.useForm();
     const token = localStorage.getItem("token");
     const navigate = useNavigate();
+    const {message} = App.useApp();
 
     // Xử lý upload file Word
     const handleWordUpload = async (file) => {
