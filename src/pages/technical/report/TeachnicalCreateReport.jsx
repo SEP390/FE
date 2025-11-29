@@ -1,14 +1,17 @@
-import {Layout, Form, Input, Button, message, Select} from "antd";
+import {Layout, Form, Input, Button, message, Select, App} from "antd";
 import {GuardSidebar} from "../../../components/layout/GuardSidebar.jsx";
 import {AppHeader} from "../../../components/layout/AppHeader.jsx";
 import React, {useState} from "react";
 import axios from "axios";
 import {SideBarTechnical} from "../../../components/layout/SideBarTechnical.jsx";
+import {useNavigate} from "react-router-dom";
 
 export function TeachnicalCreateReport() {
     const [collapsed, setCollapsed] = useState(false);
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
+    const navigate = useNavigate();
+    const { message } = App.useApp();
 
     const toggleSideBar = () => setCollapsed(!collapsed);
 
@@ -34,6 +37,7 @@ export function TeachnicalCreateReport() {
 
             message.success("Tạo báo cáo thành công!");
             form.resetFields();
+            navigate("/technical/reports");
         } catch (err) {
             console.error(err);
             message.error("Tạo báo cáo thất bại!");
