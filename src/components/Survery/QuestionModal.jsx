@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Modal, Input, Table, Button, message, Space } from "antd";
+import {Modal, Input, Table, Button, Space, App} from "antd";
 
 export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
     const [question, setQuestion] = useState("");
     const [answers, setAnswers] = useState([{ id: Date.now(), optionName: "", isNew: true }]);
     const [loading, setLoading] = useState(false);
     const [originalAnswers, setOriginalAnswers] = useState([]);
+    const {message} = App.useApp();
 
     const token = localStorage.getItem("token");
 
@@ -72,10 +73,16 @@ export function QuestionModal({ open, onCancel, questionId, onSuccess }) {
     };
 
     const handleSave = async () => {
-        if (!question.trim()) {
-            message.warning("Vui lòng nhập nội dung câu hỏi");
+        const validAnswers = answers.filter(a => a.optionName.trim() !== "");
+        if (validAnswers.length < 2) {
+            message.error("Vui lòng nhập ít nhất 2 đáp án hợp lệ");
             return;
         }
+        if (!question.trim()) {
+            message.error("Vui lòng nhập nội dung câu hỏi");
+            return;
+        }
+
 
         setLoading(true);
         try {

@@ -201,7 +201,7 @@ export function SurveyManagementPage() {
                         }}
                     >
                         <Input
-                            placeholder="Tìm kiếm tin tức..."
+                            placeholder="Tìm kiếm câu hỏi..."
                             allowClear
                             prefix={<SearchOutlined/>}
                             onChange={(e) => handleSearch(e.target.value)}
