@@ -50,8 +50,10 @@ const dorms = [
 ]
 
 const useWaypointsStore = create(set => ({
+    slot: null,
+    setSlot: (slot) => set({slot}),
     startPoint: [21.013516, 105.527024],
-    endPoint: dorms[2].position,
+    endPoint: null,
     setStartPoint: (startPoint) => set({startPoint}),
     setEndPoint: (endPoint) => set({endPoint}),
 }))
@@ -94,6 +96,10 @@ function CurrentLocationMarker() {
     );
 }
 
+function RoutingComponent(props) {
+    return L.Routing.control({});
+}
+
 function RoutingMachine() {
     const startPoint = useWaypointsStore(state => state.startPoint);
     const endPoint = useWaypointsStore(state => state.endPoint);
@@ -109,7 +115,7 @@ function RoutingMachine() {
         } else {
             controlRef.current = L.Routing.control({
                 waypoints: [
-                    L.latLng(),
+                    L.latLng(startPoint[0], startPoint[1]),
                     L.latLng(endPoint[0], endPoint[1])
                 ],
                 router: L.Routing.osrmv1({
@@ -129,34 +135,45 @@ function RoutingMachine() {
 }
 
 function DormMarker({title, position}) {
-    const marker = useRef();
-    const setEndPoint = useWaypointsStore(state => state.setEndPoint);
-    const eventHandlers = {
-        click: (event) => {
-            const {lat, lng} = event.latlng;
-            setEndPoint([lat, lng]);
-        }
-    }
+    const {slot} = useWaypointsStore()
+    const dormName = slot?.room?.dorm?.dormName;
     return (
-        <Marker eventHandlers={eventHandlers} ref={marker} position={position} icon={DormIcon}>
+        <Marker position={position} icon={DormIcon}>
+            <Popup>
+                <div className={"flex flex-col gap-2"}>
+                    <div className={"!font-medium text-lg"}>{title}</div>
+                    {title === dormName && (
+                        <>
+                            <div>
+                                <div className={"font-bold"}>Phòng của bạn</div>
+                                <div>Phòng: {slot?.room?.roomNumber}</div>
+                                <div>Giường: {slot?.slotName}</div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </Popup>
         </Marker>
     )
 }
 
 function OpenStreetMap() {
-    const setEndPoint = useWaypointsStore(state => state.setEndPoint);
+    const {startPoint, endPoint, setEndPoint, setSlot} = useWaypointsStore()
     const {data} = useQuery({
-        queryKey: "current-slot",
+        queryKey: ["current-slot"],
         queryFn: () => axiosClient.get("/slots/current").then(res => res.data)
     })
 
     useEffect(() => {
         if (data) {
-            console.log(data.room.dorm.dormName)
-            const dorm = dorms.find(d => d.title === data.room.dormName)
-            if (dorm) setEndPoint(dorm.position)
+            const dormName = data.room.dorm.dormName;
+            const dorm = dorms.find(d => d.title === dormName)
+            if (dorm) {
+                setEndPoint(dorm.position)
+                setSlot(data)
+            }
         }
-    }, [data, setEndPoint]);
+    }, [data, setEndPoint, setSlot]);
     const position = [21.012745, 105.525717];
     return (
         <MapContainer
@@ -166,8 +183,8 @@ function OpenStreetMap() {
         >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
             {dorms.map(({title, position}) => <DormMarker key={title} position={position} title={title}/>)}
-            <RoutingMachine/>
-            <CurrentLocationMarker />
+            {startPoint && endPoint && <RoutingMachine/>}
+            <CurrentLocationMarker/>
         </MapContainer>
     );
 }

@@ -34,7 +34,7 @@ export default function BookingHistoryPage() {
 
     useErrorNotification(error);
 
-    return <RequireRole role={"RESIDENT"}><AppLayout>
+    return <RequireRole role={"RESIDENT"}><AppLayout activeSidebar={"booking-history"}>
         <div className={"flex flex-col gap-3"}>
             <PageHeader title={"Lịch sử đặt phòng"}/>
             <div className={"section"}>
