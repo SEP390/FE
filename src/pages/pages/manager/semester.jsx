@@ -11,6 +11,7 @@ import {DateRangeSelect} from "../../../components/DateRangeSelect.jsx";
 import {CloseOutlined} from "@ant-design/icons";
 import {Pen, Plus, Save, Trash} from "lucide-react";
 import dayjs from "dayjs";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const FormContext = createContext(null);
 
@@ -140,7 +141,7 @@ const SemesterPage = () => {
 
     const dataSource = editable.filter(item => item.startsWith("new_")).map(item => ({ id: item })).concat(data ? data.content : [])
     return (
-        <LayoutManager>
+        <RequireRole role={"MANAGER"}><LayoutManager>
             <div className={"flex gap-3 flex-col"}>
                 <PageHeader title={"Quản lý kỳ"}/>
                 <div className={"section flex justify-between items-end"}>
@@ -202,7 +203,7 @@ const SemesterPage = () => {
                     }} onChange={onChange}/>
                 </div>
             </div>
-        </LayoutManager>
+        </LayoutManager></RequireRole>
     );
 };
 

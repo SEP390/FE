@@ -12,6 +12,7 @@ import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import {create} from 'zustand'
 import {useQuery} from "@tanstack/react-query";
 import axiosClient from "../../api/axiosClient/axiosClient.js";
+import {RequireRole} from "../../components/authorize/RequireRole.jsx";
 
 const dorms = [
     {
@@ -173,10 +174,10 @@ function OpenStreetMap() {
 
 export default function MapPage() {
     return <>
-        <AppLayout activeSidebar={"map"}>
+        <RequireRole role={"RESIDENT"}><AppLayout activeSidebar={"map"}>
             <Card title={"Bản đồ trường học"} className={"!h-full !box-border"}>
                 <OpenStreetMap/>
             </Card>
-        </AppLayout>
+        </AppLayout></RequireRole>
     </>
 }

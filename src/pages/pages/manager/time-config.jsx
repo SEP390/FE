@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import {formatTime} from "../../../util/formatTime.js";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 export default function TimeConfigManager() {
     const queryClient = useQueryClient()
@@ -49,7 +50,7 @@ export default function TimeConfigManager() {
         mutate(payload)
     }
 
-    return <LayoutManager>
+    return <RequireRole role={"MANAGER"}><LayoutManager>
         <div className={"flex flex-col gap-3"}>
             <div className={"section"}>
                 <div className={"font-medium text-lg"}>Quản lý thời gian đặt phòng</div>
@@ -87,5 +88,5 @@ export default function TimeConfigManager() {
                 </Form>
             </div>
         </div>
-    </LayoutManager>
+    </LayoutManager></RequireRole>
 }

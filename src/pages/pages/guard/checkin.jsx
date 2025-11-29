@@ -6,6 +6,7 @@ import {RoomFilter} from "../../../components/RoomSelect.jsx";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {create} from "zustand";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const useFilterStore = create(set => ({
     page: 0,
@@ -48,7 +49,7 @@ export default function GuardCheckinPage() {
         mutate({slotId: slot.id})
     }
 
-    return <LayoutGuard active={"guard-checkin"}>
+    return <RequireRole role={"GUARD"}><LayoutGuard active={"guard-checkin"}>
         <div className={"flex flex-col gap-3"}>
             <PageHeader title={"Danh sách chờ checkin"}/>
             <div className={"section"}>
@@ -93,5 +94,5 @@ export default function GuardCheckinPage() {
                 }}/>
             </div>
         </div>
-    </LayoutGuard>
+    </LayoutGuard></RequireRole>
 }

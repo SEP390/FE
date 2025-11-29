@@ -13,6 +13,7 @@ import {ThunderboltOutlined} from "@ant-design/icons";
 import {formatDate} from "../../../util/formatTime.js";
 import {useEffect} from "react";
 import useErrorNotification from "../../../hooks/useErrorNotification.js";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const filterStore = create(set => ({
     roomId: null,
@@ -104,7 +105,7 @@ export default function GuardEW() {
         }).then(res => res.data)
     })
 
-    return <LayoutGuard active={"electric-water"}>
+    return <RequireRole role={"GUARD"}><LayoutGuard active={"electric-water"}>
         <EWRoomEditModal/>
         <div className={"flex flex-col gap-3"}>
             <PageHeader title={"Nhập điện nước"}/>
@@ -181,5 +182,5 @@ export default function GuardEW() {
                 }}/>
             </div>
         </div>
-    </LayoutGuard>
+    </LayoutGuard></RequireRole>
 }

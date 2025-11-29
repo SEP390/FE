@@ -9,6 +9,7 @@ import axiosClient from "../../../api/axiosClient/axiosClient.js";
 import {useQuery} from "@tanstack/react-query";
 import {formatPrice} from "../../../util/formatPrice.js";
 import {useState} from "react";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 function SwapDetail({roomId, userId}) {
     const {data, error} = useQuery({
@@ -90,7 +91,7 @@ export default function SwapSlot() {
             notification.error({message: e.response?.data?.message || e.message})
         })
     }
-    return <LayoutManager>
+    return <RequireRole role={"MANAGER"}><LayoutManager>
         <div className={"flex flex-col gap-3"}>
             <PageHeader title={"Đổi phòng"} back={"/pages/manager/slot-usage"}/>
             <div className={"section"}>
@@ -123,5 +124,5 @@ export default function SwapSlot() {
                 </Form>
             </div>
         </div>
-    </LayoutManager>
+    </LayoutManager></RequireRole>
 }
