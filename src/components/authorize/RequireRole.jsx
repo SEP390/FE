@@ -48,11 +48,11 @@ export function RequireRole({children, role}) {
         }
     }, [navigate, notification, showNotification]);
 
-    if (!allowView) return <Spin spinning={true} fullscreen={true}></Spin>
-
     return (
         <>
-            {children}
+            <Spin spinning={!allowView}>
+                {children}
+            </Spin>
         </>
     )
 }
