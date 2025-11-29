@@ -3,6 +3,7 @@ import {useState} from "react";
 import axiosClient from "../../api/axiosClient/axiosClient.js";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import useErrorNotification from "../../hooks/useErrorNotification.js";
+import {RequireRole} from "../../components/authorize/RequireRole.jsx";
 
 export default function VNPayDev() {
     const queryClient = useQueryClient();
@@ -24,10 +25,10 @@ export default function VNPayDev() {
     useErrorNotification(error);
 
     const updateStatus = (id, status) => {
-        mutate({ id, status })
+        mutate({id, status})
     }
 
-    return <>
+    return <RequireRole role={"MANAGER"}>
         <div className={"!h-screen p-5 bg-gray-50 overflow-auto"}>
             <Card title={"VNPay Dev"} className={"border border-gray-200 rounded-lg p-5 bg-white"}>
                 <Table dataSource={data?.content} columns={[
@@ -57,5 +58,5 @@ export default function VNPayDev() {
                 ]} pagination={{}} bordered/>
             </Card>
         </div>
-    </>
+    </RequireRole>
 }

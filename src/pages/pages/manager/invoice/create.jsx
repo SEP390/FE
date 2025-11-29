@@ -8,6 +8,7 @@ import {RoomSelect} from "../../../../components/RoomSelect.jsx";
 import {ResidentSelect} from "../../../../components/ResidentSelect.jsx";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import axiosClient from "../../../../api/axiosClient/axiosClient.js";
+import {RequireRole} from "../../../../components/authorize/RequireRole.jsx";
 
 function BackButton() {
     const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function ManagerCreateInvoice() {
 
     useErrorNotification(error)
 
-    return <LayoutManager header={<span className={"font-medium text-lg"}>Tạo hóa đơn</span>}>
+    return <RequireRole role={"MANAGER"}><LayoutManager header={<span className={"font-medium text-lg"}>Tạo hóa đơn</span>}>
         <div className={"rounded-lg h-full flex flex-col gap-3"}>
             <div className={"p-5 bg-white rounded-lg border border-gray-200 flex gap-3 items-center flex-wrap"}>
                 <BackButton/>
@@ -179,5 +180,5 @@ export default function ManagerCreateInvoice() {
                 </Form>
             </div>
         </div>
-    </LayoutManager>
+    </LayoutManager></RequireRole>
 }

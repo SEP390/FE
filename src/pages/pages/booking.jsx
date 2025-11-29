@@ -5,6 +5,7 @@ import {useQuery} from "@tanstack/react-query";
 import {PageHeader} from "../../components/PageHeader.jsx";
 import {CurrentSlot} from "../../components/booking/CurrentSlot.jsx";
 import {CreateBooking} from "../../components/booking/CreateBooking.jsx";
+import {RequireRole} from "../../components/authorize/RequireRole.jsx";
 
 export default function BookingPage() {
     const {data, isError, error, isSuccess} = useQuery({
@@ -13,7 +14,7 @@ export default function BookingPage() {
         retry: false,
     })
 
-    return <AppLayout activeSidebar={"booking"}>
+    return <RequireRole role={"RESIDENT"}><AppLayout activeSidebar={"booking"}>
         <div className={"flex-grow flex gap-3 flex-col"}>
             {isError && (
                 <>
@@ -26,5 +27,5 @@ export default function BookingPage() {
             {isSuccess && !data && <CreateBooking/>}
             {isSuccess && data && <CurrentSlot/>}
         </div>
-    </AppLayout>
+    </AppLayout></RequireRole>
 }

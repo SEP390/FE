@@ -10,6 +10,7 @@ import {create} from "zustand";
 import {formatDate} from "../../util/formatTime.js";
 import {ThunderboltOutlined} from "@ant-design/icons";
 import {CalendarDays, Droplet} from "lucide-react";
+import {RequireRole} from "../../components/authorize/RequireRole.jsx";
 
 function CountLabel({value, label}) {
     return <div className={"section text-center"}>
@@ -70,7 +71,7 @@ export default function UserEWUsage() {
 
     useErrorNotification(error)
 
-    return <AppLayout activeSidebar={"ew"}>
+    return <RequireRole role={"RESIDENT"}><AppLayout activeSidebar={"ew"}>
         <div className={"flex flex-col gap-3"}>
             <PageHeader title={'Sử dụng điện nước'}/>
             <CurrentUsage/>
@@ -93,7 +94,8 @@ export default function UserEWUsage() {
                     {
                         title: "Số nước",
                         dataIndex: "water",
-                        render: (val) => <span className={"flex gap-1 items-center"}><Droplet size={14}/>{val}<span>m<sup>3</sup></span></span>,
+                        render: (val) => <span className={"flex gap-1 items-center"}><Droplet
+                            size={14}/>{val}<span>m<sup>3</sup></span></span>,
                         sorter: true,
                     },
                     {
@@ -104,13 +106,15 @@ export default function UserEWUsage() {
                     {
                         title: "Từ ngày",
                         dataIndex: "startDate",
-                        render: (val) => <span className={"flex gap-1 items-center"}><CalendarDays size={14}/>{formatDate(val)}</span>,
+                        render: (val) => <span className={"flex gap-1 items-center"}><CalendarDays
+                            size={14}/>{formatDate(val)}</span>,
                         sorter: true,
                     },
                     {
                         title: "Đến ngày",
                         dataIndex: "endDate",
-                        render: (val) => <span className={"flex gap-1 items-center"}><CalendarDays size={14}/>{formatDate(val)}</span>,
+                        render: (val) => <span className={"flex gap-1 items-center"}><CalendarDays
+                            size={14}/>{formatDate(val)}</span>,
                         sorter: true,
                     },
                     {
@@ -127,5 +131,5 @@ export default function UserEWUsage() {
                 }}/>
             </div>
         </div>
-    </AppLayout>
+    </AppLayout></RequireRole>
 };

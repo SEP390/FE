@@ -9,6 +9,7 @@ import {formatTime} from "../../../util/formatTime.js";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import useErrorNotification from "../../../hooks/useErrorNotification.js";
 import {create} from "zustand";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 function CheckoutButton({slotHistory}) {
     const queryClient = useQueryClient();
@@ -55,7 +56,7 @@ export default function SlotUsageManage() {
         }).then(res => res.data)
     })
 
-    return <LayoutManager active={"slot"}>
+    return <RequireRole role={"MANAGER"}><LayoutManager active={"slot"}>
         <div className={"flex flex-col gap-3"}>
             <PageHeader title="Quản lý giường"/>
             <div className={"section"}>
@@ -119,5 +120,5 @@ export default function SlotUsageManage() {
                 }}/>
             </div>
         </div>
-    </LayoutManager>
+    </LayoutManager></RequireRole>
 }

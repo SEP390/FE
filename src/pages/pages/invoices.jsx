@@ -15,6 +15,7 @@ import {InvoiceStatusTag} from "../../components/InvoiceStatusTag.jsx";
 import {cn} from "../../util/cn.js";
 import {Clock} from "lucide-react";
 import {DateRangeFilter} from "../../components/DateRangeSelect.jsx";
+import {RequireRole} from "../../components/authorize/RequireRole.jsx";
 
 function AppCard({title, className, children}) {
     return <div className={cn("border border-gray-200 rounded-lg", className)}>
@@ -174,7 +175,7 @@ export default function InvoicesPage() {
 
     useErrorNotification(error);
 
-    return <AppLayout activeSidebar={"invoices"}>
+    return <RequireRole role={"RESIDENT"}><AppLayout activeSidebar={"invoices"}>
         <InvoiceDetailModal/>
         <div className={"flex flex-col gap-3"}>
             <PageHeader title={"Danh sách hóa đơn"}/>
@@ -192,7 +193,7 @@ export default function InvoicesPage() {
                     {
                         title: "Ngày tạo",
                         dataIndex: "createTime",
-                        render: (val) => <span className={"flex gap-1 items-center"}><Clock size={14} />{formatTime(val)}</span>,
+                        render: (val) => <span className={"flex gap-1 items-center"}><Clock size={14}/>{formatTime(val)}</span>,
                         sorter: true,
                     },
                     {
@@ -237,5 +238,5 @@ export default function InvoicesPage() {
                 }}/>
             </div>
         </div>
-    </AppLayout>
+    </AppLayout></RequireRole>
 }

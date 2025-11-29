@@ -10,6 +10,7 @@ import {useQuery} from "@tanstack/react-query";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
 import {formatDate} from "../../../util/formatTime.js";
 import {ThunderboltOutlined} from "@ant-design/icons";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 function CreateElectricInvoiceButton() {
     const navigate = useNavigate();
@@ -47,7 +48,7 @@ export default function ManageEW() {
         }).then(res => res.data)
     })
 
-    return <LayoutManager active={"manager-ew"}>
+    return <RequireRole role={"MANAGER"}><LayoutManager active={"manager-ew"}>
         <div className={"flex flex-col gap-3"}>
             <div className={"section"}>
                 <div className={"font-medium text-lg"}>Quản lý điện nước</div>
@@ -114,5 +115,5 @@ export default function ManageEW() {
 
             </div>
         </div>
-    </LayoutManager>
+    </LayoutManager></RequireRole>
 }

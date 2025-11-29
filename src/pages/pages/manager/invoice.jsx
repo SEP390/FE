@@ -15,6 +15,7 @@ import axiosClient from "../../../api/axiosClient/axiosClient.js";
 import {cn} from "../../../util/cn.js";
 import {InvoiceTypeTag} from "../../../components/InvoiceTypeTag.jsx";
 import {InvoiceStatusTag} from "../../../components/InvoiceStatusTag.jsx";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const useModalStore = create(set => ({
     invoice: null,
@@ -288,7 +289,7 @@ function InvoiceTable() {
 }
 
 export default function ManageInvoicePage() {
-    return <LayoutManager active={"manager-invoice"} header={<>
+    return <RequireRole role={"MANAGER"}><LayoutManager active={"manager-invoice"} header={<>
         <span className={"font-medium text-lg"}>Quản lý hóa đơn</span>
     </>}>
         <DetailInvoiceModal/>
@@ -299,5 +300,5 @@ export default function ManageInvoicePage() {
                 <InvoiceTable/>
             </div>
         </div>
-    </LayoutManager>
+    </LayoutManager></RequireRole>
 }

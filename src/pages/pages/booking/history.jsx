@@ -9,6 +9,7 @@ import {useQuery} from "@tanstack/react-query";
 import axiosClient from "../../../api/axiosClient/axiosClient.js";
 import useErrorNotification from "../../../hooks/useErrorNotification.js";
 import {create} from "zustand";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const useFilterStore = create(set => ({
     page: 0,
@@ -33,7 +34,7 @@ export default function BookingHistoryPage() {
 
     useErrorNotification(error);
 
-    return <AppLayout>
+    return <RequireRole role={"RESIDENT"}><AppLayout>
         <div className={"flex flex-col gap-3"}>
             <PageHeader title={"Lịch sử đặt phòng"}/>
             <div className={"section"}>
@@ -86,5 +87,5 @@ export default function BookingHistoryPage() {
                 }} onChange={onChange}/>
             </div>
         </div>
-    </AppLayout>
+    </AppLayout></RequireRole>
 }

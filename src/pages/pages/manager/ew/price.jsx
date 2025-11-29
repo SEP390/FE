@@ -9,6 +9,7 @@ import axiosClient from "../../../../api/axiosClient/axiosClient.js";
 import useErrorNotification from "../../../../hooks/useErrorNotification.js";
 import {formatTime} from "../../../../util/formatTime.js";
 import {Clock} from "lucide-react";
+import {RequireRole} from "../../../../components/authorize/RequireRole.jsx";
 
 function ItemLabel({label, value, prefix}) {
     return <div className={"p-5 rounded-lg border border-gray-200 bg-white flex flex-col justify-center items-center"}>
@@ -137,7 +138,7 @@ function UpdatePriceForm() {
 }
 
 export default function ManageEWPrice() {
-    return <LayoutManager>
+    return <RequireRole role={"MANAGER"}><LayoutManager>
         <div className={"flex flex-col gap-3"}>
             <div className={"section flex items-center gap-3"}>
                 <GoBack url={"/pages/manager/ew"}/>
@@ -146,5 +147,5 @@ export default function ManageEWPrice() {
             <CurrentPrice/>
             <UpdatePriceForm/>
         </div>
-    </LayoutManager>
+    </LayoutManager></RequireRole>
 }
