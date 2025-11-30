@@ -4,26 +4,36 @@ import {
     Dropdown, Menu, message, Spin
 } from "antd";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
-import { Link } from 'react-router-dom';
-// === THÊM MỚI: Thêm icon Search và Clear ===
-import { EyeOutlined, SearchOutlined, ClearOutlined } from "@ant-design/icons";
+import { Link, useNavigate } from 'react-router-dom';
+// === THÊM MỚI: Thêm icon Search, Clear, Logout và MenuOutlined ===
+import { EyeOutlined, SearchOutlined, ClearOutlined, LogoutOutlined, MenuOutlined } from "@ant-design/icons";
+// Import AppHeader (Giả định path đúng)
+import { AppHeader } from '../../../components/layout/AppHeader.jsx';
+// Thêm import hook quản lý state global (Giả định hook này có tồn tại)
+import { useCollapsed } from '../../../hooks/useCollapsed.js';
 // === KẾT THÚC THÊM MỚI ===
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
-// (Lấy Option từ Select nếu bạn cần Filter sau này)
 const { Option } = Select;
 
 export function ResidentManagerPage() {
-    const [loading, setLoading] = useState(false);
-    // [residents] là state lưu trữ danh sách GỐC từ API
-    const [residents, setResidents] = useState([]);
+    // === SỬ DỤNG HOOK GLOBAL CHO COLLAPSED (THAY THẾ useState) ===
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
 
-    // === THÊM MỚI: State cho tìm kiếm ===
+    const [loading, setLoading] = useState(false);
+    const [residents, setResidents] = useState([]);
     const [searchText, setSearchText] = useState('');
-    // (Bạn có thể thêm state cho filter (ví dụ filterKhuVuc) ở đây sau)
-    // const [filterKhuVuc, setFilterKhuVuc] = useState(undefined);
+
+    const navigate = useNavigate();
+
+    // === LOGIC TOGGLE SIDEBAR (ĐÃ SỬA DÙNG CALLBACK) ===
+    const toggleSideBar = () => {
+        setCollapsed(prev => !prev);
+    }
+    // === KẾT THÚC LOGIC TOGGLE ===
 
     // Hàm gọi API lấy danh sách sinh viên (Giữ nguyên)
     const fetchResidents = async () => {
@@ -56,26 +66,17 @@ export function ResidentManagerPage() {
     // === THÊM MỚI: Logic Lọc và Xóa Filter ===
     const handleClearFilters = () => {
         setSearchText('');
-        // (setFilterKhuVuc(undefined); // Nếu có)
     };
 
     const filteredData = residents.filter(item => {
-        // 1. Chuẩn bị chuỗi mục tiêu để tìm kiếm
         const searchTarget = `
             ${item.fullName || ''} 
             ${item.userName || ''} 
             ${item.email || ''} 
             ${item.phoneNumber || ''}
         `.toLowerCase();
-
-        // 2. Kiểm tra match với searchText
         const matchesSearch = searchTarget.includes(searchText.toLowerCase());
-
-        // (3. Kiểm tra match với filterKhuVuc - ví dụ sau này)
-        // const matchesKhuVuc = filterKhuVuc ? item.dormName === filterKhuVuc : true;
-
-        // Trả về true nếu tất cả điều kiện đều đúng
-        return matchesSearch; // && matchesKhuVuc;
+        return matchesSearch;
     });
 
     // === CỘT (Giữ nguyên) ===
@@ -126,21 +127,14 @@ export function ResidentManagerPage() {
 
     return (
         <Layout className={"!h-screen"}>
-            <SideBarManager active={"manager-residents"} collapsed={false}/>
+            <SideBarManager active={"manager-residents"} collapsed={collapsed}/>
             <Layout>
-                <Header
-                    style={{
-                        background: "#fff",
-                        padding: "0 24px",
-                        borderBottom: "1px solid #f0f0f0",
-                        height: 80,
-                    }}
-                >
-                    {/* === SỬA LẠI: Title cho nhất quán === */}
-                    <Title level={2} style={{ margin: 0, lineHeight: "80px" }}>
-                        Quản lý sinh viên
-                    </Title>
-                </Header>
+                {/* === SỬ DỤNG APPHEADER THAY THẾ HEADER CŨ === */}
+                <AppHeader
+                    header={"Quản lý sinh viên"}
+                    toggleSideBar={toggleSideBar}
+                />
+                {/* === KẾT THÚC APPHEADER === */}
                 <Content className={"!overflow-auto h-full p-5 flex flex-col"}>
 
                     {/* === SỬA LẠI: Thêm thanh tìm kiếm === */}
@@ -153,13 +147,6 @@ export function ResidentManagerPage() {
                                 onChange={(e) => setSearchText(e.target.value)}
                             />
                         </Col>
-                        {/* (Bạn có thể thêm Select lọc theo Tòa/Phòng ở đây) */}
-                        {/* <Col>
-                            <Select placeholder="Lọc theo Tòa" style={{ width: 150 }} onChange={setFilterKhuVuc} value={filterKhuVuc} allowClear>
-                                <Option value="A1">Tòa A1</Option>
-                                <Option value="B2">Tòa B2</Option>
-                            </Select>
-                        </Col> */}
                         <Col>
                             <Button onClick={handleClearFilters} icon={<ClearOutlined />}>
                                 Xóa bộ lọc
@@ -170,9 +157,7 @@ export function ResidentManagerPage() {
 
                     <Table
                         columns={columns}
-                        // === SỬA LẠI: Dùng dữ liệu đã lọc ===
                         dataSource={filteredData}
-                        // === KẾT THÚC SỬA ===
                         loading={loading}
                         pagination={{ pageSize: 10, showSizeChanger: true }}
                         bordered

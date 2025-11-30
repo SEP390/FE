@@ -11,7 +11,9 @@ import {
     UnlockOutlined,
     ClearOutlined,
     ReloadOutlined,
-    EyeOutlined // Import thêm EyeOutlined
+    EyeOutlined,
+    LogoutOutlined,
+    MenuOutlined
 } from "@ant-design/icons";
 import { useNavigate } from 'react-router-dom';
 
@@ -21,24 +23,33 @@ import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 // Import dayjs for DatePicker
 import dayjs from 'dayjs';
-// Import hàm tạo mật khẩu
+// Import hàm tạo mật khẩu (giả định file này tồn tại)
 import { generateRandomPassword } from '../../../util/password.js';
 
+// Import AppHeader (Giả định path đúng)
+import { AppHeader } from '../../../components/layout/AppHeader.jsx';
+// Thêm import hook quản lý state global (Giả định hook này có tồn tại)
+import { useCollapsed } from '../../../hooks/useCollapsed.js';
+
+
 const { Header, Content } = Layout;
-const { Title, Text, Link } = Typography;
+const { Title, Link } = Typography;
 const { Option } = Select;
 
 // --- COMPONENT CHÍNH ---
 export function StaffManager() {
     // (States chung)
-    const [collapsed, setCollapsed] = useState(false);
+    // === SỬ DỤNG HOOK GLOBAL CHO COLLAPSED (THAY THẾ useState) ===
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
+
     const activeKey = 'manager-staff';
     const [staffData, setStaffData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchText, setSearchText] = useState('');
     const [filterPosition, setFilterPosition] = useState(undefined);
 
-    // (State Modals - giữ nguyên)
+    // (State Modals)
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const [isSubmittingAdd, setIsSubmittingAdd] = useState(false);
     const [formAddStaff] = Form.useForm();
@@ -53,6 +64,13 @@ export function StaffManager() {
 
     const navigate = useNavigate();
 
+    // === LOGIC TOGGLE SIDEBAR (ĐÃ SỬA DÙNG CALLBACK) ===
+    const toggleSideBar = () => {
+        setCollapsed(prev => !prev); // Sử dụng callback để đảm bảo cập nhật state đúng
+    }
+    // === KẾT THÚC LOGIC TOGGLE ===
+
+
     // --- API Calls ---
     const fetchStaff = async () => {
         setLoading(true);
@@ -62,7 +80,7 @@ export function StaffManager() {
                 const dataWithKey = response.data.map(staff => ({
                     ...staff,
                     key: staff.employeeId,
-                    phone: staff.phone || 'N/A'
+                    phone: staff.phoneNumber || staff.phone || 'N/A'
                 }));
                 setStaffData(dataWithKey);
             } else { setStaffData([]); }
@@ -90,9 +108,10 @@ export function StaffManager() {
         setFilterPosition(undefined);
     };
 
-    // --- Handlers cho Modals (giữ nguyên) ---
+    // --- Handlers cho Modals ---
     const showAddModal = () => setIsAddModalVisible(true);
     const handleCancelAdd = () => { setIsAddModalVisible(false); formAddStaff.resetFields(); };
+
     const handleAddStaff = async (values) => {
         setIsSubmittingAdd(true);
         try {
@@ -105,7 +124,8 @@ export function StaffManager() {
             };
             await axiosClient.post('/employees', formattedValues);
             message.success(`Đã thêm nhân viên ${values.username} thành công!`);
-            handleCancelAdd(); fetchStaff();
+            handleCancelAdd();
+            fetchStaff();
         } catch (error) {
             message.error(`Thêm nhân viên thất bại! ` + (error.response?.data?.message || error.message));
         } finally {
@@ -115,6 +135,7 @@ export function StaffManager() {
 
     const showEditModal = (record) => {
         setEditingStaff(record);
+        // Lấy chi tiết nhân viên để điền vào form
         axiosClient.get(`/employees/${record.employeeId}`)
             .then(response => {
                 if (response && response.data) {
@@ -156,7 +177,8 @@ export function StaffManager() {
 
             await axiosClient.put(`/employees/${employeeId}`, payload);
             message.success(`Đã cập nhật nhân viên ${editingStaff.username}!`);
-            handleCancelEdit(); fetchStaff();
+            handleCancelEdit();
+            fetchStaff();
         } catch (error) {
             console.error("Lỗi khi cập nhật nhân viên:", error.response || error);
             message.error(`Cập nhật thất bại! ` + (error.response?.data?.message || error.message));
@@ -212,12 +234,14 @@ export function StaffManager() {
             message.error("Không tìm thấy ID nhân viên.");
             return;
         }
+        // Đường dẫn này phải khớp với route của trang chi tiết
         navigate(`/manager/staff/details/${employeeId}`);
     };
 
     // --- Dropdown Actions ---
     const handleMenuClick = (key, record) => {
-        if (key === 'viewDetails') { // Xử lý click Xem chi tiết
+        if (key === 'viewDetails') {
+            // >>> CHỈ ĐIỀU HƯỚNG KHI NHẤN "VIEW DETAILS" <<<
             handleNavigateToDetails(record.employeeId);
         } else if (key === 'edit') {
             showEditModal(record);
@@ -226,7 +250,6 @@ export function StaffManager() {
         }
     };
 
-    // THÊM MỤC XEM CHI TIẾT VÀO MENU
     const getActionMenu = (record) => (
         <Menu onClick={({ key }) => handleMenuClick(key, record)}>
             <Menu.Item key="viewDetails" icon={<EyeOutlined />}>
@@ -245,32 +268,52 @@ export function StaffManager() {
     // --- Cột Bảng ---
     const columns = [
         {
+            title: 'STT',
+            key: 'stt',
+            width: 70,
+            render: (text, record, index) => {
+                const currentPage = 1;
+                const pageSize = 10;
+                return ((currentPage - 1) * pageSize) + index + 1;
+            },
+        },
+        {
             title: 'Username',
             dataIndex: 'username',
             key: 'username',
             sorter: (a, b) => (a.username || '').localeCompare(b.username || ''),
-            render: (text, record) => (
-                // Giữ lại Link để có thể click vào Username để xem chi tiết
-                <Link strong onClick={() => handleNavigateToDetails(record.employeeId)}>
+            // >>> ĐÃ VÔ HIỆU HÓA CHỨC NĂNG CLICK TRỰC TIẾP <<<
+            render: (text) => (
+                <span>
                     {text || 'N/A'}
-                </Link>
+                </span>
             )
         },
         { title: 'Email', dataIndex: 'email', key: 'email' },
         { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone' },
         { title: 'Chức vụ', dataIndex: 'role', key: 'role', render: (role) => <Tag color="blue">{role || 'N/A'}</Tag> },
-        { title: 'Hành động', key: 'action', render: (text, record) => ( <Dropdown overlay={() => getActionMenu(record)} trigger={['click']}><Button type="text" icon={<MoreOutlined />} /></Dropdown> ) },
+        {
+            title: 'Hành động',
+            key: 'action',
+            render: (text, record) => (
+                <Dropdown overlay={() => getActionMenu(record)} trigger={['click']}>
+                    <Button type="text" icon={<MoreOutlined />} />
+                </Dropdown>
+            )
+        },
     ];
-
 
     // --- PHẦN RENDER (Return) ---
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
             <Layout>
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80 }}>
-                    <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>Quản lý nhân viên</Title>
-                </Header>
+                {/* === SỬ DỤNG APPHEADER THAY THẾ HEADER CŨ === */}
+                <AppHeader
+                    header={"Quản lý nhân viên"}
+                    toggleSideBar={toggleSideBar}
+                />
+                {/* === KẾT THÚC APPHEADER === */}
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
 
                     <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
@@ -290,11 +333,17 @@ export function StaffManager() {
                     </Row>
                     {/* --- KẾT THÚC Hàng Filter --- */}
 
-                    <Table columns={columns} dataSource={filteredData} loading={loading} pagination={{ pageSize: 10 }} bordered />
+                    <Table
+                        columns={columns}
+                        dataSource={filteredData}
+                        loading={loading}
+                        pagination={{ pageSize: 10 }}
+                        bordered
+                    />
                 </Content>
             </Layout>
 
-            {/* (Modal Thêm Nhân Viên - ĐÃ GIỚI HẠN ROLE VÀ THÊM NGÀY HỢP ĐỒNG) */}
+            {/* --- MODAL THÊM NHÂN VIÊN --- */}
             <Modal title="Thêm nhân viên mới" open={isAddModalVisible} onCancel={handleCancelAdd} footer={null} destroyOnClose>
                 <Form form={formAddStaff} layout="vertical" onFinish={handleAddStaff} name="add_staff_form">
                     <Row gutter={16}>
@@ -327,6 +376,7 @@ export function StaffManager() {
                         <Select placeholder="Chọn chức vụ">
                             <Option value="GUARD">Bảo vệ</Option>
                             <Option value="CLEANER">Lao công</Option>
+                            <Option value="TECHNICAL">Kỹ thuật</Option>
                         </Select>
                     </Form.Item>
 
@@ -334,7 +384,7 @@ export function StaffManager() {
                 </Form>
             </Modal>
 
-            {/* (Modal Sửa Nhân Viên - ĐÃ GIỚI HẠN ROLE VÀ THÊM NGÀY HỢP ĐỒNG) */}
+            {/* --- MODAL SỬA NHÂN VIÊN --- */}
             <Modal title={`Cập nhật thông tin ${editingStaff?.username || ''}`} open={isEditModalVisible} onCancel={handleCancelEdit} footer={null} destroyOnClose >
                 <Form form={formEditStaff} layout="vertical" onFinish={handleUpdateStaff} name="edit_staff_form">
                     <Form.Item name="phoneNumber" label="Số điện thoại" rules={[{ required: true }]}><Input /></Form.Item>
@@ -357,6 +407,7 @@ export function StaffManager() {
                         <Select placeholder="Chọn chức vụ">
                             <Option value="GUARD">Bảo vệ</Option>
                             <Option value="CLEANER">Lao công</Option>
+                            <Option value="TECHNICAL">Kỹ thuật</Option>
                         </Select>
                     </Form.Item>
 
