@@ -16,6 +16,7 @@ export function RequireRole({children, role}) {
         if (!role) navigate("/login")
         else if (role === "MANAGER") navigate("/manager")
         else if (role === "GUARD") navigate("/guard/requests")
+        else if (role === "TECHNICAL") navigate("/technical/requests")
         else navigate("/");
     }, [navigate, notification])
 
