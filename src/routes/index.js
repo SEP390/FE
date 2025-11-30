@@ -27,7 +27,6 @@ import {StaffManager} from "../pages/manager/Staff/StaffManager.jsx";
 import {SurveyManagementPage} from "../pages/manager/Survey/SurveyManagementPage.jsx";
 import {ScheduleManager} from "../pages/manager/Schedule/ScheduleManager.jsx";
 import {ShiftConfigurationPage} from "../pages/manager/Schedule/ShiftConfigurationPage.jsx";
-import {AttendanceManagementPage} from "../pages/manager/Schedule/AttendanceManagementPage.jsx";
 import { InvoiceManager } from "../pages/manager/Invoice/InvoiceManager.jsx";
 import { ElectricInvoiceAuto } from "../pages/manager/Invoice/ElectricInvoiceAuto.jsx";
 import { ViolationInvoiceCreate } from "../pages/manager/Invoice/ViolationInvoiceCreate.jsx";
@@ -91,7 +90,6 @@ const routes = [
     { path: "/manager/staff/details/:id", element: StaffDetailPage },
     { path: "/manager/schedule", element: ScheduleManager },
     { path: "/manager/shifts", element: ShiftConfigurationPage },
-    { path: "/manager/attendance", element: AttendanceManagementPage },
     { path: "/manager/surveys", element: SurveyManagementPage },
     {path: "/manager/residents", element: ResidentManagerPage},
     { path: "/manager/resident-detail/:residentId", element: ResidentDetail },

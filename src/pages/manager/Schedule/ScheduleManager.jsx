@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     Layout, Typography, Calendar, Select, Button, Tag, Space, Modal, Form,
-    Input, Row, Col, message, Spin, Checkbox
+    Input, Row, Col, message, Spin,
 } from 'antd';
 import { PlusOutlined, UserOutlined, ClockCircleOutlined, EnvironmentOutlined, FilterOutlined, SettingOutlined } from "@ant-design/icons";
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
@@ -20,7 +20,6 @@ dayjs.extend(isSameOrBefore);
 const { Header, Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
-const CheckboxGroup = Checkbox.Group;
 
 // --- COMPONENT CHÍNH ---
 export function ScheduleManager() {
@@ -32,14 +31,14 @@ export function ScheduleManager() {
 
     // Form Instances
     const [formSingle] = Form.useForm();
-    const [formRecurring] = Form.useForm();
+    // Đã bỏ formRecurring
     const [formEdit] = Form.useForm();
 
     // Data States
     const [staffs, setStaffs] = useState([]);
     const [shifts, setShifts] = useState([]);
     const [dorms, setDorms] = useState([]);
-    const [semesters, setSemesters] = useState([]);
+    // Đã bỏ semesters
     const [scheduleData, setScheduleData] = useState({});
 
     // UI/Loading States
@@ -48,7 +47,7 @@ export function ScheduleManager() {
 
     // Modal Visibility
     const [isSingleModalVisible, setIsSingleModalVisible] = useState(false);
-    const [isRecurringModalVisible, setIsRecurringModalVisible] = useState(false);
+    // Đã bỏ isRecurringModalVisible
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
 
     // Selected Data
@@ -58,18 +57,21 @@ export function ScheduleManager() {
 
     // === FILTER STATES (BỘ LỌC) ===
     const [filterEmployeeId, setFilterEmployeeId] = useState(undefined);
-    const [filterSemesterId, setFilterSemesterId] = useState(undefined);
+    // Đã bỏ filterSemesterId
     const [filterDormId, setFilterDormId] = useState(undefined);
 
-    // --- 1. FETCH DATA ---
+    // State tạm để lưu kỳ học của ngày được chọn
+    const [selectedDateSemester, setSelectedDateSemester] = useState(null);
+
+    // --- 1. FETCH DATA (ĐÃ BỎ SEMESTERS) ---
     const fetchDependencies = async () => {
         setLoadingDependencies(true);
         try {
-            const [staffRes, shiftRes, dormRes, semesterRes] = await Promise.all([
+            // Đã bỏ axiosClient.get('/semesters')
+            const [staffRes, shiftRes, dormRes] = await Promise.all([
                 axiosClient.get('/employees'),
                 axiosClient.get('/shifts'),
                 axiosClient.get('/dorms'),
-                axiosClient.get('/semesters', { params: { page: 0, size: 1000 } })
             ]);
 
             // Lọc nhân viên chỉ lấy Bảo vệ (GUARD) và Lao công (CLEANER) ngay khi tải
@@ -86,9 +88,7 @@ export function ScheduleManager() {
             }));
             setShifts(formattedShifts);
             setDorms(dormRes.data || []);
-
-            const semesterData = semesterRes?.data?.content || [];
-            setSemesters(semesterData);
+            // Đã bỏ setSemesters
 
         } catch (error) {
             console.error("Lỗi dependencies:", error);
@@ -129,6 +129,18 @@ export function ScheduleManager() {
     useEffect(() => { fetchDependencies(); }, []);
     useEffect(() => { fetchSchedule(currentMonth); }, [currentMonth]);
 
+    // --- TÌM SEMESTER CHO NGÀY ĐƯỢC CHỌN (Tạm thời bỏ qua vì đã xóa state semesters)
+    // Giả định rằng backend sẽ tự xử lý hoặc sẽ cần thêm API để lấy semester
+    // const findSemesterForDate = async (date) => {
+    //     // Đây là nơi bạn gọi API để kiểm tra ngày này thuộc kỳ học nào, hoặc bỏ qua nếu backend không cần semesterId
+    //     return { id: 'DUMMY_SEMESTER_ID', name: 'Kỳ học mặc định' }; // Dữ liệu giả
+    // };
+
+    // Hàm này phải được gọi khi select date để lấy semesterId của ngày đó
+    // Nếu không cần semesterId cho lịch ngày lẻ, có thể bỏ qua.
+    // TẠM THỜI XÓA LOGIC TÌM SEMESTER ĐỂ ĐẢM BẢO CHỈ CÓ LỊCH NGÀY
+    // VÀ GIẢ ĐỊNH API CHỈ CẦN employeeId, shiftId, dormId, singleDate
+
     // --- 2. HANDLERS ---
     const onOpenEditModal = (scheduleItem) => {
         setEditingSchedule(scheduleItem);
@@ -162,49 +174,27 @@ export function ScheduleManager() {
         }
     };
 
-    const handleCreateSchedule = async (values, isRecurring = false) => {
+    // --- CHỈ CÒN TẠO LỊCH NGÀY LẺ (SINGLE DATE) ---
+    const handleCreateSchedule = async (values) => { // Đã bỏ đối số isRecurring
         setLoading(true);
-        let payload = {};
 
-        // --- TẠO LỊCH ĐỊNH KỲ (Recurring) ---
-        if (isRecurring) {
-            const selectedSemester = semesters.find(s => String(s.id) === String(values.semesterId));
-            if (!selectedSemester) { message.error("Chọn kỳ học!"); setLoading(false); return; }
-
-            const repeatedDays = values.repeatDays.map(String);
-
-            payload = {
-                employeeId: values.employeeId, shiftId: values.shiftId, dormId: values.dormId,
-                semesterId: values.semesterId, from: selectedSemester.startDate, to: selectedSemester.endDate,
-                repeatDays: repeatedDays,
-                note: values.note,
-            };
-        }
-        // --- TẠO LỊCH NGÀY LẺ (Single Date) ---
-        else {
-            const date = dayjs(selectedDate);
-            const selectedSemester = semesters.find(s => date.isSameOrAfter(s.startDate) && date.isSameOrBefore(s.endDate));
-
-            if (!selectedSemester) {
-                message.error(`Ngày ${selectedDate} không thuộc kỳ nào. Vui lòng thêm/kiểm tra dữ liệu Kỳ học.`);
-                setLoading(false);
-                return;
-            }
-
-            payload = {
-                employeeId: values.employeeId, shiftId: values.shiftId, dormId: values.dormId,
-                semesterId: selectedSemester.id, singleDate: selectedDate, note: values.note,
-            };
-        }
+        const payload = {
+            employeeId: values.employeeId,
+            shiftId: values.shiftId,
+            dormId: values.dormId,
+            // Giả định API không cần semesterId cho lịch ngày lẻ, hoặc backend tự tìm
+            // Nếu API yêu cầu semesterId, bạn cần phải thêm logic lấy semesterId của ngày selectedDate ở đây
+            // semesterId: selectedDateSemester?.id,
+            singleDate: selectedDate,
+            note: values.note,
+        };
 
         try {
             await axiosClient.post('/schedules', payload);
             message.success('Tạo lịch thành công!');
             fetchSchedule(currentMonth);
-            if (isRecurring) setIsRecurringModalVisible(false); else setIsSingleModalVisible(false);
-            // Reset form sau khi đóng modal
+            setIsSingleModalVisible(false); // Chỉ có modal single
             formSingle.resetFields();
-            formRecurring.resetFields();
         } catch (error) {
             message.error(`Lỗi: ` + (error.response?.data?.message || error.message));
         } finally {
@@ -219,9 +209,9 @@ export function ScheduleManager() {
 
         const filteredListData = listData.filter(item => {
             const matchEmployee = !filterEmployeeId || String(item.employeeId) === String(filterEmployeeId);
-            const matchSemester = !filterSemesterId || String(item.semesterId) === String(filterSemesterId);
+            // Đã bỏ kiểm tra filterSemesterId
             const matchDorm = !filterDormId || String(item.dormId) === String(filterDormId);
-            return matchEmployee && matchSemester && matchDorm;
+            return matchEmployee && matchDorm;
         });
 
         const MAX_ITEMS = 3;
@@ -261,9 +251,14 @@ export function ScheduleManager() {
         );
     };
 
-    const onSelectDate = (value) => {
+    const onSelectDate = async (value) => { // Đã thêm async
         const date = value.format('YYYY-MM-DD');
         setSelectedDate(date);
+
+        // Logic tìm semester đã bị loại bỏ hoặc đơn giản hóa:
+        // const semester = await findSemesterForDate(date);
+        // setSelectedDateSemester(semester);
+
         // Reset form và state của form con khi mở modal
         formSingle.resetFields();
         setIsSingleModalVisible(true);
@@ -286,13 +281,7 @@ export function ScheduleManager() {
                         <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
                             <Col>
                                 <Space>
-                                    <Button type="primary" icon={<PlusOutlined />} onClick={() => {
-                                        formRecurring.resetFields(); // Reset form khi mở
-                                        setIsRecurringModalVisible(true);
-                                    }}>
-                                        Tạo lịch định kỳ
-                                    </Button>
-
+                                    {/* ĐÃ BỎ NÚT "Tạo lịch định kỳ" */}
                                     <Button
                                         icon={<SettingOutlined />}
                                         onClick={() => navigate('/manager/shifts')}
@@ -305,10 +294,7 @@ export function ScheduleManager() {
                                 <Space>
                                     <FilterOutlined style={{ color: '#888' }} />
 
-                                    {/* BỘ LỌC KỲ HỌC */}
-                                    <Select placeholder="Lọc kỳ học" style={{ width: 180 }} allowClear onChange={setFilterSemesterId}>
-                                        {semesters.map(s => <Option key={String(s.id)} value={String(s.id)}>{s.name}</Option>)}
-                                    </Select>
+                                    {/* ĐÃ BỎ BỘ LỌC KỲ HỌC */}
 
                                     {/* BỘ LỌC TÒA NHÀ */}
                                     <Select
@@ -375,7 +361,7 @@ export function ScheduleManager() {
                 </Content>
             </Layout>
 
-            {/* --- MODAL 1: TẠO MỚI NGÀY LẺ --- */}
+            {/* --- MODAL 1: TẠO MỚI NGÀY LẺ (SINGLE DATE) --- */}
             <Modal
                 title={`Phân ca cho ngày: ${selectedDate}`}
                 open={isSingleModalVisible}
@@ -383,49 +369,13 @@ export function ScheduleManager() {
                 onCancel={() => setIsSingleModalVisible(false)}
                 okText="Lưu" cancelText="Hủy" destroyOnClose confirmLoading={loading}
             >
-                {/* ĐÃ THÊM props form={formSingle} */}
-                <Form form={formSingle} layout="vertical" onFinish={(values) => handleCreateSchedule(values, false)}>
+                {/* Đã xóa tham số isRecurring=false khỏi onFinish, giờ mặc định là Single Date */}
+                <Form form={formSingle} layout="vertical" onFinish={handleCreateSchedule}>
                     <CommonScheduleForm staffs={staffs} shifts={shifts} dorms={dorms} form={formSingle} />
                 </Form>
             </Modal>
 
-            {/* --- MODAL 2: TẠO ĐỊNH KỲ --- */}
-            <Modal
-                title="Tạo lịch định kỳ"
-                open={isRecurringModalVisible}
-                onOk={() => formRecurring.submit()}
-                onCancel={() => setIsRecurringModalVisible(false)}
-                okText="Lưu toàn bộ" cancelText="Hủy" width={650} destroyOnClose confirmLoading={loading}
-            >
-                {/* ĐÃ THÊM props form={formRecurring} */}
-                <Form form={formRecurring} layout="vertical" onFinish={(values) => handleCreateSchedule(values, true)}>
-                    <CommonScheduleForm staffs={staffs} shifts={shifts} dorms={dorms} isRecurring={true} form={formRecurring} />
-                    <Row gutter={16} style={{ marginTop: 10, borderTop: '1px dashed #d9d9d9', paddingTop: 10 }}>
-                        <Col span={24}>
-                            <Form.Item name="semesterId" label="Áp dụng cho kỳ học" rules={[{ required: true, message: 'Vui lòng chọn kỳ học' }]}>
-                                <Select placeholder="Chọn kỳ học" notFoundContent={loadingDependencies ? <Spin size="small" /> : "Không có dữ liệu"}>
-                                    {semesters.map(s => <Option key={String(s.id)} value={String(s.id)}>{s.name}</Option>)}
-                                </Select>
-                            </Form.Item>
-                        </Col>
-                        <Col span={24}>
-                            <Form.Item name="repeatDays" label="Lặp lại" rules={[{ required: true, message: 'Vui lòng chọn ngày lặp lại' }]}>
-                                <CheckboxGroup
-                                    options={[
-                                        { label: 'Thứ 2', value: 'MONDAY' },
-                                        { label: 'Thứ 3', value: 'TUESDAY' },
-                                        { label: 'Thứ 4', value: 'WEDNESDAY' },
-                                        { label: 'Thứ 5', value: 'THURSDAY' },
-                                        { label: 'Thứ 6', value: 'FRIDAY' },
-                                        { label: 'Thứ 7', value: 'SATURDAY' },
-                                        { label: 'Chủ Nhật', value: 'SUNDAY' },
-                                    ]}
-                                />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                </Form>
-            </Modal>
+            {/* ĐÃ BỎ MODAL 2: TẠO ĐỊNH KỲ (RECURRING) */}
 
             {/* --- MODAL 3: SỬA LỊCH --- */}
             <Modal

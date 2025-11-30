@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
-import { Layout, Typography, Spin, Descriptions, Button, message } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Layout, Typography, Spin, Descriptions, Button, message, Image, Row, Col } from 'antd';
+import { ArrowLeftOutlined, UserOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 // === IMPORT THÊM SIDEBAR MANAGER ===
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
@@ -87,15 +87,59 @@ export function StaffDetailPage() {
 
                 <Title level={2} style={{ marginBottom: 30 }}>Chi tiết nhân viên: {staff.fullName || 'N/A'}</Title>
 
-                <Descriptions bordered column={1}>
-                    <Descriptions.Item label="Họ tên">{staff.fullName || 'N/A'}</Descriptions.Item>
-                    <Descriptions.Item label="Mã NV">{staff.userCode || 'N/A'}</Descriptions.Item>
-                    <Descriptions.Item label="Email">{staff.email || 'N/A'}</Descriptions.Item>
-                    <Descriptions.Item label="SĐT">{staff.phoneNumber || 'N/A'}</Descriptions.Item>
-                    <Descriptions.Item label="Chức vụ">{staff.role || 'N/A'}</Descriptions.Item>
-                    <Descriptions.Item label="Ngày sinh">{staff.dob ? dayjs(staff.dob).format('DD/MM/YYYY') : 'N/A'}</Descriptions.Item>
-                    <Descriptions.Item label="Giới tính">{staff.gender || 'N/A'}</Descriptions.Item>
-                </Descriptions>
+                <Row gutter={32}>
+                    {/* Cột 1: Hiển thị Hình ảnh */}
+                    <Col span={6} style={{ textAlign: 'center' }}>
+                        <div style={{ marginBottom: 20 }}>
+                            {/* Hiển thị ảnh nếu có URL hợp lệ, nếu không hiển thị placeholder */}
+                            {staff.image && typeof staff.image === 'string' && staff.image.startsWith('http') ? (
+                                <Image
+                                    width={200}
+                                    height={200}
+                                    style={{ objectFit: 'cover', borderRadius: '50%' }}
+                                    src={staff.image}
+                                    alt={`Ảnh của ${staff.fullName}`}
+                                    // Fallback sẽ là placeholder mặc định của Ant Design nếu ảnh không tải được
+                                />
+                            ) : (
+                                <div style={{
+                                    width: 200,
+                                    height: 200,
+                                    borderRadius: '50%',
+                                    backgroundColor: '#f0f0f0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    <UserOutlined style={{ fontSize: 80, color: '#999' }} />
+                                </div>
+                            )}
+                        </div>
+                        <Title level={4}>{staff.fullName || 'N/A'}</Title>
+                        <Typography.Text type="secondary">{staff.role || 'Chưa rõ chức vụ'}</Typography.Text>
+                    </Col>
+
+                    {/* Cột 2: Hiển thị Chi tiết mô tả */}
+                    <Col span={18}>
+                        <Title level={4} style={{ marginTop: 0 }}>Thông tin cá nhân & Liên hệ</Title>
+                        <Descriptions bordered column={2} size="middle" style={{ marginBottom: 20 }}>
+                            <Descriptions.Item label="Mã NV">{staff.userCode || 'N/A'}</Descriptions.Item>
+                            <Descriptions.Item label="Chức vụ">{staff.role || 'N/A'}</Descriptions.Item>
+
+                            <Descriptions.Item label="Email" span={2}>{staff.email || 'N/A'}</Descriptions.Item>
+                            <Descriptions.Item label="SĐT">{staff.phoneNumber || 'N/A'}</Descriptions.Item>
+                            <Descriptions.Item label="Giới tính">{staff.gender || 'N/A'}</Descriptions.Item>
+
+                            <Descriptions.Item label="Ngày sinh" span={2}>{staff.dob ? dayjs(staff.dob).format('DD/MM/YYYY') : 'N/A'}</Descriptions.Item>
+                        </Descriptions>
+
+                        <Title level={4}>Thông tin Hợp đồng</Title>
+                        <Descriptions bordered column={1} size="middle">
+                            <Descriptions.Item label="Ngày bắt đầu HĐ">{staff.hireDate ? dayjs(staff.hireDate).format('DD/MM/YYYY') : 'N/A'}</Descriptions.Item>
+                            <Descriptions.Item label="Ngày kết thúc HĐ">{staff.contractEndDate ? dayjs(staff.contractEndDate).format('DD/MM/YYYY') : 'N/A'}</Descriptions.Item>
+                        </Descriptions>
+                    </Col>
+                </Row>
             </Content>
         );
     };
