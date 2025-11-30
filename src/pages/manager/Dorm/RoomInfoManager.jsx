@@ -5,14 +5,18 @@ import {
 } from 'antd';
 import {
     SearchOutlined, EditOutlined, PlusOutlined, DollarCircleOutlined,
-    EyeOutlined
+    EyeOutlined, LogoutOutlined, MenuOutlined
 } from "@ant-design/icons";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // Import SideBarManager
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 // Import Component quản lý giá mới
 import { RoomPricingModal } from './RoomPricingModal.jsx';
+// Import AppHeader (Giả định path đúng)
+import { AppHeader } from '../../../components/layout/AppHeader.jsx';
+// Thêm import hook quản lý state global (Giả định hook này có tồn tại)
+import { useCollapsed } from '../../../hooks/useCollapsed.js';
 
 // Import axiosClient
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
@@ -24,10 +28,9 @@ const { Option } = Select;
 // === CỘT BẢNG PHÒNG CHÍNH ===
 const roomColumns = [
     {
-        // === CỘT THÊM MỚI: SỐ THỨ TỰ ===
         title: 'STT',
         key: 'stt',
-        render: (text, record, index) => index + 1, // STT được tính dựa trên vị trí trong data source
+        render: (text, record, index) => index + 1,
         width: 60,
     },
     {
@@ -46,11 +49,9 @@ const roomColumns = [
         title: 'Số phòng',
         dataIndex: 'roomNumber',
         key: 'roomNumber',
-        // ĐÃ SỬA: Bỏ style bold
         render: (text) => <span>{text || 'N/A'}</span>,
     },
     {
-        // ĐÃ SỬA: Chỉ hiển thị Số slot Tối đa
         title: 'Số slot tối đa',
         key: 'maxOccupancy',
         render: (text, record) => {
@@ -61,7 +62,6 @@ const roomColumns = [
     {
         title: 'Hành động',
         key: 'action',
-        // Sẽ được render động trong finalRoomColumns
     },
 ];
 
@@ -76,8 +76,10 @@ const generateFloorOptions = (totalFloors) => {
 
 // --- COMPONENT CHÍNH ---
 export function RoomInfoManager() {
-    // (States chung)
-    const [collapsed, setCollapsed] = useState(false);
+    // === SỬ DỤNG HOOK GLOBAL CHO COLLAPSED (THAY THẾ useState) ===
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
+
     const activeKey = 'manager-rooms';
     const [buildings, setBuildings] = useState([]);
     const [roomData, setRoomData] = useState([]);
@@ -110,6 +112,21 @@ export function RoomInfoManager() {
     // (State Editing & Selection)
     const [editingRoom, setEditingRoom] = useState(null);
     const [selectedDormForAddRoom, setSelectedDormForAddRoom] = useState(null);
+
+    const navigate = useNavigate();
+
+    // === LOGIC LOGOUT VÀ TOGGLE SIDEBAR ===
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        message.success('Đã đăng xuất thành công!');
+        navigate('/');
+    };
+    const toggleSideBar = () => {
+        // Hàm này gọi setCollapsed từ hook global
+        setCollapsed(prev => !prev);
+    }
+    // === KẾT THÚC LOGIC LOGOUT VÀ TOGGLE ===
+
 
     // --- API CALLS ---
     const fetchPricings = async () => {
@@ -199,10 +216,8 @@ export function RoomInfoManager() {
         } catch (error) { message.error("Thêm phòng thất bại!"); } finally { setIsAddingSingleRoom(false); }
     };
 
-    // Cột động (ĐÃ SỬA: Bỏ logic thêm filters cho cột Tòa nhà)
+    // Cột động
     const finalRoomColumns = roomColumns.map(col => {
-        // === ĐÃ LOẠI BỎ LOGIC THÊM FILTERS CHO CỘT 'Tòa nhà' (key === 'dormName') ===
-
         if (col.key === 'action') return {
             ...col,
             render: (text, record) => (
@@ -229,9 +244,14 @@ export function RoomInfoManager() {
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
+            {/* SideBarManager sử dụng state global */}
             <SideBarManager collapsed={collapsed} active={activeKey} />
             <Layout>
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80 }}> <Title level={2} style={{ margin: 0, lineHeight: '80px' }}> Quản lý ký túc xá / Thông tin phòng </Title> </Header>
+                {/* AppHeader gọi hàm toggleSideBar global */}
+                <AppHeader
+                    header={"Quản lý ký túc xá / Thông tin phòng"}
+                    toggleSideBar={toggleSideBar}
+                />
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
                     {/* Filter Buttons */}
                     <Row gutter={[16, 16]} style={{ marginBottom: 20 }} justify="space-between" align="middle">
