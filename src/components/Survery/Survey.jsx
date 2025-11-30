@@ -4,12 +4,11 @@ import {
     Radio,
     Typography,
     Spin,
-    message,
     Space,
     Button,
     Divider,
     Progress,
-    Empty,
+    Empty, App,
 } from "antd";
 import { AppLayout } from "../layout/AppLayout.jsx";
 import { surveyApi } from "../../api/surveyApi/surveyApi.js";
@@ -52,9 +51,9 @@ const Survey = () => {
 
     const [hasDoneSurvey, setHasDoneSurvey] = useState(false);
     const [loadedInitialCheck, setLoadedInitialCheck] = useState(false);
+    const {message} = App.useApp();
 
-    // Nếu đã làm survey → chỉ xem, không cho sửa
-    const isReadOnly = hasDoneSurvey;
+    const isReadOnly = false;
 
     // ---------------------- CHECK STATUS (ĐÃ LÀM CHƯA) ----------------------
     useEffect(() => {
@@ -122,7 +121,6 @@ const Survey = () => {
 
     // ---------------------- HANDLE SELECT ----------------------
     const handleSelectOption = (questionId, optionId) => {
-        if (isReadOnly) return; // khóa chỉnh sửa
         setAnswers((prev) => ({
             ...prev,
             [questionId]: optionId,
@@ -240,8 +238,8 @@ const Survey = () => {
 
                                     <div
                                         style={{
-                                            opacity: isReadOnly ? 0.5 : 1,
-                                            pointerEvents: isReadOnly ? "none" : "auto",
+                                            opacity: 1,
+                                            pointerEvents: "auto",
                                         }}
                                     >
                                         <Space direction="vertical" size="large" style={{ width: "100%" }}>
@@ -309,7 +307,6 @@ const Survey = () => {
                                         style={{
                                             height: 48,
                                             fontWeight: 600,
-                                            opacity: isReadOnly ? 0.5 : 1,
                                         }}
                                     >
                                         Lưu khảo sát

@@ -1,4 +1,4 @@
-import { Modal, Form, Input, Select, message, Divider } from "antd";
+import { Modal, Form, Input, Select, Divider, App } from "antd";
 import { useEffect, useState } from "react";
 
 const { TextArea } = Input;
@@ -7,7 +7,7 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
     const [form] = Form.useForm();
     const token = localStorage.getItem("token");
     const [htmlPreview, setHtmlPreview] = useState("");
-
+    const { message } = App.useApp();
     useEffect(() => {
         if (news) {
             form.setFieldsValue(news);
