@@ -11,7 +11,9 @@ import {
     UnlockOutlined,
     ClearOutlined,
     ReloadOutlined,
-    EyeOutlined
+    EyeOutlined,
+    LogoutOutlined,
+    MenuOutlined
 } from "@ant-design/icons";
 import { useNavigate } from 'react-router-dom';
 
@@ -24,6 +26,12 @@ import dayjs from 'dayjs';
 // Import hàm tạo mật khẩu (giả định file này tồn tại)
 import { generateRandomPassword } from '../../../util/password.js';
 
+// Import AppHeader (Giả định path đúng)
+import { AppHeader } from '../../../components/layout/AppHeader.jsx';
+// Thêm import hook quản lý state global (Giả định hook này có tồn tại)
+import { useCollapsed } from '../../../hooks/useCollapsed.js';
+
+
 const { Header, Content } = Layout;
 const { Title, Link } = Typography;
 const { Option } = Select;
@@ -31,7 +39,10 @@ const { Option } = Select;
 // --- COMPONENT CHÍNH ---
 export function StaffManager() {
     // (States chung)
-    const [collapsed] = useState(false);
+    // === SỬ DỤNG HOOK GLOBAL CHO COLLAPSED (THAY THẾ useState) ===
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
+
     const activeKey = 'manager-staff';
     const [staffData, setStaffData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -52,6 +63,13 @@ export function StaffManager() {
     const [formResetPassword] = Form.useForm();
 
     const navigate = useNavigate();
+
+    // === LOGIC TOGGLE SIDEBAR (ĐÃ SỬA DÙNG CALLBACK) ===
+    const toggleSideBar = () => {
+        setCollapsed(prev => !prev); // Sử dụng callback để đảm bảo cập nhật state đúng
+    }
+    // === KẾT THÚC LOGIC TOGGLE ===
+
 
     // --- API Calls ---
     const fetchStaff = async () => {
@@ -285,15 +303,17 @@ export function StaffManager() {
         },
     ];
 
-
     // --- PHẦN RENDER (Return) ---
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
             <Layout>
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80 }}>
-                    <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>Quản lý nhân viên</Title>
-                </Header>
+                {/* === SỬ DỤNG APPHEADER THAY THẾ HEADER CŨ === */}
+                <AppHeader
+                    header={"Quản lý nhân viên"}
+                    toggleSideBar={toggleSideBar}
+                />
+                {/* === KẾT THÚC APPHEADER === */}
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
 
                     <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
