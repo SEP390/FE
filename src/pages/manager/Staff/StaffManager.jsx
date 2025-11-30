@@ -25,7 +25,7 @@ import dayjs from 'dayjs';
 import { generateRandomPassword } from '../../../util/password.js';
 
 const { Header, Content } = Layout;
-const { Title } = Typography;
+const { Title, Link } = Typography;
 const { Option } = Select;
 
 // --- COMPONENT CHÍNH ---
@@ -210,10 +210,21 @@ export function StaffManager() {
         });
     };
 
+    // --- Hàm xử lý điều hướng ---
+    const handleNavigateToDetails = (employeeId) => {
+        if (!employeeId) {
+            message.error("Không tìm thấy ID nhân viên.");
+            return;
+        }
+        // Đường dẫn này phải khớp với route của trang chi tiết
+        navigate(`/manager/staff/details/${employeeId}`);
+    };
+
     // --- Dropdown Actions ---
     const handleMenuClick = (key, record) => {
         if (key === 'viewDetails') {
-            message.info("Chức năng xem chi tiết đã bị vô hiệu hóa.");
+            // >>> CHỈ ĐIỀU HƯỚNG KHI NHẤN "VIEW DETAILS" <<<
+            handleNavigateToDetails(record.employeeId);
         } else if (key === 'edit') {
             showEditModal(record);
         } else if (key === 'resetPass') {
@@ -238,16 +249,13 @@ export function StaffManager() {
 
     // --- Cột Bảng ---
     const columns = [
-        // >>> ĐÃ THÊM CỘT STT <<<
         {
             title: 'STT',
             key: 'stt',
             width: 70,
-            // Sử dụng index để đánh số thứ tự
             render: (text, record, index) => {
-                const currentPage = 1; // Giả sử pagination mặc định
+                const currentPage = 1;
                 const pageSize = 10;
-                // Nếu pagination được sử dụng, cần lấy thông tin pagination từ Table
                 return ((currentPage - 1) * pageSize) + index + 1;
             },
         },
@@ -256,7 +264,7 @@ export function StaffManager() {
             dataIndex: 'username',
             key: 'username',
             sorter: (a, b) => (a.username || '').localeCompare(b.username || ''),
-            // >>> ĐÃ SỬA CỠ CHỮ: BỎ STYLE fontWeight: 'bold' <<<
+            // >>> ĐÃ VÔ HIỆU HÓA CHỨC NĂNG CLICK TRỰC TIẾP <<<
             render: (text) => (
                 <span>
                     {text || 'N/A'}
@@ -266,7 +274,15 @@ export function StaffManager() {
         { title: 'Email', dataIndex: 'email', key: 'email' },
         { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone' },
         { title: 'Chức vụ', dataIndex: 'role', key: 'role', render: (role) => <Tag color="blue">{role || 'N/A'}</Tag> },
-        { title: 'Hành động', key: 'action', render: (text, record) => ( <Dropdown overlay={() => getActionMenu(record)} trigger={['click']}><Button type="text" icon={<MoreOutlined />} /></Dropdown> ) },
+        {
+            title: 'Hành động',
+            key: 'action',
+            render: (text, record) => (
+                <Dropdown overlay={() => getActionMenu(record)} trigger={['click']}>
+                    <Button type="text" icon={<MoreOutlined />} />
+                </Dropdown>
+            )
+        },
     ];
 
 
@@ -303,8 +319,6 @@ export function StaffManager() {
                         loading={loading}
                         pagination={{ pageSize: 10 }}
                         bordered
-                        // Thêm logic để tính STT nếu muốn hỗ trợ phân trang
-                        // (Cần truyền tham số pagination vào render column nếu cần)
                     />
                 </Content>
             </Layout>
