@@ -9,6 +9,7 @@ import { ArrowLeftOutlined, UserOutlined } from "@ant-design/icons";
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -109,6 +110,7 @@ export function ResidentDetail() {
 
     // --- === GIAO DIỆN MỚI === ---
     return (
+        <RequireRole role = "MANAGER">
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
 
@@ -183,5 +185,6 @@ export function ResidentDetail() {
                 </Content>
             </Layout>
         </Layout>
+</RequireRole>
     );
 }

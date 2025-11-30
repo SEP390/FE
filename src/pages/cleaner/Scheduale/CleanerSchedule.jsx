@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Layout, Typography, Calendar, Tag, Space, message, Spin, Row, Col, Select
+    Layout, Typography, Calendar, Tag, Space, message, Spin, Row, Col, Select, Button // <-- Thêm Button
 } from 'antd';
 import {
-    ClockCircleOutlined, UserOutlined, EnvironmentOutlined, FilterOutlined
+    ClockCircleOutlined, UserOutlined, EnvironmentOutlined, FilterOutlined, LogoutOutlined, MenuOutlined // <-- Thêm LogoutOutlined, MenuOutlined
 } from "@ant-design/icons";
 // SỬA LỖI ĐƯỜNG DẪN: Giả định Sidebar nằm trong cùng cấp components/layout
 import { SideBarCleaner } from '../../../components/layout/SideBarCleaner.jsx';
 // SỬA LỖI ĐƯỜNG DẪN: Giả định axiosClient.js nằm trong api/axiosClient/
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom'; // <-- Thêm useNavigate
 
 // --- CẤU HÌNH DAYJS ---
 import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import {useToken} from "../../../hooks/useToken.js"; // <-- Thêm useToken
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -26,7 +29,7 @@ const { Option } = Select;
 // --- COMPONENT CHÍNH ---
 export function CleanerSchedule() {
     // Layout State
-    const [collapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(false); // <-- Thay đổi để có thể toggle
     const activeKey = 'cleaner-schedule';
 
     // Data States
@@ -41,6 +44,22 @@ export function CleanerSchedule() {
 
     // Filter State
     const [currentMonth, setCurrentMonth] = useState(dayjs());
+
+    // Khởi tạo useNavigate
+    const navigate = useNavigate();
+
+    // === LOGIC LOGOUT VÀ TOGGLE SIDEBAR ===
+    const {setToken} = useToken();
+    const handleLogout = () => {
+        setToken(null);
+        message.success('Đã đăng xuất thành công!');
+        navigate('/');
+    };
+    const toggleSideBar = () => {
+        setCollapsed(prev => !prev);
+    }
+    // === KẾT THÚC LOGIC LOGOUT VÀ TOGGLE ===
+
 
     // --- 1. FETCH USER INFO VÀ EMPLOYEE ID ---
     const fetchCleanerInfo = async () => {
@@ -181,84 +200,98 @@ export function CleanerSchedule() {
 
     // --- RENDER MAIN CONTENT ---
     return (
-        <Layout style={{ minHeight: '100vh' }}>
-            {/* Sử dụng SideBarCleaner */}
-            <SideBarCleaner collapsed={collapsed} active={activeKey} />
-            <Layout>
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 64, display: 'flex', alignItems: 'center' }}>
-                    <Title level={3} style={{ margin: 0 }}>Lịch làm việc Vệ sinh Cá nhân</Title>
-                </Header>
+        <RequireRole role = "CLEANER"> {/* SỬA ROLE: Giả định Role cho Cleaner là CLEANER */}
+            <Layout style={{ minHeight: '100vh' }}>
+                {/* Sử dụng SideBarCleaner */}
+                <SideBarCleaner collapsed={collapsed} active={activeKey} />
+                <Layout>
+                    {/* === HEADER TÍCH HỢP LOGOUT VÀ MENU TOGGLE === */}
+                    <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                            <MenuOutlined onClick={toggleSideBar} style={{ fontSize: '18px', cursor: 'pointer' }} />
+                            <Title level={3} style={{ margin: 0 }}>Lịch làm việc Vệ sinh Cá nhân</Title>
+                        </div>
+                        <Button
+                            type="default"
+                            icon={<LogoutOutlined />}
+                            onClick={handleLogout}
+                        >
+                            Đăng xuất
+                        </Button>
+                    </Header>
+                    {/* === KẾT THÚC HEADER === */}
 
-                <Content style={{ margin: '16px', padding: 24, background: '#fff' }}>
-                    <Spin spinning={loading}>
+                    <Content style={{ margin: '16px', padding: 24, background: '#fff' }}>
+                        <Spin spinning={loading}>
 
-                        {/* --- THÔNG TIN VÀ CHỌN THÁNG/NĂM --- */}
-                        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-                            <Col>
-                                <Space direction="vertical" size={2}>
-                                    <Text strong><UserOutlined /> Nhân viên Vệ sinh: {cleanerInfo?.fullName || cleanerInfo?.username || 'N/A'}</Text>
-                                </Space>
-                            </Col>
-                            <Col>
-                                <Space>
-                                    <FilterOutlined style={{ color: '#888' }} />
-                                    {/* Lọc tháng/năm tự động của Calendar */}
-                                </Space>
-                            </Col>
-                        </Row>
+                            {/* --- THÔNG TIN VÀ CHỌN THÁNG/NĂM --- */}
+                            <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+                                <Col>
+                                    <Space direction="vertical" size={2}>
+                                        <Text strong><UserOutlined /> Nhân viên Vệ sinh: {cleanerInfo?.fullName || cleanerInfo?.username || 'N/A'}</Text>
+                                    </Space>
+                                </Col>
+                                <Col>
+                                    <Space>
+                                        <FilterOutlined style={{ color: '#888' }} />
+                                        {/* Lọc tháng/năm tự động của Calendar */}
+                                    </Space>
+                                </Col>
+                            </Row>
 
-                        {/* CALENDAR */}
-                        <Calendar
-                            cellRender={cellRender}
-                            onPanelChange={onPanelChange}
-                            headerRender={({ value, onChange }) => {
-                                // Lấy code render header từ GuardSchedule
-                                const currentYear = value.year();
-                                const currentMonth = value.month();
-                                const monthOptions = [];
-                                for (let i = 0; i < 12; i++) {
-                                    monthOptions.push(<Option key={i} value={i}>Tháng {i + 1}</Option>);
-                                }
-                                const yearOptions = [];
-                                for (let i = currentYear - 10; i < currentYear + 10; i++) {
-                                    yearOptions.push(<Option key={i} value={i}>Năm {i}</Option>);
-                                }
-                                return (
-                                    <div style={{ padding: '10px 0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                        <Select
-                                            value={currentMonth}
-                                            onChange={(newMonth) => {
-                                                const now = value.clone().month(newMonth);
-                                                onChange(now);
-                                            }}
-                                            style={{ width: 110 }}
-                                        >
-                                            {monthOptions}
-                                        </Select>
-                                        <Select
-                                            value={currentYear}
-                                            onChange={(newYear) => {
-                                                const now = value.clone().year(newYear);
-                                                onChange(now);
-                                            }}
-                                            style={{ width: 110 }}
-                                        >
-                                            {yearOptions}
-                                        </Select>
-                                    </div>
-                                );
-                            }}
-                        />
+                            {/* CALENDAR */}
+                            <Calendar
+                                cellRender={cellRender}
+                                onPanelChange={onPanelChange}
+                                headerRender={({ value, onChange }) => {
+                                    // Lấy code render header từ GuardSchedule
+                                    const currentYear = value.year();
+                                    const currentMonth = value.month();
+                                    const monthOptions = [];
+                                    for (let i = 0; i < 12; i++) {
+                                        monthOptions.push(<Option key={i} value={i}>Tháng {i + 1}</Option>);
+                                    }
+                                    const yearOptions = [];
+                                    for (let i = currentYear - 10; i < currentYear + 10; i++) {
+                                        yearOptions.push(<Option key={i} value={i}>Năm {i}</Option>);
+                                    }
+                                    return (
+                                        <div style={{ padding: '10px 0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                            <Select
+                                                value={currentMonth}
+                                                onChange={(newMonth) => {
+                                                    const now = value.clone().month(newMonth);
+                                                    onChange(now);
+                                                }}
+                                                style={{ width: 110 }}
+                                            >
+                                                {monthOptions}
+                                            </Select>
+                                            <Select
+                                                value={currentYear}
+                                                onChange={(newYear) => {
+                                                    const now = value.clone().year(newYear);
+                                                    onChange(now);
+                                                }}
+                                                style={{ width: 110 }}
+                                            >
+                                                {yearOptions}
+                                            </Select>
+                                        </div>
+                                    );
+                                }}
+                            />
 
-                        {/* Thông báo nếu không có lịch */}
-                        {!loading && Object.keys(scheduleData).length === 0 && (
-                            <div style={{ textAlign: 'center', marginTop: 20, color: '#999' }}>
-                                Không có lịch làm việc vệ sinh được phân công trong tháng này.
-                            </div>
-                        )}
-                    </Spin>
-                </Content>
+                            {/* Thông báo nếu không có lịch */}
+                            {!loading && Object.keys(scheduleData).length === 0 && (
+                                <div style={{ textAlign: 'center', marginTop: 20, color: '#999' }}>
+                                    Không có lịch làm việc vệ sinh được phân công trong tháng này.
+                                </div>
+                            )}
+                        </Spin>
+                    </Content>
+                </Layout>
             </Layout>
-        </Layout>
+        </RequireRole>
     );
 }

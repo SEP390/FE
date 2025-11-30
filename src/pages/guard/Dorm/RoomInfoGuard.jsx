@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Layout, Typography, Row, Col, Table, Input, Select, Tag, Space, message
+    Layout, Typography, Row, Col, Table, Input, Select, Tag, Space, message, Button
 } from 'antd';
 import {
-    SearchOutlined, EyeOutlined,
+    SearchOutlined, EyeOutlined, LogoutOutlined, MenuOutlined // <-- Thêm LogoutOutlined, MenuOutlined
 } from "@ant-design/icons";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // <-- Thêm useNavigate
 
 // Import SideBar đã sửa thành GuardSidebar
 import { GuardSidebar } from '../../../components/layout/GuardSidebar.jsx';
 // Import axiosClient
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
+import {useToken} from "../../../hooks/useToken.js";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -88,6 +90,21 @@ export function RoomInfoGuard() {
     const [isGettingRooms, setIsGettingRooms] = useState(false);
     const [isGettingBuildings, setIsGettingBuildings] = useState(false);
 
+    // Khởi tạo useNavigate
+    const navigate = useNavigate();
+
+    // === LOGIC LOGOUT VÀ TOGGLE SIDEBAR ===
+    const {setToken} = useToken();
+    const handleLogout = () => {
+        setToken(null);
+        message.success('Đã đăng xuất thành công!');
+        navigate('/');
+    };
+    const toggleSideBar = () => {
+        setCollapsed(prev => !prev);
+    }
+    // === KẾT THÚC LOGIC LOGOUT VÀ TOGGLE ===
+
 
     // --- API CALLS ---
     const fetchBuildings = async () => {
@@ -162,8 +179,6 @@ export function RoomInfoGuard() {
 
     // Cột động: Loại bỏ logic thêm filters cho cột Tòa nhà (đồng bộ với Manager)
     const finalRoomColumns = roomColumns.map(col => {
-        // *** ĐÃ BỎ LOGIC THÊM FILTERS CHO CỘT 'Tòa nhà' (key === 'dormName') ***
-
         if (col.key === 'action') return {
             ...col,
             render: (text, record) => (
@@ -179,18 +194,30 @@ export function RoomInfoGuard() {
                 </Space>
             )
         };
-        // Cần đảm bảo cột Tòa nhà không bị trả về filters
-        // Vì không có logic if (col.key === 'dormName') ở đây, nó sẽ tự động không thêm filters.
         return col;
     });
 
+
     return (
+        <RequireRole role = "GUARD">
         <Layout style={{ minHeight: '100vh' }}>
             <GuardSidebar collapsed={collapsed} active={activeKey} />
             <Layout>
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80 }}>
-                    <Title level={2} style={{ margin: 0, lineHeight: '80px' }}> Quản lý ký túc xá / Thông tin phòng (Bảo vệ) </Title>
+                {/* === HEADER TÍCH HỢP LOGOUT VÀ MENU TOGGLE === */}
+                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <MenuOutlined onClick={toggleSideBar} style={{ fontSize: '18px', cursor: 'pointer' }} />
+                        <Title level={2} style={{ margin: 0 }}> Quản lý ký túc xá / Thông tin phòng (Bảo vệ) </Title>
+                    </div>
+                    <Button
+                        type="default"
+                        icon={<LogoutOutlined />}
+                        onClick={handleLogout}
+                    >
+                        Đăng xuất
+                    </Button>
                 </Header>
+                {/* === KẾT THÚC HEADER === */}
                 <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
                     {/* Filter */}
                     <Row gutter={[16, 16]} style={{ marginBottom: 20 }} justify="start" align="middle">
@@ -217,5 +244,6 @@ export function RoomInfoGuard() {
                 </Content>
             </Layout>
         </Layout>
+        </RequireRole>
     );
 }

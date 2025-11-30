@@ -5,6 +5,7 @@ import { Layout, Typography, Spin, Descriptions, Button, message, Image, Row, Co
 import { ArrowLeftOutlined, UserOutlined, ContactsOutlined, FileTextOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -106,6 +107,7 @@ export function StaffDetailPage() {
         const imageUrl = staff.imageUrl;
 
         return (
+            <RequireRole role = "MANAGER">
             <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
                 <Button
                     onClick={() => navigate('/manager/staff')}
@@ -173,6 +175,7 @@ export function StaffDetailPage() {
                     </Col>
                 </Row>
             </Content>
+            </RequireRole>
         );
     };
 

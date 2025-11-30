@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Button, Table, Form, InputNumber, Space, message, Tag, Tooltip } from 'antd';
 import { EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 export const RoomPricingModal = ({ open, onCancel, onDataChange }) => {
     const [pricings, setPricings] = useState([]);
@@ -122,6 +123,7 @@ export const RoomPricingModal = ({ open, onCancel, onDataChange }) => {
     ];
 
     return (
+        <RequireRole role = "MANAGER">
         <>
             <Modal
                 title="Quản lý bảng giá phòng"
@@ -186,5 +188,6 @@ export const RoomPricingModal = ({ open, onCancel, onDataChange }) => {
                 </Form>
             </Modal>
         </>
+        </RequireRole>
     );
 };

@@ -13,6 +13,7 @@ import { AppHeader } from '../../../components/layout/AppHeader.jsx';
 import { useCollapsed } from '../../../hooks/useCollapsed.js';
 // === KẾT THÚC THÊM MỚI ===
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -126,6 +127,7 @@ export function ResidentManagerPage() {
     ];
 
     return (
+        <RequireRole role = "MANAGER">
         <Layout className={"!h-screen"}>
             <SideBarManager active={"manager-residents"} collapsed={collapsed}/>
             <Layout>
@@ -165,5 +167,6 @@ export function ResidentManagerPage() {
                 </Content>
             </Layout>
         </Layout>
+        </RequireRole>
     )
 }
