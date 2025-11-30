@@ -20,6 +20,7 @@ import { useCollapsed } from '../../../hooks/useCollapsed.js';
 
 // Import axiosClient
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -243,6 +244,7 @@ export function RoomInfoManager() {
     });
 
     return (
+        <RequireRole role = "MANAGER">
         <Layout style={{ minHeight: '100vh' }}>
             {/* SideBarManager sử dụng state global */}
             <SideBarManager collapsed={collapsed} active={activeKey} />
@@ -355,5 +357,6 @@ export function RoomInfoManager() {
                 </Form>
             </Modal>
         </Layout>
+        </RequireRole>
     );
 }

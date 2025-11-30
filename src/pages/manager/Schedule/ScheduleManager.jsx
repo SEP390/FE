@@ -19,6 +19,7 @@ import { useCollapsed } from '../../../hooks/useCollapsed.js';
 import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -431,6 +432,7 @@ const CommonScheduleForm = ({ staffs, shifts, dorms, form }) => {
     };
 
     return (
+        <RequireRole role = "MANAGER">
         <>
             <Row gutter={16}>
                 <Col span={12}>
@@ -492,5 +494,6 @@ const CommonScheduleForm = ({ staffs, shifts, dorms, form }) => {
                 <Input.TextArea rows={2} placeholder="..." />
             </Form.Item>
         </>
+        </RequireRole>
     );
 };

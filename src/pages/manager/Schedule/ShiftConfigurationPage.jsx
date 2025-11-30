@@ -17,6 +17,7 @@ dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -141,6 +142,7 @@ export function ShiftConfigurationPage() {
     ];
 
     return (
+        <RequireRole role = "MANAGER">
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
             <Layout>
@@ -203,5 +205,6 @@ export function ShiftConfigurationPage() {
                 </Form>
             </Modal>
         </Layout>
+</RequireRole>
     );
 }

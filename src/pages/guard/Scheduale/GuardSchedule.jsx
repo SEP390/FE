@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Layout, Typography, Calendar, Tag, Space, message, Spin, Row, Col, Select
+    Layout, Typography, Calendar, Tag, Space, message, Spin, Row, Col, Select, Button
 } from 'antd';
 import {
-    ClockCircleOutlined, UserOutlined, EnvironmentOutlined, FilterOutlined
+    ClockCircleOutlined, UserOutlined, EnvironmentOutlined, FilterOutlined, LogoutOutlined, MenuOutlined // <-- Thêm LogoutOutlined, MenuOutlined
 } from "@ant-design/icons";
 import { GuardSidebar } from '../../../components/layout/GuardSidebar.jsx';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom'; // <-- Thêm useNavigate
 
 // --- CẤU HÌNH DAYJS ---
 import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import {useToken} from "../../../hooks/useToken.js";
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -24,7 +27,7 @@ const { Option } = Select;
 // --- COMPONENT CHÍNH ---
 export function GuardSchedule() {
     // Layout State
-    const [collapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
     const activeKey = 'guard-schedule';
 
     // Data States
@@ -39,7 +42,22 @@ export function GuardSchedule() {
 
     // Filter State
     const [currentMonth, setCurrentMonth] = useState(dayjs());
-    // [KHÔNG DÙNG NỮA] const [filterDormId, setFilterDormId] = useState(undefined);
+
+    // Khởi tạo useNavigate
+    const navigate = useNavigate();
+
+    // === LOGIC LOGOUT VÀ TOGGLE SIDEBAR ===
+    const {setToken} = useToken();
+    const handleLogout = () => {
+        setToken(null);
+        message.success('Đã đăng xuất thành công!');
+        navigate('/');
+    };
+    const toggleSideBar = () => {
+        setCollapsed(prev => !prev);
+    }
+    // === KẾT THÚC LOGIC LOGOUT VÀ TOGGLE ===
+
 
     // --- 1. FETCH USER INFO VÀ DORM ID ---
     const fetchGuardInfo = async () => {
@@ -57,7 +75,6 @@ export function GuardSchedule() {
             if (employeeId) {
                 setGuardId(String(employeeId));
                 setGuardInfo(userData);
-                // [KHÔNG DÙNG NỮA] if (userData?.dormId) { setFilterDormId(userData.dormId); }
             } else {
                 setError("Lỗi cấu trúc dữ liệu: Response API không chứa trường ID người dùng.");
                 message.error("Lỗi cấu trúc dữ liệu người dùng.");
@@ -178,12 +195,25 @@ export function GuardSchedule() {
 
     // --- RENDER MAIN CONTENT ---
     return (
+        <RequireRole role = "GUARD">
         <Layout style={{ minHeight: '100vh' }}>
             <GuardSidebar collapsed={collapsed} active={activeKey} />
             <Layout>
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 64, display: 'flex', alignItems: 'center' }}>
-                    <Title level={3} style={{ margin: 0 }}>Lịch làm việc Cá nhân</Title>
+                {/* === HEADER TÍCH HỢP LOGOUT VÀ MENU TOGGLE === */}
+                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <MenuOutlined onClick={toggleSideBar} style={{ fontSize: '18px', cursor: 'pointer' }} />
+                        <Title level={3} style={{ margin: 0 }}>Lịch làm việc Cá nhân</Title>
+                    </div>
+                    <Button
+                        type="default"
+                        icon={<LogoutOutlined />}
+                        onClick={handleLogout}
+                    >
+                        Đăng xuất
+                    </Button>
                 </Header>
+                {/* === KẾT THÚC HEADER === */}
 
                 <Content style={{ margin: '16px', padding: 24, background: '#fff' }}>
                     <Spin spinning={loading}>
@@ -257,5 +287,6 @@ export function GuardSchedule() {
                 </Content>
             </Layout>
         </Layout>
+        </RequireRole>
     );
 }

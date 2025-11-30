@@ -30,6 +30,7 @@ import { generateRandomPassword } from '../../../util/password.js';
 import { AppHeader } from '../../../components/layout/AppHeader.jsx';
 // Thêm import hook quản lý state global (Giả định hook này có tồn tại)
 import { useCollapsed } from '../../../hooks/useCollapsed.js';
+import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 
 const { Header, Content } = Layout;
@@ -305,6 +306,7 @@ export function StaffManager() {
 
     // --- PHẦN RENDER (Return) ---
     return (
+<RequireRole role="MANAGER">
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
             <Layout>
@@ -466,5 +468,6 @@ export function StaffManager() {
                 </Form>
             </Modal>
         </Layout>
+</RequireRole>
     );
 }
