@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import {Layout, Typography, Table, Button, Space, message, Tag, Dropdown, Modal, Input,} from "antd";
-import { EllipsisOutlined } from "@ant-design/icons";
-import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
+import {EllipsisOutlined} from "@ant-design/icons";
+import {SideBarManager} from "../../../components/layout/SideBarManger.jsx";
 import axios from "axios";
 import {useCollapsed} from "../../../hooks/useCollapsed.js";
 import {AppHeader} from "../../../components/layout/AppHeader.jsx";
+import { ReportDetailModal } from "../../../components/report/ReportDetailModal.jsx";
 
-const { Header, Content } = Layout;
-const { Title } = Typography;
-const { TextArea } = Input;
+
+const {Header, Content} = Layout;
+const {Title} = Typography;
+const {TextArea} = Input;
 
 export function ReportManagePage() {
     const [reports, setReports] = useState([]);
@@ -18,6 +20,9 @@ export function ReportManagePage() {
     const [responseMessage, setResponseMessage] = useState("");
     const collapsed = useCollapsed(state => state.collapsed);
     const setCollapsed = useCollapsed(state => state.setCollapsed);
+    const [detailVisible, setDetailVisible] = useState(false);
+    const [detailReport, setDetailReport] = useState(null);
+
     useEffect(() => {
         fetchReports();
     }, []);
@@ -28,7 +33,7 @@ export function ReportManagePage() {
         setLoading(true);
         try {
             const res = await axios.get("http://localhost:8080/api/reports", {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: {Authorization: `Bearer ${token}`},
             });
             if (res.data.status === 200) setReports(res.data.data);
             else message.error("Không thể tải dữ liệu báo cáo");
@@ -50,7 +55,7 @@ export function ReportManagePage() {
                     responseMessage: responseMsg,
                 },
                 {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: {Authorization: `Bearer ${token}`},
                 }
             );
 
@@ -78,11 +83,14 @@ export function ReportManagePage() {
     };
 
     const getMenuItems = (record) => [
-        // {
-        //     key: "view",
-        //     label: "Xem chi tiết",
-        //     onClick: () => message.info(`Nội dung: ${record.content}`),
-        // },
+        {
+            key: "view",
+            label: "Xem chi tiết",
+            onClick: () => {
+                setDetailReport(record);
+                setDetailVisible(true);
+            },
+        },
         {
             key: "confirm",
             label: "Xác nhận báo cáo",
@@ -141,11 +149,11 @@ export function ReportManagePage() {
             render: (_, record) => (
                 <Space>
                     <Dropdown
-                        menu={{ items: getMenuItems(record) }}
+                        menu={{items: getMenuItems(record)}}
                         trigger={["click"]}
                         placement="bottomRight"
                     >
-                        <Button type="text" icon={<EllipsisOutlined />} />
+                        <Button type="text" icon={<EllipsisOutlined/>}/>
                     </Dropdown>
                 </Space>
             ),
@@ -166,19 +174,23 @@ export function ReportManagePage() {
 
     return (
         <Layout className="!h-screen">
-            <SideBarManager active="manager-reports" collapsed={false} />
+            <SideBarManager active="manager-reports" collapsed={false}/>
             <Layout>
                 <AppHeader header={"Quản lí báo cáo"} toggleSideBar={toggleSideBar}/>
-                <Content className="!overflow-auto h-full p-5 flex flex-col bg-white">
-                    <Table
-                        rowKey="reportId"
-                        columns={columns}
-                        dataSource={reports}
-                        loading={loading}
-                        pagination={{ pageSize: 6 }}
-                    />
-                </Content>
-
+                    <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+                        <Table
+                            rowKey="reportId"
+                            columns={columns}
+                            dataSource={reports}
+                            loading={loading}
+                            pagination={{pageSize: 6}}
+                        />
+                    </Content>
+                <ReportDetailModal
+                    open={detailVisible}
+                    onClose={() => setDetailVisible(false)}
+                    report={detailReport}
+                />
                 <Modal
                     title="Trả lời báo cáo"
                     open={modalVisible}

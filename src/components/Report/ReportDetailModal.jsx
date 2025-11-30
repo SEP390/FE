@@ -147,7 +147,7 @@ export function ReportDetailModal({ open, onClose, report }) {
                 </Card>
 
                 <Card size="small" title="Phản hồi từ quản lý">
-                    <Paragraph style={{ whiteSpace: "pre-wrap", marginBottom: 0 }}>
+                    <Paragraph style={{ whiteSpace: "pre-wrap", marginBottom: 0 , opacity: report.responseMessage ? 1 : 0.5 }} >
                         {report.responseMessage ? report.responseMessage : "Chưa có phản hồi"}
                     </Paragraph>
                 </Card>
