@@ -30,6 +30,14 @@ function PaymentAction() {
 function ExtendAction() {
     const queryClient = useQueryClient();
     const {notification} = App.useApp();
+    const currentSemester = useQuery({
+        queryKey: ["semestes-current"],
+        queryFn: () => axiosClient.get("/semesters/current").then(res => res.data)
+    })
+    const currentSlotHistory = useQuery({
+        queryKey: ["user-slot-history-current"],
+        queryFn: () => axiosClient.get("/user/slot-history/current").then(res => res.data),
+    })
     const {mutate} = useMutation({
         mutationFn: () => axiosClient.get("/booking/extend").then(res => res.data),
         onError: err => {
@@ -43,7 +51,7 @@ function ExtendAction() {
         }
     })
 
-    return <Button onClick={() => mutate()} type={"link"}>Gia hạn</Button>
+    return currentSemester.data?.id === currentSlotHistory.data?.semester?.id && <Button onClick={() => mutate()} type={"link"}>Gia hạn</Button>
 }
 
 export function CurrentSlot() {

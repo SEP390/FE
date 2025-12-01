@@ -1,27 +1,20 @@
-import {useApi} from "../hooks/useApi.js";
-import {useEffect, useState} from "react";
 import {Select} from "antd";
+import {useQuery} from "@tanstack/react-query";
+import axiosClient from "../api/axiosClient/axiosClient.js";
 
 export function SlotSelect({roomId, value, onChange}) {
-    const {get, data} = useApi();
-    const [search, setSearch] = useState("");
-    const [options, setOptions] = useState([]);
+    const {data} = useQuery({
+        queryKey: ["rooms", roomId],
+        queryFn: () => axiosClient.get(`/rooms/${roomId}`).then(res => res.data),
+    });
 
-    useEffect(() => {
-        if (data) {
-            setOptions(data.slots.map(item => ({
-                label: `${item.slotName}`,
-                value: item.id,
-            })))
-        }
-    }, [data]);
-
-    useEffect(() => {
-        get("/rooms/" + roomId)
-    }, [get, roomId, search, value]);
+    const options = data ? data.slots.map(item => ({
+        label: `${item.slotName}`,
+        value: item.id,
+    })) : [];
 
     return <Select value={value} onChange={onChange} autoClearSearchValue={false} className={"w-45"}
                    allowClear filterOption={false}
-                   options={options} showSearch onSearch={setSearch}
+                   options={options}
                    placeholder={"Chọn phòng"}/>
 }

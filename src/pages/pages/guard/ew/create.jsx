@@ -135,7 +135,7 @@ export default function GuardCreateEW() {
                             </Form.Item>
                             <Form.Item rules={[{
                                 required: true, message: "",
-                            }]} label={"Số điện"} name={"water"}>
+                            }]} label={"Số nước"} name={"water"}>
                                 <InputNumber suffix={"m3"} className={"!w-full"} />
                             </Form.Item>
                             <Form.Item label={null}>

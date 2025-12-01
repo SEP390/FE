@@ -6,11 +6,13 @@ import axiosClient from "../api/axiosClient/axiosClient.js";
 export function ResidentSelect({value, onChange}) {
     const [search, setSearch] = useState("");
 
+    const searchTrim = search ? search.trim() : ""
+
     const {data} = useQuery({
-        queryKey: ["residents", search, value],
+        queryKey: ["residents", searchTrim, value],
         queryFn: () => axiosClient.get("/residents/search", {
             params: {
-                userCode: !value ? search : undefined,
+                userCode: !value ? searchTrim : undefined,
                 id: value ? value : undefined,
             }
         }).then(res => res.data)

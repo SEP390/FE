@@ -10,6 +10,8 @@ import {useQuery} from "@tanstack/react-query";
 import {formatPrice} from "../../../util/formatPrice.js";
 import {useState} from "react";
 import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
+import {CurrentRoomInput} from "../../../components/CurrentRoomInput.jsx";
+import {RoomPricingSelect} from "../../../components/RoomPricingSelect.jsx";
 
 function SwapDetail({roomId, userId}) {
     const {data, error} = useQuery({
@@ -28,23 +30,6 @@ function SwapDetail({roomId, userId}) {
             <Form.Item label={null}>
                 <div className={"text-red-600"}>Sinh viên không ở trong phòng</div>
             </Form.Item>
-        )}
-        {data.old && (
-            <>
-                <Form.Item label={"Phòng hiện tại"}>
-                    <RoomSelect disabled value={data.old.id}/>
-                </Form.Item>
-                <Form.Item label={"Giá phòng hiện tại"}>
-                    {formatPrice(data.old.pricing.price)}
-                </Form.Item>
-            </>
-        )}
-        {data.new && data.swapable && (
-            <>
-                <Form.Item label={"Giá phòng mới"}>
-                    {formatPrice(data.new.pricing.price)}
-                </Form.Item>
-            </>
         )}
         {data.old && data.new && (
             <>
@@ -101,9 +86,19 @@ export default function SwapSlot() {
                             <Form.Item label={"Sinh viên"} name={"userId"}>
                                 <ResidentSelect onChange={setUserId}/>
                             </Form.Item>
-                            <Form.Item label={"Chuyển sang phòng"} name={"roomId"}>
-                                <RoomSelect/>
+                            <Form.Item label={"Phòng hiện tại"}>
+                                <CurrentRoomInput userId={userId}/>
                             </Form.Item>
+                            <Form.Item label={"Loại phòng chuyển đến"} name={"totalSlot"}>
+                                <RoomPricingSelect />
+                            </Form.Item>
+                            {fields.totalSlot && fields.userId && (
+                                <>
+                                    <Form.Item label={"Chuyển sang phòng"} name={"roomId"}>
+                                        <RoomSelect totalSlot={fields.totalSlot} swapUserId={fields.userId}/>
+                                    </Form.Item>
+                                </>
+                            )}
                             {fields.roomId && (
                                 <>
                                     <Form.Item label={"Slot"} name={"slotId"}>
@@ -117,7 +112,7 @@ export default function SwapSlot() {
                                 </>
                             )}
                             <Form.Item label={null}>
-                                <Button htmlType={"submit]"}>Đổi phòng</Button>
+                                <Button htmlType={"submit"}>Đổi phòng</Button>
                             </Form.Item>
                         </>
                     )}
