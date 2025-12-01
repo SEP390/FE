@@ -131,10 +131,10 @@ function SubmitButton() {
 const SemesterPage = () => {
     const {search, setSearch, page, onChange, edit, cancel, isEditable, add, editable} = useEditableStore()
     const {data} = useQuery({
-        queryKey: ["semesters", page],
+        queryKey: ["semesters", page, search],
         queryFn: () => axiosClient.get("/semesters", {
             params: {
-                page, size: 5, sort: "startDate,DESC"
+                page, size: 5, sort: "startDate,DESC", id: search
             },
         }).then(res => res.data)
     })
@@ -148,7 +148,7 @@ const SemesterPage = () => {
                     <div>
                         <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
                         <div className={"flex gap-3 flex-wrap"}>
-                            <SemesterFilter/>
+                            <SemesterFilter onChange={setSearch}/>
                         </div>
                     </div>
                     <div>
