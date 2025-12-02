@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     Layout, Typography, Calendar, Select, Button, Tag, Space, Modal, Form,
-    Input, Row, Col, message, Spin,
+    Input, Row, Col, message, Spin, DatePicker, Checkbox, // <<< Thêm DatePicker và Checkbox
 } from 'antd';
-import { PlusOutlined, UserOutlined, ClockCircleOutlined, EnvironmentOutlined, FilterOutlined, SettingOutlined, LogoutOutlined, MenuOutlined } from "@ant-design/icons";
+import { PlusOutlined, UserOutlined, ClockCircleOutlined, EnvironmentOutlined, FilterOutlined, SettingOutlined } from "@ant-design/icons";
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
@@ -13,7 +13,6 @@ import { useNavigate } from 'react-router-dom';
 import { AppHeader } from '../../../components/layout/AppHeader.jsx';
 // Thêm import hook quản lý state global (Giả định hook này có tồn tại)
 import { useCollapsed } from '../../../hooks/useCollapsed.js';
-
 
 // --- CẤU HÌNH DAYJS ---
 import isBetween from 'dayjs/plugin/isBetween';
@@ -41,6 +40,8 @@ export function ScheduleManager() {
     // Form Instances
     const [formSingle] = Form.useForm();
     const [formEdit] = Form.useForm();
+    // THÊM: Form cho tạo định kỳ
+    const [formRecurring] = Form.useForm();
 
     // Data States
     const [staffs, setStaffs] = useState([]);
@@ -55,6 +56,8 @@ export function ScheduleManager() {
     // Modal Visibility
     const [isSingleModalVisible, setIsSingleModalVisible] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    // THÊM: State cho modal tạo định kỳ
+    const [isRecurringModalVisible, setIsRecurringModalVisible] = useState(false);
 
     // Selected Data
     const [selectedDate, setSelectedDate] = useState(null);
@@ -172,7 +175,7 @@ export function ScheduleManager() {
         }
     };
 
-    // --- CHỈ CÒN TẠO LỊCH NGÀY LẺ (SINGLE DATE) ---
+    // --- TẠO LỊCH NGÀY LẺ (SINGLE DATE) ---
     const handleCreateSchedule = async (values) => {
         setLoading(true);
 
@@ -196,6 +199,48 @@ export function ScheduleManager() {
             setLoading(false);
         }
     };
+
+    // --- HANDLER TẠO LỊCH ĐỊNH KỲ (RECURRING SCHEDULE) ---
+    const handleCreateRecurringSchedule = async (values) => {
+        setLoading(true);
+
+        // Lấy giá trị từ trường from và to riêng biệt
+        const from = values.from;
+        const to = values.to;
+
+        const repeatDays = values.repeatDays;
+
+        // Kiểm tra tính hợp lệ của ngày (from phải trước hoặc bằng to)
+        if (from.isAfter(to)) {
+            message.error('Ngày bắt đầu không thể sau ngày kết thúc.');
+            setLoading(false);
+            return;
+        }
+
+        const payload = {
+            employeeId: values.employeeId,
+            shiftId: values.shiftId,
+            dormId: values.dormId,
+            from: from.format('YYYY-MM-DD'),
+            to: to.format('YYYY-MM-DD'),
+            repeatDays: repeatDays, // Mảng các chuỗi ngày (MONDAY, TUESDAY,...)
+            note: values.note,
+        };
+
+        try {
+            await axiosClient.post('/schedules', payload);
+            message.success('Tạo lịch định kỳ thành công!');
+            fetchSchedule(currentMonth);
+            setIsRecurringModalVisible(false);
+            formRecurring.resetFields();
+        } catch (error) {
+            message.error(`Lỗi: ` + (error.response?.data?.message || error.message));
+        } finally {
+            setLoading(false);
+        }
+    };
+    // --------------------------------------------------------
+
 
     // --- 3. RENDER Ô LỊCH ---
     const cellRender = (value) => {
@@ -246,10 +291,13 @@ export function ScheduleManager() {
     };
 
     const onSelectDate = async (value) => {
-        const date = value.format('YYYY-MM-DD');
-        setSelectedDate(date);
-        formSingle.resetFields();
-        setIsSingleModalVisible(true);
+        // Chỉ mở modal ngày lẻ nếu modal định kỳ không mở
+        if (!isRecurringModalVisible) {
+            const date = value.format('YYYY-MM-DD');
+            setSelectedDate(date);
+            formSingle.resetFields();
+            setIsSingleModalVisible(true);
+        }
     };
     const onPanelChange = (value) => setCurrentMonth(value);
 
@@ -272,6 +320,18 @@ export function ScheduleManager() {
                         <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
                             <Col>
                                 <Space>
+                                    {/* NÚT TẠO LỊCH ĐỊNH KỲ */}
+                                    <Button
+                                        type="primary"
+                                        icon={<PlusOutlined />}
+                                        onClick={() => {
+                                            formRecurring.resetFields();
+                                            setIsRecurringModalVisible(true);
+                                        }}
+                                    >
+                                        Tạo Lịch Định Kỳ
+                                    </Button>
+
                                     <Button
                                         icon={<SettingOutlined />}
                                         onClick={() => navigate('/manager/shifts')}
@@ -357,13 +417,16 @@ export function ScheduleManager() {
                 onCancel={() => setIsSingleModalVisible(false)}
                 okText="Lưu" cancelText="Hủy" destroyOnClose confirmLoading={loading}
             >
-                {/* Đã xóa tham số isRecurring=false khỏi onFinish, giờ mặc định là Single Date */}
                 <Form form={formSingle} layout="vertical" onFinish={handleCreateSchedule}>
+                    {/* CommonScheduleForm có logic chọn nhân viên, ca, khu vực */}
                     <CommonScheduleForm staffs={staffs} shifts={shifts} dorms={dorms} form={formSingle} />
+                    <Form.Item name="note" label="Ghi chú">
+                        <Input.TextArea rows={2} placeholder="..." />
+                    </Form.Item>
                 </Form>
             </Modal>
 
-            {/* --- MODAL 3: SỬA LỊCH --- */}
+            {/* --- MODAL 3: SỬA LỊCH (GIỮ NGUYÊN) --- */}
             <Modal
                 title="Chỉnh sửa lịch làm việc"
                 open={isEditModalVisible}
@@ -405,6 +468,88 @@ export function ScheduleManager() {
                     </Form.Item>
                 </Form>
             </Modal>
+
+            {/* --- MODAL 4: TẠO LỊCH ĐỊNH KỲ (RECURRING) --- */}
+            <Modal
+                title="Tạo Lịch Làm Việc Định Kỳ"
+                open={isRecurringModalVisible}
+                onOk={() => formRecurring.submit()}
+                onCancel={() => setIsRecurringModalVisible(false)}
+                okText="Tạo Lịch" cancelText="Hủy" destroyOnClose confirmLoading={loading}
+                width={700}
+            >
+                <Form form={formRecurring} layout="vertical" onFinish={handleCreateRecurringSchedule}>
+                    {/* Sử dụng lại CommonScheduleForm cho nhân viên, ca, khu vực */}
+                    <CommonScheduleForm staffs={staffs} shifts={shifts} dorms={dorms} form={formRecurring} />
+
+                    {/* PHẦN 1: KHOẢNG NGÀY ÁP DỤNG (ĐÃ TÁCH) */}
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                name="from"
+                                label="Từ Ngày Áp Dụng"
+                                rules={[{ required: true, message: 'Vui lòng chọn ngày bắt đầu' }]}
+                            >
+                                <DatePicker
+                                    style={{ width: '100%' }}
+                                    format="DD/MM/YYYY"
+                                    placeholder="Chọn ngày bắt đầu"
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name="to"
+                                label="Đến Ngày Áp Dụng"
+                                rules={[{ required: true, message: 'Vui lòng chọn ngày kết thúc' }]}
+                            >
+                                <DatePicker
+                                    style={{ width: '100%' }}
+                                    format="DD/MM/YYYY"
+                                    placeholder="Chọn ngày kết thúc"
+                                />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    {/* PHẦN 2: NGÀY LẶP LẠI TRONG TUẦN (DÙNG CHECKBOX GROUP) */}
+                    <Form.Item
+                        name="repeatDays"
+                        label="Ngày Lặp Lại Trong Tuần"
+                        rules={[{ required: true, message: 'Chọn ít nhất 1 ngày lặp' }]}
+                    >
+                        <Checkbox.Group style={{ width: '100%' }}>
+                            <Row gutter={[8, 8]}>
+                                <Col>
+                                    <Checkbox value="MONDAY"><Tag color="blue">Thứ Hai</Tag></Checkbox>
+                                </Col>
+                                <Col>
+                                    <Checkbox value="TUESDAY"><Tag color="blue">Thứ Ba</Tag></Checkbox>
+                                </Col>
+                                <Col>
+                                    <Checkbox value="WEDNESDAY"><Tag color="blue">Thứ Tư</Tag></Checkbox>
+                                </Col>
+                                <Col>
+                                    <Checkbox value="THURSDAY"><Tag color="blue">Thứ Năm</Tag></Checkbox>
+                                </Col>
+                                <Col>
+                                    <Checkbox value="FRIDAY"><Tag color="blue">Thứ Sáu</Tag></Checkbox>
+                                </Col>
+                                <Col>
+                                    <Checkbox value="SATURDAY"><Tag color="green">Thứ Bảy</Tag></Checkbox>
+                                </Col>
+                                <Col>
+                                    <Checkbox value="SUNDAY"><Tag color="red">Chủ Nhật</Tag></Checkbox>
+                                </Col>
+                            </Row>
+                        </Checkbox.Group>
+                    </Form.Item>
+
+                    <Form.Item name="note" label="Ghi chú">
+                        <Input.TextArea rows={2} placeholder="..." />
+                    </Form.Item>
+                </Form>
+            </Modal>
         </Layout>
     );
 }
@@ -433,67 +578,64 @@ const CommonScheduleForm = ({ staffs, shifts, dorms, form }) => {
 
     return (
         <RequireRole role = "MANAGER">
-        <>
-            <Row gutter={16}>
-                <Col span={12}>
-                    {/* TRƯỜNG LỌC CHỨC VỤ (CHỈ CÓ GUARD VÀ CLEANER) */}
-                    <Form.Item
-                        name="roleFilterTemp"
-                        label="Lọc chức vụ"
-                        rules={[{ required: true, message: 'Vui lòng chọn chức vụ' }]}
-                    >
-                        <Select
-                            placeholder="Chọn chức vụ"
-                            onChange={handleRoleChange}
-                            allowClear={false}
+            <>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        {/* TRƯỜNG LỌC CHỨC VỤ (CHỈ CÓ GUARD VÀ CLEANER) */}
+                        <Form.Item
+                            name="roleFilterTemp"
+                            label="Lọc chức vụ"
+                            rules={[{ required: true, message: 'Vui lòng chọn chức vụ' }]}
                         >
-                            <Option value="GUARD">Bảo vệ</Option>
-                            <Option value="CLEANER">Lao công</Option>
-                            {/* ĐÃ BỎ KỸ THUẬT */}
-                        </Select>
-                    </Form.Item>
-                </Col>
+                            <Select
+                                placeholder="Chọn chức vụ"
+                                onChange={handleRoleChange}
+                                allowClear={false}
+                            >
+                                <Option value="GUARD">Bảo vệ</Option>
+                                <Option value="CLEANER">Lao công</Option>
+                            </Select>
+                        </Form.Item>
+                    </Col>
 
-                <Col span={12}>
-                    {/* TRƯỜNG CHỌN NHÂN VIÊN (Phụ thuộc vào chức vụ) */}
-                    <Form.Item name="employeeId" label={<><UserOutlined /> Nhân viên</>} rules={[{ required: true, message: 'Vui lòng chọn nhân viên' }]}>
-                        <Select
-                            placeholder={selectedRole ? "Chọn nhân viên" : "Vui lòng chọn chức vụ trước"}
-                            showSearch
-                            optionFilterProp="children"
-                            // DISABLE nếu chưa chọn chức vụ hoặc không có nhân viên nào phù hợp
-                            disabled={!selectedRole || filteredStaffs.length === 0}
-                        >
-                            {/* Dùng danh sách đã lọc: filteredStaffs */}
-                            {filteredStaffs.map(s =>
-                                <Option key={String(s.employeeId)} value={String(s.employeeId)}>
-                                    {s.username} <Tag style={{marginLeft:5, fontSize:10}}>{s.role}</Tag>
-                                </Option>
-                            )}
-                        </Select>
-                    </Form.Item>
-                </Col>
-            </Row>
-            <Row gutter={16}>
-                <Col span={12}>
-                    <Form.Item name="shiftId" label={<><ClockCircleOutlined /> Ca làm việc</>} rules={[{ required: true, message: 'Vui lòng chọn ca' }]}>
-                        <Select placeholder="Chọn ca">
-                            {shifts.map(s => <Option key={String(s.id)} value={String(s.id)}>{s.name}</Option>)}
-                        </Select>
-                    </Form.Item>
-                </Col>
-                <Col span={12}>
-                    <Form.Item name="dormId" label={<><EnvironmentOutlined /> Khu vực (KTX)</>} rules={[{ required: true, message: 'Vui lòng chọn KTX' }]}>
-                        <Select placeholder="Chọn khu vực">
-                            {dorms.map(d => <Option key={String(d.id)} value={String(d.id)}>{d.dormName}</Option>)}
-                        </Select>
-                    </Form.Item>
-                </Col>
-            </Row>
-            <Form.Item name="note" label="Ghi chú">
-                <Input.TextArea rows={2} placeholder="..." />
-            </Form.Item>
-        </>
+                    <Col span={12}>
+                        {/* TRƯỜNG CHỌN NHÂN VIÊN (Phụ thuộc vào chức vụ) */}
+                        <Form.Item name="employeeId" label={<><UserOutlined /> Nhân viên</>} rules={[{ required: true, message: 'Vui lòng chọn nhân viên' }]}>
+                            <Select
+                                placeholder={selectedRole ? "Chọn nhân viên" : "Vui lòng chọn chức vụ trước"}
+                                showSearch
+                                optionFilterProp="children"
+                                // DISABLE nếu chưa chọn chức vụ hoặc không có nhân viên nào phù hợp
+                                disabled={!selectedRole || filteredStaffs.length === 0}
+                            >
+                                {/* Dùng danh sách đã lọc: filteredStaffs */}
+                                {filteredStaffs.map(s =>
+                                    <Option key={String(s.employeeId)} value={String(s.employeeId)}>
+                                        {s.username} <Tag style={{marginLeft:5, fontSize:10}}>{s.role}</Tag>
+                                    </Option>
+                                )}
+                            </Select>
+                        </Form.Item>
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <Form.Item name="shiftId" label={<><ClockCircleOutlined /> Ca làm việc</>} rules={[{ required: true, message: 'Vui lòng chọn ca' }]}>
+                            <Select placeholder="Chọn ca">
+                                {shifts.map(s => <Option key={String(s.id)} value={String(s.id)}>{s.name}</Option>)}
+                            </Select>
+                        </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                        <Form.Item name="dormId" label={<><EnvironmentOutlined /> Khu vực (KTX)</>} rules={[{ required: true, message: 'Vui lòng chọn KTX' }]}>
+                            <Select placeholder="Chọn khu vực">
+                                {dorms.map(d => <Option key={String(d.id)} value={String(d.id)}>{d.dormName}</Option>)}
+                            </Select>
+                        </Form.Item>
+                    </Col>
+                </Row>
+                {/* Đã loại bỏ ghi chú khỏi form con */}
+            </>
         </RequireRole>
     );
 };
