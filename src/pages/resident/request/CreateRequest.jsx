@@ -22,6 +22,12 @@ export function CreateRequest() {
     const { post, data, isSuccess, isError, error, errorData, isLoading } = useApi();
     const { currentSemester, loading: semesterLoading, error: semesterError } = useSemester();
 
+    // 🔥 Tính toán ngày checkout tối đa (trước khi hết kỳ 3 ngày)
+    const getMaxCheckoutDate = () => {
+        if (!currentSemester || !currentSemester.endDate) return null;
+        return dayjs(currentSemester.endDate).subtract(3, 'day');
+    };
+
     const handleSubmit = (values) => {
         if (!currentSemester) {
             message.error("Không tìm thấy học kỳ hiện tại");
@@ -82,6 +88,26 @@ export function CreateRequest() {
         if (value !== "CHECKOUT") {
             form.setFieldsValue({ checkoutDate: null });
         }
+    };
+
+    // 🔥 Kiểm tra ngày có hợp lệ không (không quá khứ và không quá ngày kết thúc kỳ - 3 ngày)
+    const disabledCheckoutDate = (current) => {
+        if (!current) return false;
+
+        const today = dayjs().startOf('day');
+        const maxDate = getMaxCheckoutDate();
+
+        // Không cho chọn ngày trong quá khứ
+        if (current < today) {
+            return true;
+        }
+
+        // Không cho chọn ngày sau (endDate - 3 ngày)
+        if (maxDate && current > maxDate) {
+            return true;
+        }
+
+        return false;
     };
 
     return (
@@ -158,26 +184,46 @@ export function CreateRequest() {
                                             </Select>
                                         </Form.Item>
 
-                                        {/* Trường nhập ngày checkout - chỉ hiển thị khi chọn CHECKOUT */}
+                                        {/* 🔥 Trường nhập ngày checkout - chỉ hiển thị khi chọn CHECKOUT */}
                                         {requestType === "CHECKOUT" && (
-                                            <Form.Item
-                                                label="Ngày checkout dự kiến"
-                                                name="checkoutDate"
-                                                rules={[
-                                                    { required: true, message: "Vui lòng chọn ngày checkout dự kiến" }
-                                                ]}
-                                                extra="Chọn ngày bạn muốn checkout khỏi phòng"
-                                            >
-                                                <DatePicker
-                                                    style={{ width: '100%' }}
-                                                    placeholder="Chọn ngày checkout"
-                                                    format="DD/MM/YYYY"
-                                                    disabledDate={(current) => {
-                                                        // Không cho chọn ngày trong quá khứ
-                                                        return current && current < dayjs().startOf('day');
-                                                    }}
-                                                />
-                                            </Form.Item>
+                                            <>
+                                                <Form.Item
+                                                    label="Ngày checkout dự kiến"
+                                                    name="checkoutDate"
+                                                    rules={[
+                                                        { required: true, message: "Vui lòng chọn ngày checkout dự kiến" }
+                                                    ]}
+                                                    extra={
+                                                        <div className="text-xs mt-1">
+                                                            <div>Bạn chỉ được checkout từ hôm nay đến trước khi kết thúc kỳ 3 ngày</div>
+                                                            {currentSemester && currentSemester.endDate && (
+                                                                <div className="text-orange-600 font-medium mt-1">
+                                                                    📅 Ngày checkout muộn nhất: {getMaxCheckoutDate()?.format('DD/MM/YYYY')}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    }
+                                                >
+                                                    <DatePicker
+                                                        style={{ width: '100%' }}
+                                                        placeholder="Chọn ngày checkout"
+                                                        format="DD/MM/YYYY"
+                                                        disabledDate={disabledCheckoutDate}
+                                                    />
+                                                </Form.Item>
+
+                                                {/* 🔥 Cảnh báo nếu học kỳ sắp kết thúc */}
+                                                {currentSemester && currentSemester.endDate &&
+                                                    dayjs(currentSemester.endDate).diff(dayjs(), 'day') <= 10 && (
+                                                        <Alert
+                                                            message="Lưu ý"
+                                                            description={`Học kỳ sẽ kết thúc vào ${dayjs(currentSemester.endDate).format('DD/MM/YYYY')}. Vui lòng đảm bảo chọn ngày checkout trước ${getMaxCheckoutDate()?.format('DD/MM/YYYY')}`}
+                                                            type="warning"
+                                                            showIcon
+                                                            className="mb-4"
+                                                        />
+                                                    )}
+                                            </>
                                         )}
 
                                         <Form.Item

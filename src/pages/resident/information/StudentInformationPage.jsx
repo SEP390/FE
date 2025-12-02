@@ -3,51 +3,56 @@ import { useEffect, useState } from "react";
 import { useApi } from "../../../hooks/useApi.js";
 import { Spin, Typography, Card, Row, Col, Divider, Avatar, Upload, message } from "antd";
 import { UserOutlined, CameraOutlined } from "@ant-design/icons";
-import axios from "axios";
 
 const { Title, Text } = Typography;
 
 export function StudentInformationPage() {
-    const { get, data, isComplete, isSuccess } = useApi();
-    const { get: getRoom, data: roomData, isSuccess: isRoomSuccess } = useApi();
+    const { get: getProfile, data: profileData, isSuccess: isProfileSuccess, isComplete: isProfileComplete } = useApi();
+    const { get: getRoom, data: roomData, isSuccess: isRoomSuccess, isComplete: isRoomComplete } = useApi();
     const [student, setStudent] = useState(null);
     const [avatarUrl, setAvatarUrl] = useState(null);
     const [uploading, setUploading] = useState(false);
 
+    // Chỉ cần gọi /users/profile - nó đã trả đủ thông tin
     useEffect(() => {
-        get("/users/profile");
-    }, [get]);
-
-    useEffect(() => {
+        getProfile("/users/profile");
         getRoom("/rooms/current");
-    }, [getRoom]);
+    }, []);
 
+    // Xử lý dữ liệu từ /users/profile
     useEffect(() => {
-        if (isSuccess && data) {
-            const userData = data;
-            const formattedDob = userData.dob ? new Date(userData.dob).toISOString().split('T')[0] : 'N/A';
-            const formattedGender = userData.gender ? userData.gender.charAt(0).toUpperCase() + userData.gender.slice(1).toLowerCase() : 'N/A';
+        if (isProfileSuccess && profileData) {
+            console.log("📌 Profile data:", profileData);
 
-            // Set avatar URL từ data
-            setAvatarUrl(userData.avatarUrl || null);
+            // profileData từ GetUserInformationResponse có các field:
+            // id, username, fullName, phongNum, email, dob, StudentId, gender, slotName, image, role
+
+            const formattedDob = profileData.dob
+                ? new Date(profileData.dob).toISOString().split('T')[0]
+                : 'N/A';
+
+            const formattedGender = profileData.gender
+                ? profileData.gender.charAt(0).toUpperCase() + profileData.gender.slice(1).toLowerCase()
+                : 'N/A';
+
+            setAvatarUrl(profileData.image || null);
 
             setStudent({
-                name: userData.username || 'N/A',
+                name: profileData.fullName || profileData.username || 'N/A',
                 dob: formattedDob,
                 gender: formattedGender,
-                mail: userData.email || 'N/A',
-                bed: userData.slotName || 'N/A',
-                StudentId: userData.studentId || 'N/A',
+                mail: profileData.email || 'N/A',
+                phoneNumber: profileData.phongNum || 'N/A',
+                StudentId: profileData.StudentId || 'N/A',
             });
         }
-    }, [isSuccess, data]);
+    }, [isProfileSuccess, profileData]);
 
-    // Hàm xử lý upload avatar
+    // Xử lý upload avatar
     const handleAvatarUpload = async (file) => {
         setUploading(true);
 
         try {
-            // Bước 1: Upload ảnh lên server
             const formData = new FormData();
             formData.append('image', file);
 
@@ -63,12 +68,8 @@ export function StudentInformationPage() {
 
             if (uploadResult.status === 201 && uploadResult.data) {
                 const newAvatarUrl = uploadResult.data;
-
-                // Tạm thời chỉ update UI, chưa lưu vào DB
                 setAvatarUrl(newAvatarUrl);
                 message.success('Upload ảnh thành công! (Chưa lưu vào profile - cần API update)');
-
-                // TODO: Đợi backend thêm API PUT/PATCH /api/users/profile
                 console.log('Avatar URL:', newAvatarUrl);
             } else {
                 message.error('Upload ảnh thất bại!');
@@ -80,17 +81,18 @@ export function StudentInformationPage() {
             setUploading(false);
         }
 
-        // Ngăn upload mặc định của antd
         return false;
     };
 
+    const isLoading = !isProfileComplete || !isRoomComplete || uploading;
+
     return (
-        <Spin spinning={!isComplete || uploading}>
+        <Spin spinning={isLoading}>
             <AppLayout>
                 <div className="p-6">
-                    {isSuccess && student ? (
+                    {isProfileSuccess && student ? (
                         <>
-                            <Title level={3}>Student Information</Title>
+                            <Title level={3}>Thông Tin Sinh Viên</Title>
 
                             {/* Avatar Section */}
                             <div className="flex justify-center mb-6">
@@ -135,18 +137,59 @@ export function StudentInformationPage() {
                                             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                                         }}
                                     >
-                                        <Title level={4} style={{ color: "#004aad", marginBottom: 16 }}>
+                                        <Title level={4} style={{ color: "#004aad", marginBottom: 24 }}>
                                             {student.name}
                                         </Title>
-                                        <Text>
-                                            {student.dob} - {student.gender}
-                                        </Text>
-                                        <br />
-                                        <Text strong>Mail: </Text>
-                                        <a href={`mailto:${student.mail}`}>{student.mail}</a>
-                                        <br />
-                                        <Text strong>Student ID: </Text>
-                                        <Text>{student.StudentId}</Text>
+
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-32">
+                                                    <Text strong style={{ color: "#666" }}>Ngày sinh:</Text>
+                                                </div>
+                                                <Text style={{ fontSize: "15px" }}>{student.dob}</Text>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-32">
+                                                    <Text strong style={{ color: "#666" }}>Giới tính:</Text>
+                                                </div>
+                                                <Text style={{ fontSize: "15px" }}>{student.gender}</Text>
+                                            </div>
+
+                                            <Divider style={{ margin: "16px 0" }} />
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-32">
+                                                    <Text strong style={{ color: "#666" }}>Email:</Text>
+                                                </div>
+                                                <a
+                                                    href={`mailto:${student.mail}`}
+                                                    style={{
+                                                        color: "#1890ff",
+                                                        fontSize: "15px",
+                                                        textDecoration: "none"
+                                                    }}
+                                                    onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
+                                                    onMouseLeave={(e) => e.target.style.textDecoration = "none"}
+                                                >
+                                                    {student.mail}
+                                                </a>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-32">
+                                                    <Text strong style={{ color: "#666" }}>Số điện thoại:</Text>
+                                                </div>
+                                                <Text style={{ fontSize: "15px" }}>{student.phoneNumber}</Text>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-32">
+                                                    <Text strong style={{ color: "#666" }}>Mã sinh viên:</Text>
+                                                </div>
+                                                <Text style={{ fontSize: "15px", fontWeight: 500 }}>{student.StudentId}</Text>
+                                            </div>
+                                        </div>
                                     </Card>
                                 </Col>
 
@@ -159,20 +202,34 @@ export function StudentInformationPage() {
                                             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                                         }}
                                     >
-                                        <Title level={4}>More Information</Title>
-                                        <Divider />
-                                        <div className="space-y-2">
-                                            <div>
-                                                <Text strong>Dorm: </Text>
-                                                <Text>{isRoomSuccess && roomData?.dorm?.dormName ? roomData.dorm.dormName : 'N/A'}</Text>
+                                        <Title level={4} style={{ marginBottom: 24 }}>Thông Tin Thêm</Title>
+
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-28">
+                                                    <Text strong style={{ color: "#666" }}>Ký túc xá:</Text>
+                                                </div>
+                                                <Text style={{ fontSize: "15px" }}>
+                                                    {isRoomSuccess && roomData?.dorm?.dormName ? roomData.dorm.dormName : 'N/A'}
+                                                </Text>
                                             </div>
-                                            <div>
-                                                <Text strong>Room: </Text>
-                                                <Text>{isRoomSuccess && roomData?.roomNumber ? roomData.roomNumber : 'N/A'}</Text>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-28">
+                                                    <Text strong style={{ color: "#666" }}>Phòng:</Text>
+                                                </div>
+                                                <Text style={{ fontSize: "15px" }}>
+                                                    {isRoomSuccess && roomData?.roomNumber ? roomData.roomNumber : 'N/A'}
+                                                </Text>
                                             </div>
-                                            <div>
-                                                <Text strong>Slot: </Text>
-                                                <Text>{student?.bed || 'N/A'}</Text>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-28">
+                                                    <Text strong style={{ color: "#666" }}>Giường:</Text>
+                                                </div>
+                                                <Text style={{ fontSize: "15px" }}>
+                                                    {isRoomSuccess && roomData?.slotName ? roomData.slotName : 'N/A'}
+                                                </Text>
                                             </div>
                                         </div>
                                     </Card>
@@ -180,7 +237,7 @@ export function StudentInformationPage() {
                             </Row>
                         </>
                     ) : (
-                        <Title level={3}>No Student Information Available</Title>
+                        <Title level={3}>Không có thông tin sinh viên</Title>
                     )}
                 </div>
             </AppLayout>
