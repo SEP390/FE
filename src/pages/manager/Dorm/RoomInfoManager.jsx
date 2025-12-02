@@ -92,6 +92,8 @@ export function RoomInfoManager() {
     const [selectedBuildingInfo, setSelectedBuildingInfo] = useState(null);
     const [filterFloor, setFilterFloor] = useState(undefined);
     const [searchText, setSearchText] = useState('');
+    // ➡️ BỔ SUNG STATE CHO SỐ SLOT TỐI ĐA
+    const [filterMaxSlot, setFilterMaxSlot] = useState(undefined);
 
     // (State Loading)
     const [isGettingRooms, setIsGettingRooms] = useState(false);
@@ -141,7 +143,15 @@ export function RoomInfoManager() {
     const fetchRooms = async (pageParams = {}) => {
         setIsGettingRooms(true); setRoomData([]);
         try {
-            const params = { page: pageParams.current - 1, size: pageParams.pageSize, dormId: filterBuildingId, floor: filterFloor, roomNumber: searchText };
+            // ➡️ CẬP NHẬT PARAMS ĐỂ THÊM filterMaxSlot
+            const params = {
+                page: pageParams.current - 1,
+                size: pageParams.pageSize,
+                dormId: filterBuildingId,
+                floor: filterFloor,
+                roomNumber: searchText,
+                totalSlot: filterMaxSlot // 💡 THÊM THAM SỐ LỌC NÀY
+            };
             const response = await axiosClient.get('/rooms', { params });
             if (response && response.data && Array.isArray(response.data.content)) {
                 const dataWithKey = response.data.content.filter(room => room && room.id).map(room => ({...room, key: room.id }));
@@ -152,7 +162,9 @@ export function RoomInfoManager() {
     };
 
     useEffect(() => { fetchBuildings(); fetchPricings(); }, []);
-    useEffect(() => { fetchRooms(pagination); }, [filterBuildingId, filterFloor, searchText, pagination.current, pagination.pageSize]);
+
+    // ➡️ CẬP NHẬT useEffect để lắng nghe thay đổi của filterMaxSlot
+    useEffect(() => { fetchRooms(pagination); }, [filterBuildingId, filterFloor, searchText, filterMaxSlot, pagination.current, pagination.pageSize]);
 
     const handleTableChange = (newPagination) => setPagination(prev => ({ ...prev, current: newPagination.current, pageSize: newPagination.pageSize }));
 
@@ -245,118 +257,160 @@ export function RoomInfoManager() {
 
     return (
         <RequireRole role = "MANAGER">
-        <Layout style={{ minHeight: '100vh' }}>
-            {/* SideBarManager sử dụng state global */}
-            <SideBarManager collapsed={collapsed} active={activeKey} />
-            <Layout>
-                {/* AppHeader gọi hàm toggleSideBar global */}
-                <AppHeader
-                    header={"Quản lý ký túc xá / Thông tin phòng"}
-                    toggleSideBar={toggleSideBar}
-                />
-                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
-                    {/* Filter Buttons */}
-                    <Row gutter={[16, 16]} style={{ marginBottom: 20 }} justify="space-between" align="middle">
-                        <Col><Space wrap>
-                            {/* Vẫn giữ bộ lọc dạng Select trên đầu bảng */}
-                            <Select placeholder="Tòa nhà" style={{ width: 120 }} value={filterBuildingId} onChange={handleFilterBuildingChange} allowClear onClear={() => handleFilterBuildingChange(undefined)}>
-                                {buildings.map(b => (<Option key={b?.id} value={b?.id}>{b?.dormName}</Option>))}
-                            </Select>
-                            <Select placeholder="Tầng" style={{ width: 100 }} value={filterFloor} onChange={setFilterFloor} allowClear disabled={!selectedBuildingInfo}>
-                                {generateFloorOptions(selectedBuildingInfo?.totalFloor)}
-                            </Select>
-                            <Input placeholder="Tìm kiếm Số phòng..." prefix={<SearchOutlined />} style={{ width: 250 }} onChange={(e) => setSearchText(e.target.value)} />
-                        </Space> </Col>
-                        <Col><Space>
-                            <Button icon={<DollarCircleOutlined />} onClick={() => setIsPricingModalVisible(true)}>Quản lý giá phòng</Button>
-                            <Button icon={<PlusOutlined />} onClick={() => setIsAddSingleRoomModalVisible(true)}>Thêm phòng lẻ</Button>
-                            {/* === NÚT THÊM TÒA NHÀ === */}
-                            <Button
-                                type="primary"
-                                icon={<PlusOutlined />}
-                                onClick={() => {
-                                    formBuilding.resetFields();
-                                    setIsAddBuildingModalVisible(true);
-                                }}
-                            >
-                                Thêm tòa nhà
-                            </Button>
-                        </Space></Col>
-                    </Row>
-
-                    {/* MAIN TABLE */}
-                    <Table
-                        loading={isGettingRooms}
-                        columns={finalRoomColumns}
-                        dataSource={roomData}
-                        onChange={handleTableChange}
-                        pagination={{...pagination, showSizeChanger: true}}
-                        bordered
+            <Layout style={{ minHeight: '100vh' }}>
+                {/* SideBarManager sử dụng state global */}
+                <SideBarManager collapsed={collapsed} active={activeKey} />
+                <Layout>
+                    {/* AppHeader gọi hàm toggleSideBar global */}
+                    <AppHeader
+                        header={"Quản lý ký túc xá / Thông tin phòng"}
+                        toggleSideBar={toggleSideBar}
                     />
-                </Content>
+                    <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
+                        {/* Filter Buttons */}
+                        <Row gutter={[16, 16]} style={{ marginBottom: 20 }} justify="space-between" align="middle">
+                            <Col><Space wrap>
+                                {/* Bộ lọc Tòa nhà */}
+                                <Select
+                                    placeholder="Tòa nhà"
+                                    style={{ width: 120 }}
+                                    value={filterBuildingId}
+                                    onChange={handleFilterBuildingChange}
+                                    allowClear
+                                    onClear={() => handleFilterBuildingChange(undefined)}
+                                >
+                                    {buildings.map(b => (<Option key={b?.id} value={b?.id}>{b?.dormName}</Option>))}
+                                </Select>
+
+                                {/* Bộ lọc Tầng */}
+                                <Select
+                                    placeholder="Tầng"
+                                    style={{ width: 100 }}
+                                    value={filterFloor}
+                                    onChange={setFilterFloor}
+                                    allowClear
+                                    disabled={!selectedBuildingInfo}
+                                >
+                                    {generateFloorOptions(selectedBuildingInfo?.totalFloor)}
+                                </Select>
+
+                                {/* ➡️ BỘ LỌC SỐ SLOT TỐI ĐA MỚI */}
+                                <Select
+                                    placeholder="Số Slot Tối đa"
+                                    style={{ width: 150 }}
+                                    value={filterMaxSlot}
+                                    onChange={setFilterMaxSlot}
+                                    allowClear
+                                    onClear={() => setFilterMaxSlot(undefined)}
+                                >
+                                    {/* Lấy danh sách Slot từ Pricings */}
+                                    {pricings
+                                        .map(p => p.totalSlot)
+                                        .filter((value, index, self) => self.indexOf(value) === index) // Lọc giá trị duy nhất
+                                        .map(slot => (
+                                            <Option key={`slot-${slot}`} value={slot}>{slot} Slots</Option>
+                                        ))
+                                    }
+                                </Select>
+
+                                {/* Tìm kiếm Số phòng */}
+                                <Input
+                                    placeholder="Tìm kiếm Số phòng..."
+                                    prefix={<SearchOutlined />}
+                                    style={{ width: 250 }}
+                                    onChange={(e) => setSearchText(e.target.value)}
+                                />
+                            </Space> </Col>
+                            <Col><Space>
+                                <Button icon={<DollarCircleOutlined />} onClick={() => setIsPricingModalVisible(true)}>Quản lý giá phòng</Button>
+                                <Button icon={<PlusOutlined />} onClick={() => setIsAddSingleRoomModalVisible(true)}>Thêm phòng lẻ</Button>
+                                {/* === NÚT THÊM TÒA NHÀ === */}
+                                <Button
+                                    type="primary"
+                                    icon={<PlusOutlined />}
+                                    onClick={() => {
+                                        formBuilding.resetFields();
+                                        setIsAddBuildingModalVisible(true);
+                                    }}
+                                >
+                                    Thêm tòa nhà
+                                </Button>
+                            </Space></Col>
+                        </Row>
+
+                        {/* MAIN TABLE */}
+                        <Table
+                            loading={isGettingRooms}
+                            columns={finalRoomColumns}
+                            dataSource={roomData}
+                            onChange={handleTableChange}
+                            pagination={{...pagination, showSizeChanger: true}}
+                            bordered
+                        />
+                    </Content>
+                </Layout>
+
+                {/* === MODAL 1: COMPONENT QUẢN LÝ GIÁ (MỚI) === */}
+                <RoomPricingModal
+                    open={isPricingModalVisible}
+                    onCancel={() => setIsPricingModalVisible(false)}
+                    onDataChange={() => fetchPricings()}
+                />
+
+                {/* === MODAL 2: THÊM TÒA NHÀ === */}
+                <Modal
+                    title="Thêm tòa nhà mới"
+                    open={isAddBuildingModalVisible}
+                    onOk={handleOkBuilding}
+                    onCancel={() => setIsAddBuildingModalVisible(false)}
+                    confirmLoading={isCreatingBuilding}
+                >
+                    <Form form={formBuilding} layout="vertical">
+                        <Form.Item
+                            name="dormName"
+                            label="Tên tòa nhà"
+                            rules={[{ required: true, message: 'Vui lòng nhập tên tòa nhà!' }]}
+                        >
+                            <Input placeholder="Ví dụ: A5..." />
+                        </Form.Item>
+                        <Form.Item
+                            name="totalFloor"
+                            label="Tổng số tầng"
+                            rules={[{ required: true, message: 'Vui lòng nhập số tầng!' }, { type: 'number', min: 1, message: 'Phải lớn hơn 0' }]}
+                        >
+                            <InputNumber min={1} style={{ width: '100%' }} />
+                        </Form.Item>
+                    </Form>
+                </Modal>
+
+                {/* Modal 3: Sửa Phòng */}
+                <Modal title={`Chỉnh sửa phòng ${editingRoom?.roomNumber || ''}`} open={isEditRoomModalVisible} onOk={handleOkEditRoom} onCancel={() => setIsEditRoomModalVisible(false)} confirmLoading={isUpdatingRoom} destroyOnClose>
+                    <Form form={formEditRoom} layout="vertical">
+                        <Form.Item name="totalSlot" label="Loại phòng (Số giường tối đa)" rules={[{ required: true }]}>
+                            <Select placeholder="Chọn số giường mới">
+                                {pricings.map(p => ( <Option key={p?.id} value={p?.totalSlot}>{p?.totalSlot} giường ({p?.price?.toLocaleString('vi-VN')} VND)</Option>))}
+                            </Select>
+                        </Form.Item>
+                    </Form>
+                </Modal>
+
+                {/* Modal 4: Thêm Phòng Lẻ */}
+                <Modal title="Thêm phòng lẻ" open={isAddSingleRoomModalVisible} onCancel={() => setIsAddSingleRoomModalVisible(false)} footer={null} destroyOnClose >
+                    <Form form={formAddSingleRoom} layout="vertical" onFinish={handleAddSingleRoom}>
+                        <Form.Item name="dormId" label="Tòa nhà" rules={[{ required: true }]} >
+                            <Select onChange={handleDormChangeForAddRoom} allowClear >{buildings.map(dorm => (<Option key={dorm?.id} value={dorm?.id}>{dorm?.dormName}</Option> ))}</Select>
+                        </Form.Item>
+                        <Form.Item name="floor" label="Tầng" rules={[{ required: true }]} >
+                            <Select disabled={!selectedDormForAddRoom} >{generateFloorOptions(selectedDormForAddRoom?.totalFloor)}</Select>
+                        </Form.Item>
+                        <Form.Item name="roomNumber" label="Số phòng" rules={[{ required: true }]} ><Input placeholder="Ví dụ: A101..." /></Form.Item>
+                        <Form.Item name="totalSlot" label="Loại phòng" rules={[{ required: true }]} >
+                            <Select>{pricings.map(p => ( <Option key={p?.id} value={p?.totalSlot}> {p?.totalSlot} giường ({p?.price?.toLocaleString('vi-VN')} VND)</Option> ))}</Select>
+                        </Form.Item>
+                        <div style={{textAlign: 'right', marginTop: 10}}><Button type="primary" htmlType="submit" loading={isAddingSingleRoom}>Thêm</Button></div>
+                    </Form>
+                </Modal>
             </Layout>
-
-            {/* === MODAL 1: COMPONENT QUẢN LÝ GIÁ (MỚI) === */}
-            <RoomPricingModal
-                open={isPricingModalVisible}
-                onCancel={() => setIsPricingModalVisible(false)}
-                onDataChange={() => fetchPricings()}
-            />
-
-            {/* === MODAL 2: THÊM TÒA NHÀ === */}
-            <Modal
-                title="Thêm tòa nhà mới"
-                open={isAddBuildingModalVisible}
-                onOk={handleOkBuilding}
-                onCancel={() => setIsAddBuildingModalVisible(false)}
-                confirmLoading={isCreatingBuilding}
-            >
-                <Form form={formBuilding} layout="vertical">
-                    <Form.Item
-                        name="dormName"
-                        label="Tên tòa nhà"
-                        rules={[{ required: true, message: 'Vui lòng nhập tên tòa nhà!' }]}
-                    >
-                        <Input placeholder="Ví dụ: A5..." />
-                    </Form.Item>
-                    <Form.Item
-                        name="totalFloor"
-                        label="Tổng số tầng"
-                        rules={[{ required: true, message: 'Vui lòng nhập số tầng!' }, { type: 'number', min: 1, message: 'Phải lớn hơn 0' }]}
-                    >
-                        <InputNumber min={1} style={{ width: '100%' }} />
-                    </Form.Item>
-                </Form>
-            </Modal>
-
-            {/* Modal 3: Sửa Phòng */}
-            <Modal title={`Chỉnh sửa phòng ${editingRoom?.roomNumber || ''}`} open={isEditRoomModalVisible} onOk={handleOkEditRoom} onCancel={() => setIsEditRoomModalVisible(false)} confirmLoading={isUpdatingRoom} destroyOnClose>
-                <Form form={formEditRoom} layout="vertical">
-                    <Form.Item name="totalSlot" label="Loại phòng (Số giường tối đa)" rules={[{ required: true }]}>
-                        <Select placeholder="Chọn số giường mới">
-                            {pricings.map(p => ( <Option key={p?.id} value={p?.totalSlot}>{p?.totalSlot} giường ({p?.price?.toLocaleString('vi-VN')} VND)</Option>))}
-                        </Select>
-                    </Form.Item>
-                </Form>
-            </Modal>
-
-            {/* Modal 4: Thêm Phòng Lẻ */}
-            <Modal title="Thêm phòng lẻ" open={isAddSingleRoomModalVisible} onCancel={() => setIsAddSingleRoomModalVisible(false)} footer={null} destroyOnClose >
-                <Form form={formAddSingleRoom} layout="vertical" onFinish={handleAddSingleRoom}>
-                    <Form.Item name="dormId" label="Tòa nhà" rules={[{ required: true }]} >
-                        <Select onChange={handleDormChangeForAddRoom} allowClear >{buildings.map(dorm => (<Option key={dorm?.id} value={dorm?.id}>{dorm?.dormName}</Option> ))}</Select>
-                    </Form.Item>
-                    <Form.Item name="floor" label="Tầng" rules={[{ required: true }]} >
-                        <Select disabled={!selectedDormForAddRoom} >{generateFloorOptions(selectedDormForAddRoom?.totalFloor)}</Select>
-                    </Form.Item>
-                    <Form.Item name="roomNumber" label="Số phòng" rules={[{ required: true }]} ><Input placeholder="Ví dụ: A101..." /></Form.Item>
-                    <Form.Item name="totalSlot" label="Loại phòng" rules={[{ required: true }]} >
-                        <Select>{pricings.map(p => ( <Option key={p?.id} value={p?.totalSlot}> {p?.totalSlot} giường ({p?.price?.toLocaleString('vi-VN')} VND)</Option> ))}</Select>
-                    </Form.Item>
-                    <div style={{textAlign: 'right', marginTop: 10}}><Button type="primary" htmlType="submit" loading={isAddingSingleRoom}>Thêm</Button></div>
-                </Form>
-            </Modal>
-        </Layout>
         </RequireRole>
     );
 }
