@@ -1,7 +1,7 @@
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import {RoomSelect} from "../../../components/RoomSelect.jsx";
 import {useSearchParams} from "react-router-dom";
-import {App, Button, Form} from "antd";
+import {Alert, App, Button, Form} from "antd";
 import {ResidentSelect} from "../../../components/ResidentSelect.jsx";
 import {SlotSelect} from "../../../components/SlotSelect.jsx";
 import {PageHeader} from "../../../components/PageHeader.jsx";
@@ -34,9 +34,9 @@ function SwapDetail({roomId, userId}) {
         {data.old && data.new && (
             <>
                 <Form.Item label={null}>
-                    {!data.swapable && (
+                    {data.old.pricing.price > data.new.pricing.price && (
                         <>
-                            <div className={"text-red-600"}>Không thể đổi sang phòng này</div>
+                            <div className={"text-red-600"}>Không thể đổi sang phòng có giá thấp hơn phòng hiện tại</div>
                         </>
                     )}
                     {data.swapable && data.new.pricing.price === data.old.pricing.price && (
@@ -79,7 +79,8 @@ export default function SwapSlot() {
     return <RequireRole role={"MANAGER"}><LayoutManager>
         <div className={"flex flex-col gap-3"}>
             <PageHeader title={"Đổi phòng"} back={"/pages/manager/slot-usage"}/>
-            <div className={"section"}>
+            <div className={"section flex flex-col gap-3"}>
+                <Alert className={"md:w-120"} type={"info"} message={"Chỉ có thể đổi phòng sang giá phòng lớn hơn hoặc bằng phòng hiện tại"} />
                 <Form onFinish={onFinish} labelCol={{span: 10}} className={"md:w-100"} initialValues={{userId}}>
                     {(fields) => (
                         <>
