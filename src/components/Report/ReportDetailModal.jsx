@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Descriptions, Typography, Divider, Card, Button, Form, Input, InputNumber, Select, message as antMessage } from "antd";
 import { warehouseItemApi } from "../../api/Warehouse/warehouseApi.js";
+import { useApi } from "../../hooks/useApi"; // Import useApi hook
 
 const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -11,6 +12,34 @@ export function ReportDetailModal({ open, onClose, report }) {
     const [warehouseItems, setWarehouseItems] = useState([]);
     const [loadingWarehouse, setLoadingWarehouse] = useState(false);
     const [exportingStock, setExportingStock] = useState(false);
+    const [userRole, setUserRole] = useState(null);
+
+    // Use useApi hook for fetching user info
+    const userInfoApi = useApi();
+
+    // Fetch user information when modal opens
+    useEffect(() => {
+        if (open) {
+            userInfoApi.get('/users/profile');
+        }
+    }, [open]);
+
+    // Set user role when data is loaded
+    useEffect(() => {
+        if (userInfoApi.isSuccess && userInfoApi.data) {
+            console.log('User info API response:', userInfoApi.data);
+            console.log('User role:', userInfoApi.data.role);
+            setUserRole(userInfoApi.data.role);
+        }
+    }, [userInfoApi.isSuccess, userInfoApi.data]);
+
+    // Handle API error
+    useEffect(() => {
+        if (userInfoApi.isError) {
+            console.error('Error fetching user info:', userInfoApi.error);
+            antMessage.error('Không thể tải thông tin người dùng');
+        }
+    }, [userInfoApi.isError]);
 
     // Fetch warehouse items when opening export modal
     useEffect(() => {
@@ -95,19 +124,28 @@ export function ReportDetailModal({ open, onClose, report }) {
 
     if (!report) return null;
 
+    // Determine if export button should be shown
+    const showExportButton = userRole === 'TECHNICAL';
+
+    console.log('Current user role:', userRole);
+    console.log('Show export button:', showExportButton);
+    console.log('Is TECHNICAL?:', userRole === 'TECHNICAL');
+
     return (
         <>
             <Modal
                 open={open}
                 onCancel={onClose}
                 footer={[
-                    <Button key="export" onClick={handleOpenInvoice}>
-                        Tạo đơn xuất kho
-                    </Button>,
+                    showExportButton && (
+                        <Button key="export" onClick={handleOpenInvoice}>
+                            Tạo đơn xuất kho
+                        </Button>
+                    ),
                     <Button key="close" onClick={onClose}>
                         Đóng
                     </Button>
-                ]}
+                ].filter(Boolean)}
                 width={650}
                 title="Chi tiết báo cáo"
             >
@@ -153,77 +191,79 @@ export function ReportDetailModal({ open, onClose, report }) {
                 </Card>
             </Modal>
 
-            {/* Export Warehouse Modal */}
-            <Modal
-                title="Tạo đơn xuất kho"
-                open={invoiceVisible}
-                onCancel={() => {
-                    setInvoiceVisible(false);
-                    invoiceForm.resetFields();
-                }}
-                footer={null}
-                destroyOnClose
-            >
-                <Form
-                    layout="vertical"
-                    form={invoiceForm}
-                    onFinish={handleSubmitInvoice}
+            {/* Export Warehouse Modal - Only accessible if user is TECHNICAL */}
+            {showExportButton && (
+                <Modal
+                    title="Tạo đơn xuất kho"
+                    open={invoiceVisible}
+                    onCancel={() => {
+                        setInvoiceVisible(false);
+                        invoiceForm.resetFields();
+                    }}
+                    footer={null}
+                    destroyOnClose
                 >
-                    <Form.Item
-                        label="Sản phẩm"
-                        name="warehouseItemId"
-                        rules={[{ required: true, message: "Vui lòng chọn sản phẩm" }]}
+                    <Form
+                        layout="vertical"
+                        form={invoiceForm}
+                        onFinish={handleSubmitInvoice}
                     >
-                        <Select
-                            placeholder="Chọn sản phẩm"
-                            showSearch
-                            optionFilterProp="label"
-                            loading={loadingWarehouse}
-                            options={warehouseItems.map((item) => ({
-                                value: item.warehouseItemId,
-                                label: `${item.itemName} (Còn: ${item.quantity} ${item.itemUnit})`,
-                            }))}
-                        />
-                    </Form.Item>
+                        <Form.Item
+                            label="Sản phẩm"
+                            name="warehouseItemId"
+                            rules={[{ required: true, message: "Vui lòng chọn sản phẩm" }]}
+                        >
+                            <Select
+                                placeholder="Chọn sản phẩm"
+                                showSearch
+                                optionFilterProp="label"
+                                loading={loadingWarehouse}
+                                options={warehouseItems.map((item) => ({
+                                    value: item.warehouseItemId,
+                                    label: `${item.itemName} (Còn: ${item.quantity} ${item.itemUnit})`,
+                                }))}
+                            />
+                        </Form.Item>
 
-                    <Form.Item
-                        label="Số lượng xuất"
-                        name="quantity"
-                        rules={[
-                            { required: true, message: "Vui lòng nhập số lượng" },
-                            { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" },
-                            {
-                                validator: (_, value) => {
-                                    const selectedItemId = invoiceForm.getFieldValue('warehouseItemId');
-                                    const selectedItem = warehouseItems.find(item => item.warehouseItemId === selectedItemId);
-                                    if (selectedItem && value > selectedItem.quantity) {
-                                        return Promise.reject(new Error('Số lượng xuất không được vượt quá số lượng tồn kho'));
-                                    }
-                                    return Promise.resolve();
+                        <Form.Item
+                            label="Số lượng xuất"
+                            name="quantity"
+                            rules={[
+                                { required: true, message: "Vui lòng nhập số lượng" },
+                                { type: "number", min: 1, message: "Số lượng phải lớn hơn 0" },
+                                {
+                                    validator: (_, value) => {
+                                        const selectedItemId = invoiceForm.getFieldValue('warehouseItemId');
+                                        const selectedItem = warehouseItems.find(item => item.warehouseItemId === selectedItemId);
+                                        if (selectedItem && value > selectedItem.quantity) {
+                                            return Promise.reject(new Error('Số lượng xuất không được vượt quá số lượng tồn kho'));
+                                        }
+                                        return Promise.resolve();
+                                    },
                                 },
-                            },
-                        ]}
-                    >
-                        <InputNumber min={1} style={{ width: "100%" }} placeholder="Nhập số lượng" />
-                    </Form.Item>
+                            ]}
+                        >
+                            <InputNumber min={1} style={{ width: "100%" }} placeholder="Nhập số lượng" />
+                        </Form.Item>
 
-                    <Form.Item
-                        label="Lý do xuất"
-                        name="reason"
-                    >
-                        <TextArea
-                            rows={3}
-                            placeholder={`Xuất kho cho report ${report?.reportId || ''}`}
-                        />
-                    </Form.Item>
+                        <Form.Item
+                            label="Lý do xuất"
+                            name="reason"
+                        >
+                            <TextArea
+                                rows={3}
+                                placeholder={`Xuất kho cho report ${report?.reportId || ''}`}
+                            />
+                        </Form.Item>
 
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit" loading={exportingStock} block>
-                            Xuất kho
-                        </Button>
-                    </Form.Item>
-                </Form>
-            </Modal>
+                        <Form.Item>
+                            <Button type="primary" htmlType="submit" loading={exportingStock} block>
+                                Xuất kho
+                            </Button>
+                        </Form.Item>
+                    </Form>
+                </Modal>
+            )}
         </>
     );
 }

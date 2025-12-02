@@ -92,11 +92,7 @@ const managerItems = [
         icon: <FileSearchOutlined/>,
         key: "semester",
     },
-    {
-        label: <Link to={"/manager/holidays"}>Quản lí kỳ nghỉ</Link>,
-        icon: <CoffeeOutlined/>,
-        key: "holiday"
-    },
+
 ];
 
 
