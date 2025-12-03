@@ -169,15 +169,20 @@ export function ReportManagePage() {
         setModalVisible(false);
     };
     const toggleSideBar = () => {
-        setCollapsed(!collapsed);
+        setCollapsed(prev => !prev);
     }
 
     return (
         <Layout className="!h-screen">
-            <SideBarManager active="manager-reports" collapsed={false}/>
-            <Layout>
+            <SideBarManager active="manager-reports" collapsed={collapsed}/>
+            <Layout
+                style={{
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
                 <AppHeader header={"Quản lí báo cáo"} toggleSideBar={toggleSideBar}/>
-                    <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+                    <Content style={{ margin: "24px", background: "#fff", padding: 24, marginTop: 64 }}>
                         <Table
                             rowKey="reportId"
                             columns={columns}
@@ -186,28 +191,28 @@ export function ReportManagePage() {
                             pagination={{pageSize: 6}}
                         />
                     </Content>
-                <ReportDetailModal
-                    open={detailVisible}
-                    onClose={() => setDetailVisible(false)}
-                    report={detailReport}
-                />
-                <Modal
-                    title="Trả lời báo cáo"
-                    open={modalVisible}
-                    onCancel={() => setModalVisible(false)}
-                    onOk={handleReplySubmit}
-                    okText="Gửi phản hồi"
-                >
-                    <p>Báo cáo từ: {selectedReport?.employeeName}</p>
-                    <p>Nội dung: {selectedReport?.content}</p>
-                    <TextArea
-                        rows={4}
-                        placeholder="Nhập nội dung phản hồi..."
-                        value={responseMessage}
-                        onChange={(e) => setResponseMessage(e.target.value)}
-                    />
-                </Modal>
+                 <ReportDetailModal
+                     open={detailVisible}
+                     onClose={() => setDetailVisible(false)}
+                     report={detailReport}
+                 />
+                 <Modal
+                     title="Trả lời báo cáo"
+                     open={modalVisible}
+                     onCancel={() => setModalVisible(false)}
+                     onOk={handleReplySubmit}
+                     okText="Gửi phản hồi"
+                 >
+                     <p>Báo cáo từ: {selectedReport?.employeeName}</p>
+                     <p>Nội dung: {selectedReport?.content}</p>
+                     <TextArea
+                         rows={4}
+                         placeholder="Nhập nội dung phản hồi..."
+                         value={responseMessage}
+                         onChange={(e) => setResponseMessage(e.target.value)}
+                     />
+                 </Modal>
             </Layout>
-        </Layout>
-    );
+         </Layout>
+     );
 }

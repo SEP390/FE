@@ -112,9 +112,15 @@ export function ResidentDetail() {
             <Layout style={{ minHeight: '100vh' }}>
                 <SideBarManager collapsed={collapsed} active={activeKey} />
 
-                <Layout>
+                {/* THÊM LOGIC MARGIN Ở ĐÂY */}
+                <Layout
+                    style={{
+                        marginLeft: collapsed ? 80 : 260, // Bù đắp Sidebar cố định
+                        transition: 'margin-left 0.3s ease',
+                    }}
+                >
                     {/* Header giữ nguyên */}
-                    <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80 }}>
+                    <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80, position: 'fixed', top: 0, right: 0, zIndex: 999, left: collapsed ? 80 : 260, transition: 'left 0.3s ease' }}>
                         <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>
                             <Link to="/manager/residents" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)' }}>
                                 <ArrowLeftOutlined />
@@ -123,9 +129,8 @@ export function ResidentDetail() {
                         </Title>
                     </Header>
 
-                    {/* Content giữ nguyên */}
-                    <Content style={{ margin: '24px 16px', padding: 24, background: '#f0f2f5' }}>
-
+                    {/* Content cần thêm marginTop để tránh bị Header cố định che */}
+                    <Content style={{ margin: '24px 16px', padding: 24, background: '#f0f2f5', marginTop: 80 }}>
                         {/* === 1. THẺ PROFILE HEADER === */}
                         <Card bordered={false} style={{ marginBottom: 24 }}>
                             <Space align="center" size={24}>

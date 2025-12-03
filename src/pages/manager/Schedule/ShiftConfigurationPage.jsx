@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 
 // 2. Import useNavigate
 import { useNavigate } from 'react-router-dom';
+import { useCollapsed } from '../../../hooks/useCollapsed.js';
 
 // Import các plugin
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -21,7 +22,8 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 
 export function ShiftConfigurationPage() {
-    const [collapsed] = useState(false);
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const activeKey = 'manager-schedule';
     const {message}=App.useApp();
 
@@ -144,9 +146,15 @@ export function ShiftConfigurationPage() {
         <RequireRole role = "MANAGER">
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
-            <Layout>
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80 }}>
-                    <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>
+            <Layout
+                style={{
+                    marginTop: 64,
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 64 }}>
+                    <Title level={2} style={{ margin: 0, lineHeight: '64px' }}>
                         Cấu hình Ca làm việc
                     </Title>
                 </Header>

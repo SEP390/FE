@@ -1,24 +1,24 @@
-import React, { useEffect, useState } from 'react';
+// File: RoomInfoGuard.jsx
+
+import React, { useEffect, useState, useCallback } from 'react';
 import {
-    Layout, Typography, Row, Col, Table, Input, Select, Tag, Space, message, Button
+    Layout, Row, Col, Table, Input, Select, Space, message
 } from 'antd';
 import {
-    SearchOutlined, EyeOutlined, LogoutOutlined, MenuOutlined // <-- Thêm LogoutOutlined, MenuOutlined
+    SearchOutlined, EyeOutlined
 } from "@ant-design/icons";
-import { Link, useNavigate } from 'react-router-dom'; // <-- Thêm useNavigate
+import { Link } from 'react-router-dom';
 
-// Import SideBar đã sửa thành GuardSidebar
 import { GuardSidebar } from '../../../components/layout/GuardSidebar.jsx';
-// Import axiosClient
+import { AppHeader } from '../../../components/layout/AppHeader.jsx';
+import { useCollapsed } from '../../../hooks/useCollapsed.js';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
-import {useToken} from "../../../hooks/useToken.js";
-import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
+import { RequireRole } from "../../../components/authorize/RequireRole.jsx";
 
-const { Header, Content } = Layout;
-const { Title } = Typography;
+const { Content } = Layout;
 const { Option } = Select;
 
-// === HÀM HỖ TRỢ: Tạo option tầng ===
+// ... (Giữ nguyên các hàm hỗ trợ và roomColumns) ...
 const generateFloorOptions = (totalFloors) => {
     const options = [];
     if (typeof totalFloors === 'number' && totalFloors > 0) {
@@ -27,13 +27,11 @@ const generateFloorOptions = (totalFloors) => {
     return options;
 };
 
-// === CỘT BẢNG PHÒNG CHÍNH (ĐÃ ĐỒNG BỘ VỚI MANAGER) ===
 const roomColumns = [
     {
-        // === THÊM MỚI: SỐ THỨ TỰ ===
         title: 'STT',
         key: 'stt',
-        render: (text, record, index) => index + 1, // STT được tính dựa trên vị trí trong data source
+        render: (text, record, index) => index + 1,
         width: 60,
     },
     {
@@ -52,11 +50,9 @@ const roomColumns = [
         title: 'Số phòng',
         dataIndex: 'roomNumber',
         key: 'roomNumber',
-        // ĐÃ SỬA: Bỏ style bold để đồng bộ font
         render: (text) => <span>{text || 'N/A'}</span>,
     },
     {
-        // ĐÃ SỬA: Chỉ hiển thị Số slot Tối đa (bỏ logic tính Số người hiện tại)
         title: 'Số slot tối đa',
         key: 'maxOccupancy',
         render: (text, record) => {
@@ -64,63 +60,49 @@ const roomColumns = [
             return <span>{totalSlot}</span>;
         },
     },
-    // *** ĐÃ BỎ CỘT 'Trạng thái' ***
     {
         title: 'Hành động',
         key: 'action',
     },
 ];
 
-// --- COMPONENT CHÍNH ---
 export function RoomInfoGuard() {
-    // (States chung)
-    const [collapsed, setCollapsed] = useState(false);
+    // ... (Giữ nguyên toàn bộ logic states, useEffect, handlers) ...
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const activeKey = 'guard-rooms';
     const [buildings, setBuildings] = useState([]);
     const [roomData, setRoomData] = useState([]);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
 
-    // (State Filter)
     const [filterBuildingId, setFilterBuildingId] = useState(undefined);
     const [selectedBuildingInfo, setSelectedBuildingInfo] = useState(null);
     const [filterFloor, setFilterFloor] = useState(undefined);
     const [searchText, setSearchText] = useState('');
 
-    // (State Loading)
     const [isGettingRooms, setIsGettingRooms] = useState(false);
     const [isGettingBuildings, setIsGettingBuildings] = useState(false);
 
-    // Khởi tạo useNavigate
-    const navigate = useNavigate();
+     // useCollapsed.setCollapsed expects a boolean value.
+     // Passing a function (prev => !prev) would set the collapsed state to a function
+     // which can cause layout calculations to behave incorrectly. Use the current
+     // `collapsed` value to compute the new boolean state instead.
+     const toggleSideBar = () => { setCollapsed(!collapsed); }
 
-    // === LOGIC LOGOUT VÀ TOGGLE SIDEBAR ===
-    const {setToken} = useToken();
-    const handleLogout = () => {
-        setToken(null);
-        message.success('Đã đăng xuất thành công!');
-        navigate('/');
-    };
-    const toggleSideBar = () => {
-        setCollapsed(prev => !prev);
-    }
-    // === KẾT THÚC LOGIC LOGOUT VÀ TOGGLE ===
+     const fetchBuildings = async () => {
+         setIsGettingBuildings(true);
+         try {
+             const response = await axiosClient.get('/dorms');
+             if (response && response.data) setBuildings(response.data);
+         } catch (error) {
+             console.error(error);
+             message.error("Không thể tải danh sách tòa nhà!");
+         } finally {
+             setIsGettingBuildings(false);
+         }
+     };
 
-
-    // --- API CALLS ---
-    const fetchBuildings = async () => {
-        setIsGettingBuildings(true);
-        try {
-            const response = await axiosClient.get('/dorms');
-            if (response && response.data) setBuildings(response.data);
-        }
-        catch (error) {
-            message.error("Không thể tải danh sách tòa nhà!");
-        } finally {
-            setIsGettingBuildings(false);
-        }
-    };
-
-    const fetchRooms = async (pageParams = {}) => {
+    const fetchRooms = useCallback(async (pageParams = {}) => {
         setIsGettingRooms(true);
         setRoomData([]);
         try {
@@ -129,67 +111,54 @@ export function RoomInfoGuard() {
                 size: pageParams.pageSize,
                 dormId: filterBuildingId,
                 floor: filterFloor,
-                roomNumber: searchText
+                roomNumber: searchText,
             };
             const response = await axiosClient.get('/rooms', { params });
             if (response && response.data && Array.isArray(response.data.content)) {
-                const dataWithKey = response.data.content.filter(room => room && room.id).map(room => ({...room, key: room.id }));
+                const dataWithKey = response.data.content
+                    .filter(room => room && room.id)
+                    .map(room => ({ ...room, key: room.id }));
                 setRoomData(dataWithKey);
                 setPagination(prev => ({
                     ...prev,
                     current: pageParams.current || 1,
                     pageSize: pageParams.pageSize,
-                    total: response.data.totalElements
+                    total: response.data.totalElements,
                 }));
             } else {
                 setRoomData([]);
                 setPagination(prev => ({ ...prev, total: 0, current: 1 }));
             }
         } catch (error) {
+            console.error(error);
             message.error("Không thể tải danh sách phòng!");
             setRoomData([]);
         } finally {
             setIsGettingRooms(false);
         }
-    };
-
-    useEffect(() => {
-        fetchBuildings();
-    }, []);
-
-    // Logic: Khi filter thay đổi, reset page về 1
-    useEffect(() => {
-        setPagination(prev => ({ ...prev, current: 1 }));
     }, [filterBuildingId, filterFloor, searchText]);
 
-    // Logic: Khi pagination.current hoặc filter thay đổi, fetch rooms
-    useEffect(() => {
-        fetchRooms(pagination);
-    }, [pagination.current, pagination.pageSize, filterBuildingId, filterFloor, searchText]);
+    useEffect(() => { fetchBuildings(); }, []);
+    useEffect(() => { setPagination(prev => ({ ...prev, current: 1 })); }, [filterBuildingId, filterFloor, searchText]);
+    // call fetchRooms when pagination or filters change. fetchRooms is stable via useCallback.
+    useEffect(() => { fetchRooms({ current: pagination.current, pageSize: pagination.pageSize }); }, [pagination.current, pagination.pageSize, fetchRooms]);
 
     const handleTableChange = (newPagination) => setPagination(prev => ({ ...prev, current: newPagination.current, pageSize: newPagination.pageSize }));
 
-    // --- Handlers Logic ---
     const handleFilterBuildingChange = (dormId) => {
         setFilterBuildingId(dormId);
         const selectedBuilding = buildings.find(b => b.id === dormId);
         setSelectedBuildingInfo(selectedBuilding);
-        setFilterFloor(undefined); // Reset tầng khi chọn tòa nhà mới
+        setFilterFloor(undefined);
     };
 
-    // Cột động: Loại bỏ logic thêm filters cho cột Tòa nhà (đồng bộ với Manager)
     const finalRoomColumns = roomColumns.map(col => {
         if (col.key === 'action') return {
             ...col,
             render: (text, record) => (
                 <Space size="middle">
-                    {/* NÚT XEM CHI TIẾT DẠNG ICON (Chỉ giữ lại nút xem) */}
-                    {/* Link đến trang chi tiết phòng cho Bảo vệ (Giả định path là /guard/room-detail) */}
                     <Link to={`/guard/room-detail/${record.id}`}>
-                        <EyeOutlined
-                            style={{ fontSize: '18px', color: '#1890ff' }}
-                            title="Xem chi tiết phòng"
-                        />
+                        <EyeOutlined style={{ fontSize: '18px', color: '#1890ff' }} title="Xem chi tiết phòng" />
                     </Link>
                 </Space>
             )
@@ -197,53 +166,70 @@ export function RoomInfoGuard() {
         return col;
     });
 
+    // Tính toán chiều rộng Sidebar
+    const sidebarWidth = collapsed ? 80 : 260;
 
     return (
-        <RequireRole role = "GUARD">
-        <Layout style={{ minHeight: '100vh' }}>
-            <GuardSidebar collapsed={collapsed} active={activeKey} />
-            <Layout>
-                {/* === HEADER TÍCH HỢP LOGOUT VÀ MENU TOGGLE === */}
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <MenuOutlined onClick={toggleSideBar} style={{ fontSize: '18px', cursor: 'pointer' }} />
-                        <Title level={2} style={{ margin: 0 }}> Quản lý ký túc xá / Thông tin phòng (Bảo vệ) </Title>
-                    </div>
-                    <Button
-                        type="default"
-                        icon={<LogoutOutlined />}
-                        onClick={handleLogout}
-                    >
-                        Đăng xuất
-                    </Button>
-                </Header>
-                {/* === KẾT THÚC HEADER === */}
-                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
-                    {/* Filter */}
-                    <Row gutter={[16, 16]} style={{ marginBottom: 20 }} justify="start" align="middle">
-                        <Col><Space wrap>
-                            <Select placeholder="Tòa nhà" style={{ width: 120 }} value={filterBuildingId} onChange={handleFilterBuildingChange} allowClear onClear={() => handleFilterBuildingChange(undefined)} loading={isGettingBuildings}>
-                                {buildings.map(b => (<Option key={b?.id} value={b?.id}>{b?.dormName}</Option>))}
-                            </Select>
-                            <Select placeholder="Tầng" style={{ width: 100 }} value={filterFloor} onChange={setFilterFloor} allowClear disabled={!selectedBuildingInfo}>
-                                {generateFloorOptions(selectedBuildingInfo?.totalFloor)}
-                            </Select>
-                            <Input placeholder="Tìm kiếm Số phòng..." prefix={<SearchOutlined />} style={{ width: 250 }} onChange={(e) => setSearchText(e.target.value)} />
-                        </Space> </Col>
-                    </Row>
+        <RequireRole role="GUARD">
+            <Layout style={{ minHeight: '100vh' }}>
+                {/* 1. Sidebar cố định */}
+                <GuardSidebar collapsed={collapsed} active={activeKey} />
 
-                    {/* MAIN TABLE */}
-                    <Table
-                        loading={isGettingRooms}
-                        columns={finalRoomColumns}
-                        dataSource={roomData}
-                        onChange={handleTableChange}
-                        pagination={{...pagination, showSizeChanger: true}}
-                        bordered
-                    />
-                </Content>
+                {/* 2. Header cố định: Đưa ra ngoài Layout chuyển động để tránh lỗi render */}
+                <AppHeader
+                    header={"Quản lý ký túc xá / Thông tin phòng (Bảo vệ)"}
+                    toggleSideBar={toggleSideBar}
+                />
+
+                {/* 3. Wrapper Layout: Chỉ đẩy nội dung sang phải */}
+                <Layout
+                    style={{
+                        marginLeft: sidebarWidth,
+                        // SỬA QUAN TRỌNG: Chỉ transition margin-left, KHÔNG dùng 'all'
+                        transition: 'margin-left 0.3s ease',
+                        minHeight: '100vh',
+                    }}
+                >
+                    {/* 4. Content */}
+                    <Content
+                        style={{
+                            // Bù trừ Header (64px) + Gap (24px) = 88px
+                            paddingTop: 88,
+                            paddingLeft: 24,
+                            paddingRight: 24,
+                            paddingBottom: 24,
+                            background: '#f0f2f5',
+                        }}
+                    >
+                        <div style={{ background: '#fff', padding: 24, borderRadius: 8, boxShadow: '0 1px 2px 0 rgba(0,0,0,0.03)' }}>
+                            {/* Filter Buttons */}
+                            <Row gutter={[16, 16]} style={{ marginBottom: 20 }} justify="start" align="middle">
+                                <Col>
+                                    <Space wrap>
+                                        <Select placeholder="Tòa nhà" style={{ width: 120 }} value={filterBuildingId} onChange={handleFilterBuildingChange} allowClear onClear={() => handleFilterBuildingChange(undefined)} loading={isGettingBuildings}>
+                                            {buildings.map(b => (<Option key={b?.id} value={b?.id}>{b?.dormName}</Option>))}
+                                        </Select>
+                                        <Select placeholder="Tầng" style={{ width: 100 }} value={filterFloor} onChange={setFilterFloor} allowClear disabled={!selectedBuildingInfo}>
+                                            {generateFloorOptions(selectedBuildingInfo?.totalFloor)}
+                                        </Select>
+                                        <Input placeholder="Tìm kiếm Số phòng..." prefix={<SearchOutlined />} style={{ width: 250 }} onChange={(e) => setSearchText(e.target.value)} />
+                                    </Space>
+                                </Col>
+                            </Row>
+
+                            {/* MAIN TABLE */}
+                            <Table
+                                loading={isGettingRooms}
+                                columns={finalRoomColumns}
+                                dataSource={roomData}
+                                onChange={handleTableChange}
+                                pagination={{...pagination, showSizeChanger: true}}
+                                bordered
+                            />
+                        </div>
+                    </Content>
+                </Layout>
             </Layout>
-        </Layout>
         </RequireRole>
     );
 }

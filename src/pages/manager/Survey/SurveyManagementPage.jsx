@@ -183,12 +183,18 @@ export function SurveyManagementPage() {
         },
     ];
     const toggleSideBar = () => {
-        setCollapsed(!collapsed);
+        setCollapsed(prev => !prev);
     }
     return (
         <Layout style={{minHeight: "100vh"}}>
             <SideBarManager collapsed={collapsed} active="manager-surveys"/>
-            <Layout>
+            <Layout
+                style={{
+                    marginTop: 64,
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
                 <AppHeader header={"Quản lí khảo sát"} toggleSideBar={toggleSideBar}/>
 
                 <Content style={{margin: "24px", background: "#fff", padding: 24}}>
@@ -249,4 +255,3 @@ export function SurveyManagementPage() {
         </Layout>
     );
 }
-

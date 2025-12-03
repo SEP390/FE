@@ -12,7 +12,6 @@ import {
     UserOutlined,
     WarningOutlined,
 } from "@ant-design/icons";
-// CHUẨN HÓA IMPORTS: Import Layout và Menu từ 'antd'
 import {Drawer, Layout, Menu} from "antd";
 import {Link} from "react-router-dom";
 import {Bed, Clock} from "lucide-react";
@@ -20,12 +19,9 @@ import {useMobile} from "../../hooks/useMobile.js";
 import {useEffect} from "react";
 import {useCollapsed} from "../../hooks/useCollapsed.js";
 
-// Lấy Sider từ Layout đã import
 const {Sider} = Layout;
 
-
 const managerItems = [
-
     {
         label: <Link to={"/manager/residents"}>Quản lí sinh viên</Link>,
         icon: <UserOutlined/>,
@@ -67,7 +63,7 @@ const managerItems = [
         key: "manager-news",
     },
     {
-        label: <Link to={"/manager/schedule"}>Quản lí lịch làm việc</Link>, // MỤC ĐÃ HOÀN CHỈNH
+        label: <Link to={"/manager/schedule"}>Quản lí lịch làm việc</Link>,
         icon: <ScheduleOutlined/>,
         key: "manager-schedule",
     },
@@ -76,7 +72,6 @@ const managerItems = [
         icon: <TeamOutlined/>,
         key: "manager-staff",
     },
-
     {
         label: <Link to={"/manager/reports"}>Quản lí báo cáo</Link>,
         icon: <WarningOutlined/>,
@@ -92,14 +87,13 @@ const managerItems = [
         icon: <FileSearchOutlined/>,
         key: "semester",
     },
-
 ];
-
 
 export function SideBarManager({active}) {
     const {isMobile} = useMobile();
     const collapsed = useCollapsed(state => state.collapsed)
     const setCollapsed = useCollapsed(state => state.setCollapsed)
+
     useEffect(() => {
         if (!isMobile) {
             setCollapsed && setCollapsed(false)
@@ -107,6 +101,7 @@ export function SideBarManager({active}) {
             setCollapsed && setCollapsed(true)
         }
     }, [isMobile, setCollapsed]);
+
     return (
         <>
             <Sider
@@ -114,33 +109,80 @@ export function SideBarManager({active}) {
                 collapsible
                 collapsedWidth={isMobile ? 0 : 80}
                 collapsed={isMobile ? true : collapsed}
+                width={260}
                 theme="light"
-                className={"relative bg-white border-r border-gray-200 scrollbar-* flex flex-col overflow-auto"}
+                className="bg-white border-r border-gray-200 shadow-sm"
+                style={{
+                    height: 'calc(100vh - 64px)', // Trừ đi chiều cao Header
+                    overflow: 'auto',
+                    position: 'fixed', // Cố định vị trí
+                    top: '64px', // Bắt đầu sau Header
+                    left: 0,
+                    zIndex: 100 // Dưới Header (Header là z-1000)
+                }}
             >
-                <div
-                    className="sticky bg-white border-b border-r border-gray-100 top-0 py-4 z-99 flex items-center justify-center">
-                    <Bed size={32}/>
-                </div>
+                {/* Logo/Brand area - không cần nữa vì Header đã có */}
+
                 <Menu
                     mode="inline"
                     selectedKeys={[active]}
-                    className={"border-0 !z-0"}
+                    className="!border-0 pt-4"
                     items={managerItems}
+                    style={{
+                        fontSize: '15px',
+                    }}
+                    theme="light"
+                    inlineIndent={24}
                 />
+
+                <style jsx global>{`
+                    .ant-menu-item {
+                        height: 48px !important;
+                        line-height: 48px !important;
+                        margin: 4px 8px !important;
+                        border-radius: 8px !important;
+                        transition: all 0.3s ease !important;
+                    }
+
+                    .ant-menu-item:hover {
+                        background-color: #e6f4ff !important;
+                    }
+
+                    .ant-menu-item-selected {
+                        background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%) !important;
+                        color: white !important;
+                        font-weight: 600 !important;
+                        box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3) !important;
+                    }
+
+                    .ant-menu-item-selected .anticon,
+                    .ant-menu-item-selected a {
+                        color: white !important;
+                    }
+
+                    .ant-menu-item .anticon {
+                        font-size: 18px !important;
+                    }
+                `}</style>
             </Sider>
+
+            {/* Mobile Drawer */}
             {isMobile && (
-                <>
-                    <Drawer width={300} placement={"left"} onClose={() => {
+                <Drawer
+                    width={300}
+                    placement={"left"}
+                    onClose={() => {
                         setCollapsed && setCollapsed(true)
-                    }} open={!collapsed}>
-                        <Menu
-                            mode="inline"
-                            selectedKeys={[active]}
-                            className={"!border-0"}
-                            items={managerItems}
-                        />
-                    </Drawer>
-                </>
+                    }}
+                    open={!collapsed}
+                >
+                    <Menu
+                        mode="inline"
+                        selectedKeys={[active]}
+                        className={"!border-0"}
+                        items={managerItems}
+                    />
+                </Drawer>
             )}
         </>
     );

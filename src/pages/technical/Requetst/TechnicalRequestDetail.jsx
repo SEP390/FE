@@ -330,7 +330,7 @@ export function TechnicalRequestDetail() {
             <SideBarTechnical active={activeKey} collapsed={collapsed} />
             <Layout>
                 <AppHeader toggleSideBar={toggleSideBar} />
-                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+                <Content style={{ margin: "24px", background: "#fff", padding: 24, paddingTop: 88 }}>
                     <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: "16px" }}>
                         <Button
                             icon={<ArrowLeftOutlined />}
@@ -603,3 +603,4 @@ export function TechnicalRequestDetail() {
 }
 
 export default TechnicalRequestDetail;
+

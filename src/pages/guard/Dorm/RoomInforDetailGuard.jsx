@@ -4,6 +4,8 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeftOutlined, UserOutlined } from "@ant-design/icons";
 // Import SideBar đã sửa thành GuardSidebar
 import { GuardSidebar } from '../../../components/layout/GuardSidebar.jsx';
+import { AppHeader } from '../../../components/layout/AppHeader.jsx';
+import { useCollapsed } from '../../../hooks/useCollapsed.js';
 // Import axiosClient
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
@@ -22,7 +24,9 @@ const translateGender = (gender) => {
 export function RoomInforDetailGuard() {
     const { roomId } = useParams();
     const activeKey = 'guard-rooms';
-    const [collapsed, setCollapsed] = useState(false);
+    // use shared collapsed
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
 
     // State dữ liệu
     const [roomDetails, setRoomDetails] = useState(null);
@@ -78,13 +82,18 @@ export function RoomInforDetailGuard() {
         return (
             <Layout style={{ minHeight: '100vh' }}>
                 <GuardSidebar collapsed={collapsed} active={activeKey} />
-                <Layout>
-                    <Header style={{ background: '#fff', padding: '0 24px', height: 80, display: 'flex', alignItems: 'center' }}>
-                        {/* ĐÃ SỬA: Quay lại /guard/rooms */}
-                        <Link to="/guard/rooms" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)', fontSize: '20px' }}><ArrowLeftOutlined /></Link>
-                        <Title level={2} style={{ margin: 0 }}>{loading ? "Đang tải..." : "Lỗi"}</Title>
-                    </Header>
-                    <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', textAlign: 'center' }}>
+                <Layout
+                    style={{
+                        marginLeft: collapsed ? 80 : 260,
+                        transition: 'margin-left 0.3s ease',
+                    }}
+                >
+                    <AppHeader
+                        header={<><Link to="/guard/rooms" style={{ marginRight: 12 }}><ArrowLeftOutlined /></Link> {loading ? "Đang tải..." : "Lỗi"}</>}
+                        toggleSideBar={() => setCollapsed(prev => !prev)}
+                        collapsed={collapsed}
+                    />
+                    <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', textAlign: 'center', marginTop: 64 }}>
                         {loading ? <Spin size="large" /> : <div style={{ color: 'red' }}>{error}</div>}
                     </Content>
                 </Layout>
@@ -97,18 +106,19 @@ export function RoomInforDetailGuard() {
         <Layout style={{ minHeight: '100vh' }}>
             <GuardSidebar collapsed={collapsed} active={activeKey} />
 
-            <Layout>
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80 }}>
-                    <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>
-                        {/* ĐÃ SỬA: Quay lại /guard/rooms */}
-                        <Link to="/guard/rooms" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)' }}>
-                            <ArrowLeftOutlined />
-                        </Link>
-                        Thông tin chi tiết Phòng {roomDetails?.roomNumber || '...'} (Bảo vệ)
-                    </Title>
-                </Header>
+            <Layout
+                style={{
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                <AppHeader
+                    header={<><Link to="/guard/rooms" style={{ marginRight: 12 }}><ArrowLeftOutlined /></Link> Thông tin chi tiết Phòng {roomDetails?.roomNumber || '...'} (Bảo vệ)</>}
+                    toggleSideBar={() => setCollapsed(prev => !prev)}
+                    collapsed={collapsed}
+                />
 
-                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
+                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', marginTop: 64 }}>
 
                     {/* 1. THÔNG TIN PHÒNG */}
                     <Card title="Thông tin chung" style={{ marginBottom: 20 }}>

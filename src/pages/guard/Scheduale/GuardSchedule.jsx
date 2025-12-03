@@ -6,6 +6,8 @@ import {
     ClockCircleOutlined, UserOutlined, EnvironmentOutlined, FilterOutlined, LogoutOutlined, MenuOutlined // <-- Thêm LogoutOutlined, MenuOutlined
 } from "@ant-design/icons";
 import { GuardSidebar } from '../../../components/layout/GuardSidebar.jsx';
+import { AppHeader } from '../../../components/layout/AppHeader.jsx';
+import { useCollapsed } from '../../../hooks/useCollapsed.js';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom'; // <-- Thêm useNavigate
@@ -26,8 +28,9 @@ const { Option } = Select;
 
 // --- COMPONENT CHÍNH ---
 export function GuardSchedule() {
-    // Layout State
-    const [collapsed, setCollapsed] = useState(false);
+    // Layout State (shared)
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const activeKey = 'guard-schedule';
 
     // Data States
@@ -53,9 +56,7 @@ export function GuardSchedule() {
         message.success('Đã đăng xuất thành công!');
         navigate('/');
     };
-    const toggleSideBar = () => {
-        setCollapsed(prev => !prev);
-    }
+    const toggleSideBar = () => { setCollapsed(prev => !prev); }
     // === KẾT THÚC LOGIC LOGOUT VÀ TOGGLE ===
 
 
@@ -198,25 +199,15 @@ export function GuardSchedule() {
         <RequireRole role = "GUARD">
         <Layout style={{ minHeight: '100vh' }}>
             <GuardSidebar collapsed={collapsed} active={activeKey} />
-            <Layout>
-                {/* === HEADER TÍCH HỢP LOGOUT VÀ MENU TOGGLE === */}
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <MenuOutlined onClick={toggleSideBar} style={{ fontSize: '18px', cursor: 'pointer' }} />
-                        <Title level={3} style={{ margin: 0 }}>Lịch làm việc Cá nhân</Title>
-                    </div>
-                    <Button
-                        type="default"
-                        icon={<LogoutOutlined />}
-                        onClick={handleLogout}
-                    >
-                        Đăng xuất
-                    </Button>
-                </Header>
-                {/* === KẾT THÚC HEADER === */}
-
-                <Content style={{ margin: '16px', padding: 24, background: '#fff' }}>
-                    <Spin spinning={loading}>
+            <Layout
+                style={{
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                <AppHeader header={"Lịch làm việc Cá nhân (Bảo vệ)"} toggleSideBar={toggleSideBar} collapsed={collapsed} />
+                <Content style={{ margin: '16px', padding: 24, background: '#fff', marginTop: 64 }}>
+                     <Spin spinning={loading}>
 
                         {/* --- THÔNG TIN VÀ CHỌN THÁNG/NĂM --- */}
                         <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>

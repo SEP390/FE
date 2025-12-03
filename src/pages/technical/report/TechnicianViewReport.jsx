@@ -102,7 +102,7 @@ export function TechnicianViewReport() {
             <Layout>
                 <AppHeader/>
 
-                <Content style={{margin: "24px", background: "#fff", padding: 24}}>
+                <Content style={{margin: "24px", background: "#fff", padding: 24, paddingTop: 88}}>
                     <Button
                         style={{marginBottom:"10px"}}
                         type="primary"

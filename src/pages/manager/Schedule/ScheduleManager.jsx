@@ -306,16 +306,22 @@ export function ScheduleManager() {
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
-            <Layout>
-                {/* === SỬ DỤNG APPHEADER THAY THẾ HEADER CŨ === */}
-                <AppHeader
-                    header={"Quản lý Lịch làm việc"}
-                    toggleSideBar={toggleSideBar}
-                />
-                {/* === KẾT THÚC APPHEADER === */}
+            <Layout
+                style={{
+                    marginTop: 64,
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                 {/* === SỬ DỤNG APPHEADER THAY THẾ HEADER CŨ === */}
+                 <AppHeader
+                     header={"Quản lý Lịch làm việc"}
+                     toggleSideBar={toggleSideBar}
+                 />
+                 {/* === KẾT THÚC APPHEADER === */}
 
-                <Content style={{ margin: '16px', padding: 24, background: '#fff' }}>
-                    <Spin spinning={loadingDependencies}>
+                 <Content style={{ margin: '16px', padding: 24, background: '#fff' }}>
+                     <Spin spinning={loadingDependencies}>
 
                         {/* --- THANH CÔNG CỤ (TOOLBAR) --- */}
                         <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
@@ -406,9 +412,9 @@ export function ScheduleManager() {
                                 );
                             }}
                         />
-                    </Spin>
-                </Content>
-            </Layout>
+                     </Spin>
+                 </Content>
+             </Layout>
 
             {/* --- MODAL 1: TẠO MỚI NGÀY LẺ (SINGLE DATE) --- */}
             <Modal

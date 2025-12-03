@@ -5,6 +5,7 @@ import {Layout, Typography, Spin, Descriptions, Button, Image, Row, Col, Tag, Ap
 import { ArrowLeftOutlined, UserOutlined, ContactsOutlined, FileTextOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
+import { useCollapsed } from '../../../hooks/useCollapsed.js';
 import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
 const { Header, Content } = Layout;
@@ -48,7 +49,9 @@ export function StaffDetailPage() {
     const [staff, setStaff] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const [collapsed] = useState(false);
+    // use global collapsed state
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const activeKey = 'manager-staff';
 
     useEffect(() => {
@@ -82,7 +85,7 @@ export function StaffDetailPage() {
     const renderContent = () => {
         if (loading) {
             return (
-                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', textAlign: 'center' }}>
+                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', textAlign: 'center', marginTop: 80 }}>
                     <Spin tip="Đang tải..." size="large" />
                 </Content>
             );
@@ -90,7 +93,7 @@ export function StaffDetailPage() {
 
         if (!staff) {
             return (
-                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
+                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', marginTop: 80 }}>
                     <Button
                         onClick={() => navigate('/manager/staff')}
                         icon={<ArrowLeftOutlined />}
@@ -108,7 +111,7 @@ export function StaffDetailPage() {
 
         return (
             <RequireRole role = "MANAGER">
-            <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
+            <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', marginTop: 80 }}>
                 <Button
                     onClick={() => navigate('/manager/staff')}
                     icon={<ArrowLeftOutlined />}
@@ -184,13 +187,18 @@ export function StaffDetailPage() {
         <Layout style={{ minHeight: '100vh' }}>
             <SideBarManager collapsed={collapsed} active={activeKey} />
 
-            <Layout>
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80 }}>
+            <Layout
+                style={{
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80, position: 'fixed', top: 0, right: 0, zIndex: 999, left: collapsed ? 80 : 260, transition: 'left 0.3s ease' }}>
                     <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>Chi tiết nhân viên</Title>
                 </Header>
 
                 {renderContent()}
             </Layout>
-        </Layout>
-    );
+         </Layout>
+     );
 }

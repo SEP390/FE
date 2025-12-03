@@ -51,7 +51,7 @@ export function TeachnicalCreateReport() {
             <SideBarTechnical collapsed={collapsed} active="technical-create-report"/>
             <Layout>
                 <AppHeader toggleSideBar={toggleSideBar}/>
-                <Layout.Content style={{margin: "24px 16px", padding: 24, background: "#fff"}}>
+                <Layout.Content style={{margin: "24px 16px", padding: 24, background: "#fff", paddingTop: 88}}>
                     <Form
                         form={form}
                         layout="vertical"

@@ -2,15 +2,17 @@ import { useEffect, useState } from "react";
 import {Layout, Typography, Table, Button, Tag, message} from "antd";
 import { EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
-import axios from "axios";
 import {AppHeader} from "../../../components/layout/AppHeader.jsx";
+import { useCollapsed } from "../../../hooks/useCollapsed.js";
+import axios from "axios";
 import {ReportDetailModal} from "../../../components/Report/ReportDetailModal.jsx";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
 export function GuardViewReport() {
-    const [collapsed, setCollapsed] = useState(false);
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
@@ -97,13 +99,20 @@ export function GuardViewReport() {
         },
     ];
 
+    const toggleSideBar = () => setCollapsed(prev => !prev);
+
     return (
         <Layout className="!h-screen">
             <GuardSidebar collapsed={collapsed} active="guard-reports" />
-            <Layout>
-                <AppHeader/>
+            <Layout
+                style={{
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                <AppHeader toggleSideBar={toggleSideBar} collapsed={collapsed} header={"Báo cáo (Bảo vệ)"} />
 
-                <Content style={{margin: "24px", background: "#fff", padding: 24}}>
+                <Content style={{margin: "24px", background: "#fff", padding: 24, marginTop: 64}}>
                     <Button
                         style={{marginBottom:"10px"}}
                         type="primary"

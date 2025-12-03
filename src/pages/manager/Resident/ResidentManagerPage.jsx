@@ -130,14 +130,20 @@ export function ResidentManagerPage() {
         <RequireRole role = "MANAGER">
         <Layout className={"!h-screen"}>
             <SideBarManager active={"manager-residents"} collapsed={collapsed}/>
-            <Layout>
-                {/* === SỬ DỤNG APPHEADER THAY THẾ HEADER CŨ === */}
-                <AppHeader
-                    header={"Quản lý sinh viên"}
-                    toggleSideBar={toggleSideBar}
-                />
-                {/* === KẾT THÚC APPHEADER === */}
-                <Content className={"!overflow-auto h-full p-5 flex flex-col"}>
+            <Layout
+                style={{
+                    marginTop: 64,
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                 {/* === SỬ DỤNG APPHEADER THAY THẾ HEADER CŨ === */}
+                 <AppHeader
+                     header={"Quản lý sinh viên"}
+                     toggleSideBar={toggleSideBar}
+                 />
+                 {/* === KẾT THÚC APPHEADER === */}
+                 <Content className={"!overflow-auto h-full p-5 flex flex-col"}>
 
                     {/* === SỬA LẠI: Thêm thanh tìm kiếm === */}
                     <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>

@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Table, Button, Tag, Alert, Select, Input, Space, DatePicker } from "antd";
+import { Layout, Card, Table, Button, Tag, Alert, Select, Input, Space, DatePicker } from "antd";
 import { useNavigate } from "react-router-dom";
 import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
 import dayjs from "dayjs";
 
 const { Content } = Layout;
-const { Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
@@ -96,7 +95,7 @@ export function ManagerRequests() {
             console.error("Error fetching requests:", requestsError);
             setDataSource([]);
         }
-    }, [isRequestsSuccess, isRequestsError, requestsData, requestsError, isRequestsComplete]);
+    }, [isRequestsSuccess, isRequestsError, requestsData, requestsError, isRequestsComplete, showAnonymous]);
 
     // Handler cho quick date filter
     const handleQuickDateFilterChange = (value) => {
@@ -365,145 +364,144 @@ export function ManagerRequests() {
     return (
         <Layout style={{ minHeight: "100vh" }}>
             <SideBarManager collapsed={collapsed} active="manager-requests" />
-            <Layout>
+            <Layout style={{ marginLeft: collapsed ? 80 : 250, transition: "all 0.2s" }}>
                 <AppHeader
                     toggleSideBar={() => setCollapsed(!collapsed)}
-                    header={
-                        <Title level={2} style={{ margin: 0, display: "inline-block" }}>
-                            Quản lý yêu cầu sinh viên
-                        </Title>
-                    }
+                    header="Quản lý yêu cầu sinh viên"
+                    collapsed={collapsed}
                 />
 
-                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-                    {/* Statistics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">{totalRequests}</div>
-                            <div className="text-gray-600">Tổng số yêu cầu</div>
-                        </Card>
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-orange-600">{pendingRequests}</div>
-                            <div className="text-gray-600">Đang xử lý</div>
-                        </Card>
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-green-600">{approvedRequests}</div>
-                            <div className="text-gray-600">Đã chấp nhận</div>
-                        </Card>
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-red-600">{rejectedRequests}</div>
-                            <div className="text-gray-600">Từ chối</div>
-                        </Card>
-                    </div>
+                <Content style={{ marginTop: "64px", padding: "24px", background: "#f0f2f5", minHeight: "calc(100vh - 64px)" }}>
+                    <div style={{ background: "#fff", padding: 24, borderRadius: "8px" }}>
+                        {/* Statistics Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <Card className="text-center">
+                                <div className="text-2xl font-bold text-blue-600">{totalRequests}</div>
+                                <div className="text-gray-600">Tổng số yêu cầu</div>
+                            </Card>
+                            <Card className="text-center">
+                                <div className="text-2xl font-bold text-orange-600">{pendingRequests}</div>
+                                <div className="text-gray-600">Đang xử lý</div>
+                            </Card>
+                            <Card className="text-center">
+                                <div className="text-2xl font-bold text-green-600">{approvedRequests}</div>
+                                <div className="text-gray-600">Đã chấp nhận</div>
+                            </Card>
+                            <Card className="text-center">
+                                <div className="text-2xl font-bold text-red-600">{rejectedRequests}</div>
+                                <div className="text-gray-600">Từ chối</div>
+                            </Card>
+                        </div>
 
-                    {/* Filters */}
-                    <Space
-                        style={{
-                            marginBottom: 16,
-                            width: "100%",
-                            justifyContent: "space-between",
-                            flexWrap: "wrap",
-                        }}
-                    >
-                        <Space wrap>
-                            <Input
-                                placeholder="Tìm kiếm sinh viên..."
-                                value={searchText}
-                                onChange={(e) => setSearchText(e.target.value)}
-                                prefix={<SearchOutlined />}
-                                style={{ width: 200 }}
-                                allowClear
-                            />
-                            <Select
-                                value={quickDateFilter}
-                                onChange={handleQuickDateFilterChange}
-                                style={{ width: 180 }}
-                            >
-                                <Option value="all">Tất cả thời gian</Option>
-                                <Option value="today">Hôm nay</Option>
-                                <Option value="week">1 tuần</Option>
-                                <Option value="month">1 tháng</Option>
-                                <Option value="3months">3 tháng đổ lại</Option>
-                            </Select>
-                            <RangePicker
-                                placeholder={["Từ ngày", "Đến ngày"]}
-                                format="DD/MM/YYYY"
-                                value={dateRange}
-                                onChange={handleDateRangeChange}
-                                style={{ width: 250 }}
-                                allowClear
-                            />
-                            <Select
-                                placeholder="Chọn loại yêu cầu"
-                                style={{ width: 200 }}
-                                onChange={(value) => {
-                                    setTypeFilter(value);
-                                    if (value !== 'ANONYMOUS') {
-                                        setSearchText('');
-                                        setStatusFilter('all');
-                                    }
-                                }}
-                                value={typeFilter}
-                            >
-                                <Option value="all">Tất cả</Option>
-                                <Option value="CHECKOUT">Trả phòng</Option>
-                                <Option value="SECURITY_INCIDENT">Sự cố an ninh</Option>
-                                <Option value="METER_READING_DISCREPANCY">Chênh lệch đồng hồ</Option>
-                                <Option value="MAINTENANCE">Bảo trì</Option>
-                                <Option value="TECHNICAL_ISSUE">Yêu cầu kỹ thuật</Option>
-                                <Option value="COMPLAINT">Khiếu nại</Option>
-                                <Option value="ANONYMOUS">Yêu cầu ẩn danh</Option>
-                                <Option value="OTHER">Khác</Option>
-                            </Select>
-                            <Select
-                                value={statusFilter}
-                                onChange={setStatusFilter}
-                                style={{ width: 150 }}
-                            >
-                                <Option value="all">Tất cả trạng thái</Option>
-                                {uniqueStatuses.map(status => (
-                                    <Option key={status} value={status}>
-                                        {formatStatus(status)}
-                                    </Option>
-                                ))}
-                            </Select>
-                            <Button
-                                onClick={() => {
-                                    setStatusFilter("all");
-                                    setTypeFilter("all");
-                                    setSearchText("");
-                                    setDateRange(null);
-                                    setQuickDateFilter("all");
-                                }}
-                            >
-                                Xóa bộ lọc
-                            </Button>
-                        </Space>
-                    </Space>
-
-                    {/* Bảng danh sách */}
-                    <div className="mb-4">
-                        {showAnonymous && (
-                            <Alert
-                                message="Đang hiển thị yêu cầu ẩn danh"
-                                type="info"
-                                showIcon
-                                className="mb-4"
-                            />
-                        )}
-                        <Table
-                            columns={columns}
-                            dataSource={filteredData}
-                            pagination={{ pageSize: 10 }}
-                            scroll={{ x: 1000 }}
-                            rowKey="requestId"
-                            loading={isLoading}
-                            locale={{
-                                emptyText: showAnonymous
-                                    ? 'Không có yêu cầu ẩn danh nào'
-                                    : 'Không có dữ liệu'
+                        {/* Filters */}
+                        <Space
+                            style={{
+                                marginBottom: 16,
+                                width: "100%",
+                                justifyContent: "space-between",
+                                flexWrap: "wrap",
                             }}
-                        />
+                        >
+                            <Space wrap>
+                                <Input
+                                    placeholder="Tìm kiếm sinh viên..."
+                                    value={searchText}
+                                    onChange={(e) => setSearchText(e.target.value)}
+                                    prefix={<SearchOutlined />}
+                                    style={{ width: 200 }}
+                                    allowClear
+                                />
+                                <Select
+                                    value={quickDateFilter}
+                                    onChange={handleQuickDateFilterChange}
+                                    style={{ width: 180 }}
+                                >
+                                    <Option value="all">Tất cả thời gian</Option>
+                                    <Option value="today">Hôm nay</Option>
+                                    <Option value="week">1 tuần</Option>
+                                    <Option value="month">1 tháng</Option>
+                                    <Option value="3months">3 tháng đổ lại</Option>
+                                </Select>
+                                <RangePicker
+                                    placeholder={["Từ ngày", "Đến ngày"]}
+                                    format="DD/MM/YYYY"
+                                    value={dateRange}
+                                    onChange={handleDateRangeChange}
+                                    style={{ width: 250 }}
+                                    allowClear
+                                />
+                                <Select
+                                    placeholder="Chọn loại yêu cầu"
+                                    style={{ width: 200 }}
+                                    onChange={(value) => {
+                                        setTypeFilter(value);
+                                        if (value !== 'ANONYMOUS') {
+                                            setSearchText('');
+                                            setStatusFilter('all');
+                                        }
+                                    }}
+                                    value={typeFilter}
+                                >
+                                    <Option value="all">Tất cả</Option>
+                                    <Option value="CHECKOUT">Trả phòng</Option>
+                                    <Option value="SECURITY_INCIDENT">Sự cố an ninh</Option>
+                                    <Option value="METER_READING_DISCREPANCY">Chênh lệch đồng hồ</Option>
+                                    <Option value="MAINTENANCE">Bảo trì</Option>
+                                    <Option value="TECHNICAL_ISSUE">Yêu cầu kỹ thuật</Option>
+                                    <Option value="COMPLAINT">Khiếu nại</Option>
+                                    <Option value="ANONYMOUS">Yêu cầu ẩn danh</Option>
+                                    <Option value="OTHER">Khác</Option>
+                                </Select>
+                                <Select
+                                    value={statusFilter}
+                                    onChange={setStatusFilter}
+                                    style={{ width: 150 }}
+                                >
+                                    <Option value="all">Tất cả trạng thái</Option>
+                                    {uniqueStatuses.map(status => (
+                                        <Option key={status} value={status}>
+                                            {formatStatus(status)}
+                                        </Option>
+                                    ))}
+                                </Select>
+                                <Button
+                                    onClick={() => {
+                                        setStatusFilter("all");
+                                        setTypeFilter("all");
+                                        setSearchText("");
+                                        setDateRange(null);
+                                        setQuickDateFilter("all");
+                                    }}
+                                >
+                                    Xóa bộ lọc
+                                </Button>
+                            </Space>
+                        </Space>
+
+                        {/* Bảng danh sách */}
+                        <div className="mb-4">
+                            {showAnonymous && (
+                                <Alert
+                                    message="Đang hiển thị yêu cầu ẩn danh"
+                                    type="info"
+                                    showIcon
+                                    className="mb-4"
+                                />
+                            )}
+                            <Table
+                                columns={columns}
+                                dataSource={filteredData}
+                                pagination={{ pageSize: 10 }}
+                                scroll={{ x: 1000 }}
+                                rowKey="requestId"
+                                loading={isLoading}
+                                locale={{
+                                    emptyText: showAnonymous
+                                        ? 'Không có yêu cầu ẩn danh nào'
+                                        : 'Không có dữ liệu'
+                                }}
+                            />
+                        </div>
                     </div>
                 </Content>
             </Layout>

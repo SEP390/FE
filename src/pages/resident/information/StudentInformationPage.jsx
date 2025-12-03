@@ -20,12 +20,10 @@ export function StudentInformationPage() {
     }, []);
 
     // Xử lý dữ liệu từ /users/profile
+
     useEffect(() => {
         if (isProfileSuccess && profileData) {
             console.log("📌 Profile data:", profileData);
-
-            // profileData từ GetUserInformationResponse có các field:
-            // id, username, fullName, phongNum, email, dob, StudentId, gender, slotName, image, role
 
             const formattedDob = profileData.dob
                 ? new Date(profileData.dob).toISOString().split('T')[0]
@@ -42,8 +40,9 @@ export function StudentInformationPage() {
                 dob: formattedDob,
                 gender: formattedGender,
                 mail: profileData.email || 'N/A',
-                phoneNumber: profileData.phongNum || 'N/A',
-                StudentId: profileData.StudentId || 'N/A',
+                phoneNumber: profileData.phongNum || 'N/A',  // ✅ SỬA: phongNum thay vì phoneNumber
+                StudentId: profileData.studentId || 'N/A',    // ✅ SỬA: studentId (chữ s thường)
+                slotName: profileData.slotName || 'N/A',
             });
         }
     }, [isProfileSuccess, profileData]);
@@ -228,7 +227,7 @@ export function StudentInformationPage() {
                                                     <Text strong style={{ color: "#666" }}>Giường:</Text>
                                                 </div>
                                                 <Text style={{ fontSize: "15px" }}>
-                                                    {isRoomSuccess && roomData?.slotName ? roomData.slotName : 'N/A'}
+                                                    {student?.slotName || 'N/A'}
                                                 </Text>
                                             </div>
                                         </div>
