@@ -28,7 +28,7 @@ export function getRoleFromToken(token) {
 export function getRedirectPathForRole(role) {
   if (!role) return '/';
   const normalized = String(role).toLowerCase();
-  if (normalized.includes('manager')) return '/manager';
+  if (normalized.includes('manager')) return '/manager/requests';
   if (normalized.includes('guard')) return '/guard/requests';
   if (normalized.includes('cleaner')) return '/cleaner/schedule';
   if (normalized.includes('technical') || normalized.includes('technician')) return '/technical/requests';
