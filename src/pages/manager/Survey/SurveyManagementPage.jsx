@@ -127,10 +127,10 @@ export function SurveyManagementPage() {
         setModalVisible(true);
     };
 
-    const handleDelete = (record) => {
-        message.warning(`Xóa câu hỏi có id: ${record.id}`);
-        // TODO: gọi API DELETE
-    };
+    // const handleDelete = (record) => {
+    //     message.warning(`Xóa câu hỏi có id: ${record.id}`);
+    //     // TODO: gọi API DELETE
+    // };
 
     const handleCreate = () => {
         setEditID(null);
@@ -143,11 +143,11 @@ export function SurveyManagementPage() {
             label: "Chỉnh sửa",
             onClick: () => handleEdit(record),
         },
-        {
-            key: "delete",
-            label: "Xóa",
-            onClick: () => handleDelete(record),
-        },
+        // {
+        //     key: "delete",
+        //     label: "Xóa",
+        //     onClick: () => handleDelete(record),
+        // },
     ];
 
     const columns = [
