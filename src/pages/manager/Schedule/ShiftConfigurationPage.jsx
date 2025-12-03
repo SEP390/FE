@@ -1,7 +1,5 @@
-// File: src/pages/manager/ShiftConfigurationPage.jsx
-
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Table, Button, Space, Modal, Form, Input, TimePicker, message } from 'antd';
+import {Layout, Typography, Table, Button, Space, Modal, Form, Input, TimePicker, App} from 'antd';
 // 1. Import thêm ArrowLeftOutlined
 import { PlusOutlined, EditOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
@@ -24,7 +22,8 @@ const { Title } = Typography;
 
 export function ShiftConfigurationPage() {
     const [collapsed] = useState(false);
-    const activeKey = 'manager-schedule'; // Giữ activeKey để sidebar hiển thị đúng
+    const activeKey = 'manager-schedule';
+    const {message}=App.useApp();
 
     // 3. Khởi tạo navigate
     const navigate = useNavigate();

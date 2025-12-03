@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     Layout, Typography, Calendar, Select, Button, Tag, Space, Modal, Form,
-    Input, Row, Col, message, Spin, DatePicker, Checkbox, // <<< Thêm DatePicker và Checkbox
+    Input, Row, Col, Spin, DatePicker, Checkbox, App, // <<< Thêm DatePicker và Checkbox
 } from 'antd';
 import { PlusOutlined, UserOutlined, ClockCircleOutlined, EnvironmentOutlined, FilterOutlined, SettingOutlined } from "@ant-design/icons";
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
@@ -33,6 +33,7 @@ export function ScheduleManager() {
     const collapsed = useCollapsed(state => state.collapsed);
     const setCollapsed = useCollapsed(state => state.setCollapsed);
 
+    const {message}=App.useApp();
     const activeKey = 'manager-schedule';
 
     const navigate = useNavigate();

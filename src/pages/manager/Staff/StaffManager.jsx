@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Layout, Typography, Row, Col, Table, Input, Select, Button, Tag, Space,
-    Dropdown, Menu, message, Spin, Modal, Form, DatePicker, Upload
+    Dropdown, Menu, Modal, Form, DatePicker, Upload, App
 } from 'antd';
 import {
     SearchOutlined,
@@ -43,6 +43,7 @@ export function StaffManager() {
     // (States chung)
     const collapsed = useCollapsed(state => state.collapsed);
     const setCollapsed = useCollapsed(state => state.setCollapsed);
+    const {message}=App.useApp();
 
     const activeKey = 'manager-staff';
     const [staffData, setStaffData] = useState([]);

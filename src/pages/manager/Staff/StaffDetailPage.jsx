@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
-import { Layout, Typography, Spin, Descriptions, Button, message, Image, Row, Col, Tag } from 'antd';
+import {Layout, Typography, Spin, Descriptions, Button, Image, Row, Col, Tag, App} from 'antd';
 import { ArrowLeftOutlined, UserOutlined, ContactsOutlined, FileTextOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
@@ -44,7 +44,7 @@ const getGenderText = (gender) => {
 export function StaffDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    // staff sẽ chứa dữ liệu phản hồi từ GetEmployeeByIdResponse
+    const {message}=App.useApp();
     const [staff, setStaff] = useState(null);
     const [loading, setLoading] = useState(true);
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Table, Form, InputNumber, Space, message, Tag, Tooltip } from 'antd';
+import {Modal, Button, Table, Form, InputNumber, Space, Tag, Tooltip, App} from 'antd';
 import { EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
@@ -13,6 +13,7 @@ export const RoomPricingModal = ({ open, onCancel, onDataChange }) => {
     const [isFormVisible, setIsFormVisible] = useState(false);
     const [editingRecord, setEditingRecord] = useState(null);
     const [form] = Form.useForm();
+    const {message}=App.useApp();
 
     // Hàm load dữ liệu
     const fetchPricings = async () => {
