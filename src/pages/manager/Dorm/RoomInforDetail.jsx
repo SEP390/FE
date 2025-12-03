@@ -6,6 +6,7 @@ import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
 import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
+import { useCollapsed } from '../../../hooks/useCollapsed.js';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -21,7 +22,7 @@ const translateGender = (gender) => {
 export function RoomInforDetail() {
     const { roomId } = useParams();
     const activeKey = 'manager-rooms';
-    const [collapsed, setCollapsed] = useState(false);
+    const collapsed = useCollapsed(state => state.collapsed);
 
     // State dữ liệu
     const [roomDetails, setRoomDetails] = useState(null);
@@ -85,8 +86,14 @@ export function RoomInforDetail() {
         return (
             <Layout style={{ minHeight: '100vh' }}>
                 <SideBarManager collapsed={collapsed} active={activeKey} />
-                <Layout>
-                    <Header style={{ background: '#fff', padding: '0 24px', height: 80, display: 'flex', alignItems: 'center' }}>
+                <Layout
+                    style={{
+                        marginTop: 64, // Header height
+                        marginLeft: collapsed ? 80 : 260, // Sidebar width when collapsed/expanded
+                        transition: 'margin-left 0.3s ease',
+                    }}
+                >
+                    <Header style={{ background: '#fff', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center' }}>
                         <Link to="/manager/rooms" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)', fontSize: '20px' }}><ArrowLeftOutlined /></Link>
                         <Title level={2} style={{ margin: 0 }}>Đang tải...</Title>
                     </Header>
@@ -103,8 +110,14 @@ export function RoomInforDetail() {
         return (
             <Layout style={{ minHeight: '100vh' }}>
                 <SideBarManager collapsed={collapsed} active={activeKey} />
-                <Layout>
-                    <Header style={{ background: '#fff', padding: '0 24px', height: 80 }}>
+                <Layout
+                    style={{
+                        marginTop: 64,
+                        marginLeft: collapsed ? 80 : 260,
+                        transition: 'margin-left 0.3s ease',
+                    }}
+                >
+                    <Header style={{ background: '#fff', padding: '0 24px', height: 64 }}>
                         <Link to="/manager/rooms"><ArrowLeftOutlined /> Quay lại</Link>
                     </Header>
                     <Content style={{ padding: 24 }}>
@@ -121,9 +134,15 @@ export function RoomInforDetail() {
             <Layout style={{ minHeight: '100vh' }}>
                 <SideBarManager collapsed={collapsed} active={activeKey} />
 
-                <Layout>
-                    <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80 }}>
-                        <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>
+                <Layout
+                    style={{
+                        marginTop: 64,
+                        marginLeft: collapsed ? 80 : 260,
+                        transition: 'margin-left 0.3s ease',
+                    }}
+                >
+                    <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 64 }}>
+                        <Title level={2} style={{ margin: 0, lineHeight: '64px' }}>
                             <Link to="/manager/rooms" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)' }}>
                                 <ArrowLeftOutlined />
                             </Link>

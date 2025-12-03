@@ -101,7 +101,7 @@ export function NewsManagePage() {
         setEditModalVisible(true);
     };
     const toggleSideBar = () => {
-        setCollapsed(!collapsed);
+        setCollapsed(prev => !prev);
     }
 
     const handleToggleStatus = async (record) => {
@@ -203,8 +203,14 @@ export function NewsManagePage() {
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
-            <SideBarManager  active="manager-news" />
-            <Layout>
+            <SideBarManager collapsed={collapsed} active="manager-news" />
+            <Layout
+                style={{
+                    marginTop: 64, // account for fixed Header height
+                    marginLeft: collapsed ? 80 : 260, // account for Sidebar width
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
                 <AppHeader header={"Quản lý tin tức"} toggleSideBar={toggleSideBar}/>
 
                 <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
@@ -262,5 +268,3 @@ export function NewsManagePage() {
         </Layout>
     );
 }
-
-

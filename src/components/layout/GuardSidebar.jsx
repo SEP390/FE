@@ -5,10 +5,11 @@ import {
     FileTextOutlined,
     ThunderboltOutlined,
 } from "@ant-design/icons";
-import Sider from "antd/es/layout/Sider.js";
-import { Menu } from "antd";
+import { Menu, Layout } from "antd";
 import { Link } from "react-router-dom";
 import { Bed } from "lucide-react";
+
+const { Sider } = Layout;
 
 const items = [
     {
@@ -44,6 +45,8 @@ const items = [
 ];
 
 export function GuardSidebar({ collapsed, active }) {
+    // Sidebar starts below Header which has height 64px
+    const headerHeight = 64;
     return (
         <Sider
             trigger={null}
@@ -51,6 +54,19 @@ export function GuardSidebar({ collapsed, active }) {
             collapsed={collapsed}
             theme="light"
             className={"bg-white border-r border-gray-200"}
+            style={{
+                // Sidebar is fixed under the header to avoid shifting header/content
+                position: 'fixed',
+                top: headerHeight,
+                // Ensure the sidebar is anchored to the left edge of the viewport
+                left: 0,
+                height: `calc(100vh - ${headerHeight}px)`,
+                // Allow sidebar content to scroll if it overflows
+                overflow: 'auto',
+                zIndex: 999,
+            }}
+            width={260}
+            collapsedWidth={80}
         >
             <div className="flex items-center justify-center py-4">
                 <Bed />
@@ -65,4 +81,3 @@ export function GuardSidebar({ collapsed, active }) {
         </Sider>
     );
 }
-

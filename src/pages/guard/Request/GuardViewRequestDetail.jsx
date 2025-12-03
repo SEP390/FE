@@ -5,6 +5,7 @@ import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Input,
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
+import { useCollapsed } from "../../../hooks/useCollapsed.js";
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -15,7 +16,8 @@ export function GuardViewRequestDetail() {
     const { notification } = App.useApp();
     const { requestId } = useParams();
     const navigate = useNavigate();
-    const [collapsed, setCollapsed] = useState(false);
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [requestData, setRequestData] = useState(null);
     const [residentInfo, setResidentInfo] = useState(null);
     const [form] = Form.useForm();
@@ -197,13 +199,18 @@ export function GuardViewRequestDetail() {
     };
 
     const toggleSideBar = () => {
-        setCollapsed(!collapsed);
+        setCollapsed(prev => !prev);
     };
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
             <GuardSidebar collapsed={collapsed} active="guard-requests" />
-            <Layout>
+            <Layout
+                style={{
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
                 <AppHeader
                     toggleSideBar={toggleSideBar}
                     header={
@@ -219,9 +226,10 @@ export function GuardViewRequestDetail() {
                             </Title>
                         </div>
                     }
+                    collapsed={collapsed}
                 />
 
-                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+                <Content style={{ margin: "24px", background: "#fff", padding: 24, marginTop: 64 }}>
                     {isRequestLoading && (
                         <div style={{ textAlign: "center", padding: "60px 0" }}>
                             <Spin size="large" />

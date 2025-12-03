@@ -265,7 +265,7 @@ export function WarehouseManagement() {
             <SideBarTechnical active={activeKey} collapsed={collapsed} />
             <Layout>
                 <AppHeader toggleSideBar={() => setCollapsed(!collapsed)} />
-                <Content className="!overflow-auto h-full p-6 bg-gray-50">
+                <Content className="!overflow-auto h-full p-6 bg-gray-50" style={{paddingTop: 88}}>
                     <div className="max-w-7xl mx-auto">
                         {/* Header */}
                         <div className="mb-6">

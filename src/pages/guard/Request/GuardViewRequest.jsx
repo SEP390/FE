@@ -5,6 +5,7 @@ import { Layout, Typography, Card, Table, Button, Tag, Select, Input, Space } fr
 import { useNavigate } from "react-router-dom";
 import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
+import { useCollapsed } from "../../../hooks/useCollapsed.js";
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -12,7 +13,8 @@ const { Option } = Select;
 
 export function GuardViewRequest() {
     const navigate = useNavigate();
-    const [collapsed, setCollapsed] = useState(false);
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [dataSource, setDataSource] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [statusFilter, setStatusFilter] = useState("all");
@@ -240,16 +242,19 @@ export function GuardViewRequest() {
     const approvedRequests = dataSource.filter(d => d.status === "APPROVED" || d.status === "COMPLETED" || d.status === "ACCEPTED").length;
     const rejectedRequests = dataSource.filter(d => d.status === "REJECTED" || d.status === "CANCELLED").length;
 
-    const toggleSideBar = () => {
-        setCollapsed(!collapsed);
-    };
+    const toggleSideBar = () => { setCollapsed(prev => !prev); };
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
             <GuardSidebar collapsed={collapsed} active="guard-requests" />
-            <Layout>
-                <AppHeader toggleSideBar={toggleSideBar} />
-                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
+            <Layout
+                style={{
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                <AppHeader toggleSideBar={toggleSideBar} collapsed={collapsed} header={"Yêu cầu của sinh viên (Bảo vệ)"} />
+                <Content style={{ margin: "24px", background: "#fff", padding: 24, marginTop: 64 }}>
                     <Title level={2} style={{ marginBottom: 24 }}>
                         Yêu cầu của sinh viên
                     </Title>
@@ -349,4 +354,3 @@ export function GuardViewRequest() {
         </Layout>
     );
 }
-

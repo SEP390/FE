@@ -4,15 +4,18 @@ import {AppHeader} from "../../../components/layout/AppHeader.jsx";
 import React, {useState} from "react";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
+import { useCollapsed } from "../../../hooks/useCollapsed.js";
 
 export function GuardCreateReport() {
-    const [collapsed, setCollapsed] = useState(false);
+    // use shared collapsed
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
     const navigate = useNavigate();
     const { message } = App.useApp();
 
-    const toggleSideBar = () => setCollapsed(!collapsed);
+    const toggleSideBar = () => setCollapsed(prev => !prev);
 
     const onFinish = async (values) => {
         try {
@@ -48,9 +51,14 @@ export function GuardCreateReport() {
     return (
         <Layout style={{minHeight: "100vh"}}>
             <GuardSidebar collapsed={collapsed} active="guard-reports"/>
-            <Layout>
-                <AppHeader toggleSideBar={toggleSideBar}/>
-                <Layout.Content style={{margin: "24px 16px", padding: 24, background: "#fff"}}>
+            <Layout
+                style={{
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
+                <AppHeader toggleSideBar={toggleSideBar} collapsed={collapsed} header={"Tạo báo cáo (Bảo vệ)"} />
+                <Layout.Content style={{margin: "24px 16px", padding: 24, background: "#fff", marginTop: 64}}>
                     <Form
                         form={form}
                         layout="vertical"

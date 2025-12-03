@@ -337,7 +337,7 @@ export function WarehouseHistory() {
             <SideBarTechnical active={activeKey} collapsed={collapsed} />
             <Layout>
                 <AppHeader toggleSideBar={() => setCollapsed(!collapsed)} />
-                <Content className={"!overflow-auto h-full p-5 flex flex-col"}>
+                <Content className={"!overflow-auto h-full p-5 flex flex-col"} style={{paddingTop: 88}}>
                     <div className="p-0">
                         <Title level={3} style={{ marginBottom: 16 }}>Lịch sử kho kỹ thuật</Title>
 

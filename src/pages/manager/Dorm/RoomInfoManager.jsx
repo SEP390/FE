@@ -313,7 +313,14 @@ export function RoomInfoManager() {
         <RequireRole role = "MANAGER">
             <Layout style={{ minHeight: '100vh' }}>
                 <SideBarManager collapsed={collapsed} active={activeKey} />
-                <Layout>
+                <Layout
+                    // THÊM: Điều chỉnh margin cho Layout nội dung để bù đắp Sidebar cố định
+                    style={{
+                        marginTop: 64, // Bù đắp Header (H = 64px)
+                        marginLeft: collapsed ? 80 : 260, // Bù đắp Sidebar
+                        transition: 'margin-left 0.3s ease',
+                    }}
+                >
                     <AppHeader
                         header={"Quản lý ký túc xá / Thông tin phòng"}
                         toggleSideBar={toggleSideBar}

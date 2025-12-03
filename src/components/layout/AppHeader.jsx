@@ -1,12 +1,13 @@
-import {LogoutOutlined, MenuOutlined} from "@ant-design/icons";
-import {Button, Popconfirm, Layout} from "antd";
+import {LogoutOutlined, MenuOutlined, UserOutlined} from "@ant-design/icons";
+import {Button, Popconfirm, Layout, Avatar, Space} from "antd";
 import React from "react";
 import {useNavigate} from "react-router-dom";
 import {useToken} from "../../hooks/useToken.js";
+import {Bed} from "lucide-react";
 
 const {Header} = Layout;
 
-export function AppHeader({ toggleSideBar, header }) {
+export function AppHeader({ toggleSideBar, header, collapsed = false }) {
     const navigate = useNavigate();
     const {setToken} = useToken();
 
@@ -15,15 +16,55 @@ export function AppHeader({ toggleSideBar, header }) {
         navigate("/");
     }
 
-    return <>
-        <Header className={"!bg-white p-2"}>
-            <MenuOutlined onClick={toggleSideBar} className={"text-lg cursor-pointer pr-5"}/>
-            {header}
-            <div className={"float-right"}>
-                <Popconfirm onConfirm={onLogout} title={"Do you want to logout?"} icon={<LogoutOutlined />}>
-                    <Button>Logout</Button>
-                </Popconfirm>
+    return (
+        <Header
+            className="!bg-gradient-to-r from-blue-600 to-blue-500 shadow-md px-4 flex items-center justify-between fixed top-0 z-[1000] h-16"
+            style={{
+                // Header spans full viewport width and anchors to left
+                width: '100%',
+                left: 0,
+                transition: 'all 0.3s ease',
+            }}
+        >
+            <div className="flex items-center gap-4">
+                <MenuOutlined
+                    onClick={toggleSideBar}
+                    className="text-xl cursor-pointer text-white hover:text-blue-100 transition-colors"
+                />
+                <div
+                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => navigate("/")}
+                >
+                    <Bed size={28} className="text-white" />
+                    <span className="text-white font-semibold text-lg hidden sm:inline">
+                        {header || "Hệ thống quản lý KTX"}
+                    </span>
+                </div>
             </div>
+
+            <Space size="middle">
+                <Avatar
+                    size="large"
+                    icon={<UserOutlined />}
+                    className="bg-blue-400 cursor-pointer hover:bg-blue-300 transition-colors"
+                />
+                <Popconfirm
+                    onConfirm={onLogout}
+                    title="Bạn có chắc muốn đăng xuất?"
+                    icon={<LogoutOutlined className="text-red-500" />}
+                    okText="Đăng xuất"
+                    cancelText="Hủy"
+                >
+                    <Button
+                        type="primary"
+                        danger
+                        icon={<LogoutOutlined />}
+                        className="shadow-sm hover:shadow-md transition-shadow"
+                    >
+                        <span className="hidden sm:inline">Đăng xuất</span>
+                    </Button>
+                </Popconfirm>
+            </Space>
         </Header>
-    </>
+    );
 }

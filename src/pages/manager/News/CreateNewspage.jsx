@@ -4,13 +4,16 @@ import {Layout, Typography, Form, Input, Button, Card, Upload, App} from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import * as mammoth from "mammoth";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
+import { useCollapsed } from "../../../hooks/useCollapsed.js";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 const { TextArea } = Input;
 
 export function CreateNewsPage() {
-    const [collapsed] = useState(false);
+    // use global collapsed state so sidebar toggle is consistent app-wide
+    const collapsed = useCollapsed(state => state.collapsed);
+    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [loading, setLoading] = useState(false);
     const [htmlContent, setHtmlContent] = useState("");
     const [form] = Form.useForm();
@@ -64,16 +67,22 @@ export function CreateNewsPage() {
     return (
         <Layout style={{ minHeight: "100vh" }}>
             <SideBarManager collapsed={collapsed} active="manager-news" />
-            <Layout>
+            <Layout
+                style={{
+                    marginTop: 64, // account for fixed Header
+                    marginLeft: collapsed ? 80 : 260,
+                    transition: 'margin-left 0.3s ease',
+                }}
+            >
                 <Header
                     style={{
                         background: "#fff",
                         padding: "0 24px",
                         borderBottom: "1px solid #f0f0f0",
-                        height: 80,
+                        height: 64,
                     }}
                 >
-                    <Title level={2} style={{ margin: 0, lineHeight: "80px" }}>
+                    <Title level={2} style={{ margin: 0, lineHeight: "64px" }}>
                         Tạo tin tức mới
                     </Title>
                 </Header>
