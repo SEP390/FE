@@ -472,7 +472,7 @@ export function ScheduleManager() {
 
             {/* --- MODAL 4: TẠO LỊCH ĐỊNH KỲ (RECURRING) --- */}
             <Modal
-                title="Tạo Lịch Làm Việc Định Kỳ"
+                title="Tạo Lịch Làm Việc"
                 open={isRecurringModalVisible}
                 onOk={() => formRecurring.submit()}
                 onCancel={() => setIsRecurringModalVisible(false)}

@@ -1,4 +1,5 @@
 import { Typography } from "antd";
+import DOMPurify from "dompurify";
 
 const { Title, Text } = Typography;
 
@@ -18,7 +19,7 @@ export function NewsDetailModal({ news }) {
                     padding: 16,
                     marginTop: 16,
                 }}
-                dangerouslySetInnerHTML={{ __html: news.content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(news.content) }}
             />
         </div>
     );

@@ -1,5 +1,6 @@
 import { Modal, Form, Input, Select, Divider, App } from "antd";
 import { useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 
 const { TextArea } = Input;
 
@@ -91,7 +92,7 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
                     overflowY: "auto",
                     maxHeight: 400,
                 }}
-                dangerouslySetInnerHTML={{ __html: htmlPreview }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlPreview)}}
             />
         </Modal>
     );
