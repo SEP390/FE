@@ -100,18 +100,20 @@ export function RoomInfoManager() {
     const [isCreatingBuilding, setIsCreatingBuilding] = useState(false);
     const [isUpdatingRoom, setIsUpdatingRoom] = useState(false);
     const [isAddingSingleRoom, setIsAddingSingleRoom] = useState(false);
-    const [isAddBuildingModalVisible, setIsAddBuildingModalVisible] = useState(false);
+    const [isAddBuildingModalVisible, setIsAddBuildingModalVisible] = useState(false); // Modal Quản lý Tòa nhà (Danh sách/Thêm)
+    const [isEditBuildingModalVisible, setIsEditBuildingModalVisible] = useState(false); // Modal Sửa Tòa nhà <-- MỚI
     const [isPricingModalVisible, setIsPricingModalVisible] = useState(false);
     const [isEditRoomModalVisible, setIsEditRoomModalVisible] = useState(false);
     const [isAddSingleRoomModalVisible, setIsAddSingleRoomModalVisible] = useState(false);
 
     // (State Form)
-    const [formBuilding] = Form.useForm();
+    const [formBuilding] = Form.useForm(); // Sử dụng cho cả Thêm và Sửa Tòa nhà
     const [formEditRoom] = Form.useForm();
     const [formAddSingleRoom] = Form.useForm();
 
     // (State Editing & Selection)
     const [editingRoom, setEditingRoom] = useState(null);
+    const [editingBuilding, setEditingBuilding] = useState(null); // <-- MỚI
     const [selectedDormForAddRoom, setSelectedDormForAddRoom] = useState(null);
 
     const navigate = useNavigate();
@@ -183,25 +185,58 @@ export function RoomInfoManager() {
         setFilterFloor(undefined);
     };
 
-    // Modal TÒA NHÀ
-    const handleOkBuilding = async () => {
+    // Modal THÊM TÒA NHÀ
+    const handleOkAddBuilding = async (values) => {
         try {
-            const values = await formBuilding.validateFields();
             setIsCreatingBuilding(true);
             await axiosClient.post('/dorms', { dormName: values.dormName, totalFloor: values.totalFloor });
             message.success(`Đã tạo tòa nhà "${values.dormName}"!`);
-            setIsAddBuildingModalVisible(false);
             formBuilding.resetFields();
             fetchBuildings();
         } catch (error) {
             console.error(error);
-            // 💡 CẢI TIẾN: Lấy thông báo lỗi chi tiết từ API
             const errorMessage = error.response?.data?.message || "Lỗi không xác định khi tạo tòa nhà.";
             message.error(`Tạo tòa nhà thất bại! Chi tiết: ${errorMessage}`);
         } finally {
             setIsCreatingBuilding(false);
         }
     };
+
+    // LOGIC SỬA TÒA NHÀ (MỚI)
+    const handleShowEditBuildingModal = (buildingRecord) => {
+        setEditingBuilding(buildingRecord);
+        // Thiết lập giá trị cho formBuilding (vì nó được tái sử dụng)
+        formBuilding.setFieldsValue({
+            dormName: buildingRecord.dormName,
+            totalFloor: buildingRecord.totalFloor
+        });
+        setIsEditBuildingModalVisible(true);
+    };
+
+    const handleOkEditBuilding = async () => {
+        if (!editingBuilding) return;
+        try {
+            // Lấy values. TotalFloor vẫn được lấy dù bị disabled, miễn là nó đã được setFieldsValue
+            const values = await formBuilding.validateFields();
+            setIsCreatingBuilding(true);
+
+            // Sử dụng endpoint POST /dorms/{id} để cập nhật
+            await axiosClient.post(`/dorms/${editingBuilding.id}`, values);
+
+            message.success(`Đã cập nhật tòa nhà "${values.dormName}"!`);
+            setIsEditBuildingModalVisible(false);
+            setIsAddBuildingModalVisible(false);
+            setEditingBuilding(null);
+            formBuilding.resetFields();
+            fetchBuildings(); // Cập nhật lại danh sách tòa nhà
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || "Lỗi không xác định khi cập nhật tòa nhà.";
+            message.error(`Cập nhật tòa nhà thất bại! Chi tiết: ${errorMessage}`);
+        } finally {
+            setIsCreatingBuilding(false);
+        }
+    };
+    // KẾT THÚC LOGIC SỬA TÒA NHÀ
 
     // Modal SỬA PHÒNG
     const handleShowEditRoomModal = (roomRecord) => {
@@ -223,7 +258,6 @@ export function RoomInfoManager() {
             message.success(`Đã cập nhật phòng ${editingRoom.roomNumber}!`);
             setIsEditRoomModalVisible(false); setEditingRoom(null); fetchRooms(pagination);
         } catch (error) {
-            // 💡 CẢI TIẾN: Lấy thông báo lỗi chi tiết từ API
             const errorMessage = error.response?.data?.message || "Lỗi không xác định khi cập nhật phòng.";
             message.error(`Cập nhật phòng thất bại! Chi tiết: ${errorMessage}`);
         } finally { setIsUpdatingRoom(false); }
@@ -242,7 +276,6 @@ export function RoomInfoManager() {
             message.success(`Đã thêm phòng ${roomDataPayload.roomNumber}!`);
             setIsAddSingleRoomModalVisible(false); formAddSingleRoom.resetFields(); fetchRooms(pagination);
         } catch (error) {
-            // 💡 CẢI TIẾN: Lấy thông báo lỗi chi tiết từ API
             const errorMessage = error.response?.data?.message || "Lỗi không xác định khi thêm phòng lẻ.";
             message.error(`Thêm phòng thất bại! Chi tiết: ${errorMessage}`);
         } finally { setIsAddingSingleRoom(false); }
@@ -342,16 +375,16 @@ export function RoomInfoManager() {
                             <Col><Space>
                                 <Button icon={<DollarCircleOutlined />} onClick={() => setIsPricingModalVisible(true)}>Quản lý giá phòng</Button>
                                 <Button icon={<PlusOutlined />} onClick={() => setIsAddSingleRoomModalVisible(true)}>Thêm phòng lẻ</Button>
-                                {/* NÚT THÊM TÒA NHÀ */}
+                                {/* NÚT QUẢN LÝ TÒA NHÀ (Thêm và Sửa) */}
                                 <Button
                                     type="primary"
-                                    icon={<PlusOutlined />}
+                                    icon={<EditOutlined />}
                                     onClick={() => {
-                                        formBuilding.resetFields();
+                                        formBuilding.resetFields(); // Đảm bảo form sạch khi mở
                                         setIsAddBuildingModalVisible(true);
                                     }}
                                 >
-                                    Thêm tòa nhà
+                                    Quản lý Tòa nhà
                                 </Button>
                             </Space></Col>
                         </Row>
@@ -376,12 +409,75 @@ export function RoomInfoManager() {
                     onDataChange={fetchPricings}
                 />
 
-                {/* === MODAL 2: THÊM TÒA NHÀ === */}
+                {/* === MODAL 2: QUẢN LÝ TÒA NHÀ (THÊM/SỬA) === */}
                 <Modal
-                    title="Thêm tòa nhà mới"
+                    title="Quản lý Tòa nhà Ký túc xá"
                     open={isAddBuildingModalVisible}
-                    onOk={handleOkBuilding}
                     onCancel={() => setIsAddBuildingModalVisible(false)}
+                    footer={null}
+                    destroyOnClose
+                >
+                    <div style={{ marginBottom: 16 }}>
+                        <Typography.Title level={5}>Thêm Tòa nhà mới</Typography.Title>
+                        {/* Tái sử dụng formBuilding cho việc thêm */}
+                        <Form form={formBuilding} layout="inline" onFinish={handleOkAddBuilding} style={{ gap: 8 }}>
+                            <Form.Item
+                                name="dormName"
+                                rules={[{ required: true, message: 'Tên!' }]}
+                                style={{ flex: 1 }}
+                            >
+                                <Input placeholder="Tên tòa nhà (Ví dụ: A5)" />
+                            </Form.Item>
+                            <Form.Item
+                                name="totalFloor"
+                                rules={[{ required: true, message: 'Tầng!' }, { type: 'number', min: 1, message: '>=1' }]}
+                                style={{ width: 100 }}
+                            >
+                                <InputNumber min={1} placeholder="Tầng" precision={0} />
+                            </Form.Item>
+                            <Form.Item>
+                                <Button type="primary" htmlType="submit" loading={isCreatingBuilding} icon={<PlusOutlined />}>Thêm</Button>
+                            </Form.Item>
+                        </Form>
+                    </div>
+
+                    <Typography.Title level={5}>Chỉnh sửa Tòa nhà hiện có</Typography.Title>
+                    <Table
+                        dataSource={buildings}
+                        columns={[
+                            { title: 'Tên', dataIndex: 'dormName', key: 'dormName' },
+                            { title: 'Số tầng', dataIndex: 'totalFloor', key: 'totalFloor', width: 100 },
+                            {
+                                title: 'Hành động',
+                                key: 'action',
+                                width: 80,
+                                render: (text, record) => (
+                                    <Tooltip title="Chỉnh sửa thông tin">
+                                        <Button
+                                            icon={<EditOutlined />}
+                                            onClick={() => handleShowEditBuildingModal(record)}
+                                            size="small"
+                                        />
+                                    </Tooltip>
+                                )
+                            }
+                        ]}
+                        pagination={false}
+                        size="small"
+                        rowKey="id"
+                    />
+                </Modal>
+
+                {/* === MODAL 3: CHỈNH SỬA TÒA NHÀ (ĐÃ CHỈ CHO ĐỔI TÊN) === */}
+                <Modal
+                    title={`Chỉnh sửa Tòa nhà: ${editingBuilding?.dormName || ''}`}
+                    open={isEditBuildingModalVisible}
+                    onOk={handleOkEditBuilding}
+                    onCancel={() => {
+                        setIsEditBuildingModalVisible(false);
+                        setEditingBuilding(null);
+                        formBuilding.resetFields(); // Reset form sau khi đóng
+                    }}
                     confirmLoading={isCreatingBuilding}
                     destroyOnClose
                 >
@@ -391,19 +487,25 @@ export function RoomInfoManager() {
                             label="Tên tòa nhà"
                             rules={[{ required: true, message: 'Vui lòng nhập tên tòa nhà!' }]}
                         >
-                            <Input placeholder="Ví dụ: A5..." />
+                            <Input placeholder="Ví dụ: A5 mới" />
                         </Form.Item>
                         <Form.Item
                             name="totalFloor"
                             label="Tổng số tầng"
                             rules={[{ required: true, message: 'Vui lòng nhập số tầng!' }, { type: 'number', min: 1, message: 'Phải lớn hơn 0' }]}
                         >
-                            <InputNumber min={1} style={{ width: '100%' }} precision={0} />
+                            <InputNumber
+                                min={1}
+                                style={{ width: '100%' }}
+                                precision={0}
+                                disabled // <--- Đã vô hiệu hóa theo yêu cầu
+                            />
                         </Form.Item>
                     </Form>
                 </Modal>
 
-                {/* Modal 3: Sửa Phòng (ĐÃ CẬP NHẬT CẢNH BÁO) */}
+
+                {/* Modal 4: Sửa Phòng (Cũ) */}
                 <Modal
                     title={`Chỉnh sửa phòng ${editingRoom?.roomNumber || ''}`}
                     open={isEditRoomModalVisible}
@@ -434,7 +536,7 @@ export function RoomInfoManager() {
                     </Form>
                 </Modal>
 
-                {/* Modal 4: Thêm Phòng Lẻ */}
+                {/* Modal 5: Thêm Phòng Lẻ (Cũ) */}
                 <Modal
                     title="Thêm phòng lẻ"
                     open={isAddSingleRoomModalVisible}
