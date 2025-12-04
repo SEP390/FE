@@ -1,16 +1,11 @@
-import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { useEffect, useState } from "react";
-import {Layout, Typography, Table, Button, Tag, Dropdown, Modal, Space, Input, App,} from "antd";
-import {EllipsisOutlined, PlusOutlined, SearchOutlined,} from "@ant-design/icons";
+import { Table, Button, Tag, Dropdown, Modal, Space, Input, App } from "antd";
+import { EllipsisOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { NewsDetailModal } from "../../../components/news/NewsDetailModal.jsx";
 import { useNavigate } from "react-router-dom";
 import { UpdateNewsModal } from "../../../components/news/UpdateNewsModal.jsx";
-import {AppHeader} from "../../../components/layout/AppHeader.jsx";
-import {useCollapsed} from "../../../hooks/useCollapsed.js";
+import { LayoutManager } from "../../../components/layout/LayoutManager.jsx";
 
-
-const { Header, Content } = Layout;
-const { Title } = Typography;
 const { Search } = Input;
 
 // Hàm xử lý chuỗi
@@ -25,8 +20,8 @@ function removeVietnameseTones(str = "") {
     return str
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d")
-        .replace(/Đ/g, "D")
+        .replace(/Ä'/g, "d")
+        .replace(/Ä/g, "D")
         .toLowerCase();
 }
 
@@ -35,8 +30,6 @@ function normalizeSpaces(str = "") {
 }
 
 export function NewsManagePage() {
-    const collapsed = useCollapsed(state => state.collapsed);
-    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [news, setNews] = useState([]);
     const [filteredNews, setFilteredNews] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -46,7 +39,6 @@ export function NewsManagePage() {
     const navigate = useNavigate();
     const [editModalVisible, setEditModalVisible] = useState(false);
     const { message } = App.useApp();
-
 
     // Fetch tin tức từ API có token auth
     const fetchNews = async () => {
@@ -90,7 +82,6 @@ export function NewsManagePage() {
         setFilteredNews(filtered);
     };
 
-
     const handleView = (record) => {
         setSelectedNews(record);
         setModalVisible(true);
@@ -100,9 +91,6 @@ export function NewsManagePage() {
         setSelectedNews(record);
         setEditModalVisible(true);
     };
-    const toggleSideBar = () => {
-        setCollapsed(prev => !prev);
-    }
 
     const handleToggleStatus = async (record) => {
         const newStatus = record.status === "VISIBLE" ? "HIDDEN" : "VISIBLE";
@@ -144,7 +132,6 @@ export function NewsManagePage() {
             console.error(err);
         }
     };
-
 
     const getMenuItems = (record) => [
         {
@@ -202,69 +189,57 @@ export function NewsManagePage() {
     ];
 
     return (
-        <Layout style={{ minHeight: "100vh" }}>
-            <SideBarManager collapsed={collapsed} active="manager-news" />
-            <Layout
+        <LayoutManager active="manager-news" header="Quản lý tin tức">
+            <Space
                 style={{
-                    marginTop: 64, // account for fixed Header height
-                    marginLeft: collapsed ? 80 : 260, // account for Sidebar width
-                    transition: 'margin-left 0.3s ease',
+                    marginBottom: 16,
+                    width: "100%",
+                    justifyContent: "space-between",
                 }}
             >
-                <AppHeader header={"Quản lý tin tức"} toggleSideBar={toggleSideBar}/>
+                <Input
+                    placeholder="Tìm kiếm tin tức..."
+                    allowClear
+                    prefix={<SearchOutlined />}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    style={{ maxWidth: 400 }}
+                />
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => navigate("/manager/news/create")}
+                >
+                    Tạo tin mới
+                </Button>
+            </Space>
 
-                <Content style={{ margin: "24px", background: "#fff", padding: 24 }}>
-                    <Space
-                        style={{
-                            marginBottom: 16,
-                            width: "100%",
-                            justifyContent: "space-between",
-                        }}
-                    >
-                        <Input
-                            placeholder="Tìm kiếm tin tức..."
-                            allowClear
-                            prefix={<SearchOutlined />}
-                            onChange={(e) => handleSearch(e.target.value)}
-                            style={{ maxWidth: 400 }}
-                        />
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => navigate("/manager/news/create")}
-                        >
-                            Tạo tin mới
-                        </Button>
-                    </Space>
+            <Table
+                rowKey="newsid"
+                columns={columns}
+                dataSource={filteredNews}
+                loading={loading}
+                bordered
+                pagination={{ pageSize: 6 }}
+            />
 
-                    <Table
-                        rowKey="newsid"
-                        columns={columns}
-                        dataSource={filteredNews}
-                        loading={loading}
-                        bordered
-                        pagination={{ pageSize: 6 }}
-                    />
+            <Modal
+                open={modalVisible}
+                onCancel={() => setModalVisible(false)}
+                footer={null}
+                width={900}
+            >
+                <NewsDetailModal news={selectedNews} />
+            </Modal>
 
-                    <Modal
-                        open={modalVisible}
-                        onCancel={() => setModalVisible(false)}
-                        footer={null}
-                        width={900}
-                    >
-                        <NewsDetailModal news={selectedNews} />
-                    </Modal>
-                    <UpdateNewsModal
-                        open={editModalVisible}
-                        onCancel={() => setEditModalVisible(false)}
-                        news={selectedNews}
-                        onUpdated={(updated) => {
-                            setNews(prev => prev.map(n => n.newsid === updated.newsid ? updated : n));
-                            setFilteredNews(prev => prev.map(n => n.newsid === updated.newsid ? updated : n));
-                        }}
-                    />
-                </Content>
-            </Layout>
-        </Layout>
+            <UpdateNewsModal
+                open={editModalVisible}
+                onCancel={() => setEditModalVisible(false)}
+                news={selectedNews}
+                onUpdated={(updated) => {
+                    setNews(prev => prev.map(n => n.newsid === updated.newsid ? updated : n));
+                    setFilteredNews(prev => prev.map(n => n.newsid === updated.newsid ? updated : n));
+                }}
+            />
+        </LayoutManager>
     );
 }

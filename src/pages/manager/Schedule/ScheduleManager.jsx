@@ -4,13 +4,13 @@ import {
     Input, Row, Col, Spin, DatePicker, Checkbox, App, // <<< Thêm DatePicker và Checkbox
 } from 'antd';
 import { PlusOutlined, UserOutlined, ClockCircleOutlined, EnvironmentOutlined, FilterOutlined, SettingOutlined } from "@ant-design/icons";
-import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
+import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 
-// Import AppHeader (Giả định path đúng)
-import { AppHeader } from '../../../components/layout/AppHeader.jsx';
+// AppHeader not used directly, LayoutManager will provide header
+// import { AppHeader } from '../../../components/layout/AppHeader.jsx';
 // Thêm import hook quản lý state global (Giả định hook này có tồn tại)
 import { useCollapsed } from '../../../hooks/useCollapsed.js';
 
@@ -23,8 +23,7 @@ dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-const { Header, Content } = Layout;
-const { Title } = Typography;
+const { Content } = Layout;
 const { Option } = Select;
 
 // --- COMPONENT CHÍNH ---
@@ -69,13 +68,10 @@ export function ScheduleManager() {
     const [filterEmployeeId, setFilterEmployeeId] = useState(undefined);
     const [filterDormId, setFilterDormId] = useState(undefined);
 
-    // State tạm để lưu kỳ học của ngày được chọn
-    const [selectedDateSemester] = useState(null);
+    // selectedDateSemester not currently used
 
-    // === LOGIC TOGGLE SIDEBAR (ĐÃ SỬA DÙNG CALLBACK) ===
-    const toggleSideBar = () => {
-        setCollapsed(prev => !prev);
-    }
+    // === LOGIC TOGGLE SIDEBAR ===
+    const toggleSideBar = () => { setCollapsed(!collapsed); }
     // === KẾT THÚC LOGIC TOGGLE ===
 
 
@@ -304,24 +300,10 @@ export function ScheduleManager() {
 
     // --- GIAO DIỆN ---
     return (
-        <Layout style={{ minHeight: '100vh' }}>
-            <SideBarManager collapsed={collapsed} active={activeKey} />
-            <Layout
-                style={{
-                    marginTop: 64,
-                    marginLeft: collapsed ? 80 : 260,
-                    transition: 'margin-left 0.3s ease',
-                }}
-            >
-                 {/* === SỬ DỤNG APPHEADER THAY THẾ HEADER CŨ === */}
-                 <AppHeader
-                     header={"Quản lý Lịch làm việc"}
-                     toggleSideBar={toggleSideBar}
-                 />
-                 {/* === KẾT THÚC APPHEADER === */}
-
-                 <Content style={{ margin: '16px', padding: 24, background: '#fff' }}>
-                     <Spin spinning={loadingDependencies}>
+        <RequireRole role = "MANAGER">
+            <LayoutManager active={activeKey} header={"Quản lý Lịch làm việc"}>
+                <Content style={{ margin: '16px', padding: 24, background: '#fff' }}>
+                    <Spin spinning={loadingDependencies}>
 
                         {/* --- THANH CÔNG CỤ (TOOLBAR) --- */}
                         <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
@@ -414,7 +396,7 @@ export function ScheduleManager() {
                         />
                      </Spin>
                  </Content>
-             </Layout>
+             </LayoutManager>
 
             {/* --- MODAL 1: TẠO MỚI NGÀY LẺ (SINGLE DATE) --- */}
             <Modal
@@ -557,7 +539,7 @@ export function ScheduleManager() {
                     </Form.Item>
                 </Form>
             </Modal>
-        </Layout>
+        </RequireRole>
     );
 }
 

@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {Layout, Typography, Table, Button, Space, Modal, Form, Input, TimePicker, App} from 'antd';
-// 1. Import thêm ArrowLeftOutlined
+import { Typography, Table, Button, Space, Modal, Form, Input, TimePicker, App } from 'antd';
 import { PlusOutlined, EditOutlined, ArrowLeftOutlined } from "@ant-design/icons";
-import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
+import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
 import dayjs from 'dayjs';
 
-// 2. Import useNavigate
 import { useNavigate } from 'react-router-dom';
-import { useCollapsed } from '../../../hooks/useCollapsed.js';
 
 // Import các plugin
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -18,16 +15,9 @@ dayjs.extend(isSameOrBefore);
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
-const { Header, Content } = Layout;
-const { Title } = Typography;
-
 export function ShiftConfigurationPage() {
-    const collapsed = useCollapsed(state => state.collapsed);
-    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const activeKey = 'manager-schedule';
     const {message}=App.useApp();
-
-    // 3. Khởi tạo navigate
     const navigate = useNavigate();
 
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -144,24 +134,8 @@ export function ShiftConfigurationPage() {
 
     return (
         <RequireRole role = "MANAGER">
-        <Layout style={{ minHeight: '100vh' }}>
-            <SideBarManager collapsed={collapsed} active={activeKey} />
-            <Layout
-                style={{
-                    marginTop: 64,
-                    marginLeft: collapsed ? 80 : 260,
-                    transition: 'margin-left 0.3s ease',
-                }}
-            >
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 64 }}>
-                    <Title level={2} style={{ margin: 0, lineHeight: '64px' }}>
-                        Cấu hình Ca làm việc
-                    </Title>
-                </Header>
-
-                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
-
-                    {/* --- THANH CÔNG CỤ (CÓ NÚT BACK) --- */}
+            <LayoutManager active={activeKey} header={"Cấu hình Ca làm việc"}>
+                <div style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
                     <Space style={{ marginBottom: 20 }}>
                         {/* Nút Quay Lại */}
                         <Button
@@ -188,30 +162,29 @@ export function ShiftConfigurationPage() {
                         pagination={false}
                         bordered
                     />
-                </Content>
-            </Layout>
 
-            {/* MODAL */}
-            <Modal
-                title={editingShift ? "Chỉnh sửa Ca làm việc" : "Thêm Ca làm việc mới"}
-                open={isModalVisible}
-                onOk={() => form.submit()}
-                onCancel={() => setIsModalVisible(false)}
-                confirmLoading={submitting}
-                okText="Lưu"
-                cancelText="Hủy"
-                destroyOnClose
-            >
-                <Form form={form} layout="vertical" onFinish={handleSaveShift}>
-                    <Form.Item name="name" label="Tên Ca" rules={[{ required: true, message: 'Vui lòng nhập tên ca!' }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="timeRange" label="Thời gian làm việc" rules={[{ required: true, message: 'Vui lòng chọn thời gian!' }]}>
-                        <TimePicker.RangePicker format="HH:mm" style={{ width: '100%' }} />
-                    </Form.Item>
-                </Form>
-            </Modal>
-        </Layout>
-</RequireRole>
+                    {/* MODAL */}
+                    <Modal
+                        title={editingShift ? "Chỉnh sửa Ca làm việc" : "Thêm Ca làm việc mới"}
+                        open={isModalVisible}
+                        onOk={() => form.submit()}
+                        onCancel={() => setIsModalVisible(false)}
+                        confirmLoading={submitting}
+                        okText="Lưu"
+                        cancelText="Hủy"
+                        destroyOnClose
+                    >
+                        <Form form={form} layout="vertical" onFinish={handleSaveShift}>
+                            <Form.Item name="name" label="Tên Ca" rules={[{ required: true, message: 'Vui lòng nhập tên ca!' }]}>
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name="timeRange" label="Thời gian làm việc" rules={[{ required: true, message: 'Vui lòng chọn thời gian!' }]}>
+                                <TimePicker.RangePicker format="HH:mm" style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Form>
+                    </Modal>
+                </div>
+            </LayoutManager>
+        </RequireRole>
     );
 }

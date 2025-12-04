@@ -31,10 +31,7 @@ export function AppHeader({ toggleSideBar, header, collapsed = false }) {
                     onClick={toggleSideBar}
                     className="text-xl cursor-pointer text-white hover:text-blue-100 transition-colors"
                 />
-                <div
-                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => navigate("/")}
-                >
+                <div className="flex items-center gap-3">
                     <Bed size={28} className="text-white" />
                     <span className="text-white font-semibold text-lg hidden sm:inline">
                         {header || "Hệ thống quản lý KTX"}

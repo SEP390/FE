@@ -1,9 +1,6 @@
 import {
-    CheckSquareOutlined,
-    CoffeeOutlined,
     ContainerOutlined,
     FileSearchOutlined,
-    HomeOutlined,
     InfoCircleOutlined,
     ReadOutlined,
     ScheduleOutlined,
@@ -14,7 +11,7 @@ import {
 } from "@ant-design/icons";
 import {Drawer, Layout, Menu} from "antd";
 import {Link} from "react-router-dom";
-import {Bed, Clock} from "lucide-react";
+import {Clock} from "lucide-react";
 import {useMobile} from "../../hooks/useMobile.js";
 import {useEffect} from "react";
 import {useCollapsed} from "../../hooks/useCollapsed.js";
@@ -89,15 +86,20 @@ const managerItems = [
     },
 ];
 
-export function SideBarManager({active}) {
+export function SideBarManager({active, collapsed: collapsedProp, setCollapsed: setCollapsedProp}) {
     const {isMobile} = useMobile();
-    const collapsed = useCollapsed(state => state.collapsed)
-    const setCollapsed = useCollapsed(state => state.setCollapsed)
+    const collapsedStore = useCollapsed(state => state.collapsed)
+    const setCollapsedStore = useCollapsed(state => state.setCollapsed)
+
+    // Prefer values passed from LayoutManager; otherwise fall back to the shared store
+    const collapsed = typeof collapsedProp === 'boolean' ? collapsedProp : collapsedStore
+    const setCollapsed = typeof setCollapsedProp === 'function' ? setCollapsedProp : setCollapsedStore
 
     useEffect(() => {
         if (!isMobile) {
             setCollapsed && setCollapsed(false)
         } else {
+            // On mobile we want the drawer closed by default (collapsed = true)
             setCollapsed && setCollapsed(true)
         }
     }, [isMobile, setCollapsed]);
@@ -171,9 +173,7 @@ export function SideBarManager({active}) {
                 <Drawer
                     width={300}
                     placement={"left"}
-                    onClose={() => {
-                        setCollapsed && setCollapsed(true)
-                    }}
+                    onClose={() => setCollapsed && setCollapsed(true)}
                     open={!collapsed}
                 >
                     <Menu

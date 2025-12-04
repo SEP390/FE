@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Layout, Typography, Card, Divider, Row, Col, Button, Spin, Alert, Descriptions, Tag, Space, Avatar
+    Card, Row, Col, Button, Spin, Alert, Descriptions, Tag, Space, Avatar, Typography
 } from 'antd';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeftOutlined, UserOutlined } from "@ant-design/icons";
-import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
 import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
+import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
 
-const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
 // (Các hàm hỗ trợ translateGender và translateRole giữ nguyên)
@@ -32,7 +31,6 @@ const translateRole = (role) => {
 export function ResidentDetail() {
     const { residentId } = useParams();
     const activeKey = 'manager-residents';
-    const [collapsed, setCollapsed] = useState(false);
     const [residentData, setResidentData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -74,117 +72,62 @@ export function ResidentDetail() {
     // --- HIỂN THỊ LOADING HOẶC LỖI (Giữ nguyên) ---
     if (loading) {
         return (
-            <Layout style={{ minHeight: '100vh' }}>
-                <SideBarManager collapsed={collapsed} active={activeKey} />
-                <Layout>
-                    <Header style={{ background: '#fff', padding: '0 24px', height: 80, display: 'flex', alignItems: 'center' }}>
-                        <Link to="/manager/residents" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)', fontSize: '20px' }}><ArrowLeftOutlined /></Link>
-                        <Title level={2} style={{ margin: 0 }}>Đang tải chi tiết...</Title>
-                    </Header>
-                    <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', textAlign: 'center' }}>
-                        <Spin size="large" />
-                    </Content>
-                </Layout>
-            </Layout>
+            <LayoutManager active={activeKey} header={"Chi tiết sinh viên"}>
+                <div style={{ textAlign: 'center', padding: 40 }}>
+                    <Spin size="large" />
+                </div>
+            </LayoutManager>
         );
     }
     if (error) {
         return (
-            <Layout style={{ minHeight: '100vh' }}>
-                <SideBarManager collapsed={collapsed} active={activeKey} />
-                <Layout>
-                    <Header style={{ background: '#fff', padding: '0 24px', height: 80, display: 'flex', alignItems: 'center' }}>
-                        <Link to="/manager/residents" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)', fontSize: '20px' }}><ArrowLeftOutlined /></Link>
-                        <Title level={2} style={{ margin: 0 }}>Lỗi</Title>
-                    </Header>
-                    <Content style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
-                        <Alert message="Lỗi tải dữ liệu" description={error} type="error" showIcon />
-                        <Button onClick={() => window.location.reload()} style={{ marginTop: 16 }}>Thử lại</Button>
-                    </Content>
-                </Layout>
-            </Layout>
+            <LayoutManager active={activeKey} header={"Chi tiết sinh viên"}>
+                <div style={{ padding: 24 }}>
+                    <Alert message="Lỗi tải dữ liệu" description={error} type="error" showIcon />
+                    <div style={{ marginTop: 16 }}><Button onClick={() => window.location.reload()}>Thử lại</Button></div>
+                </div>
+            </LayoutManager>
         );
     }
 
-    // --- === GIAO DIỆN MỚI === ---
     return (
         <RequireRole role = "MANAGER">
-            <Layout style={{ minHeight: '100vh' }}>
-                <SideBarManager collapsed={collapsed} active={activeKey} />
+            <LayoutManager active={activeKey} header={"Chi tiết sinh viên"}>
+                <div style={{ padding: 24, background: '#f0f2f5', minHeight: 'calc(100vh - 64px)' }}>
+                    <Card bordered={false} style={{ marginBottom: 24 }}>
+                        <Space align="center" size={24}>
+                            <Avatar size={80} icon={<UserOutlined />} src={residentData.image} />
+                            <div>
+                                <Title level={3} style={{ marginBottom: 4 }}>{residentData.fullName || 'N/A'}</Title>
+                                <Text type="secondary" style={{ fontSize: '16px' }}>@{residentData.username || 'N/A'}</Text>
+                            </div>
+                            <Tag color="blue" style={{ fontSize: '14px', padding: '5px 10px', marginLeft: 32 }}>{translateRole(residentData.role)}</Tag>
+                        </Space>
+                    </Card>
 
-                {/* THÊM LOGIC MARGIN Ở ĐÂY */}
-                <Layout
-                    style={{
-                        marginLeft: collapsed ? 80 : 260, // Bù đắp Sidebar cố định
-                        transition: 'margin-left 0.3s ease',
-                    }}
-                >
-                    {/* Header giữ nguyên */}
-                    <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80, position: 'fixed', top: 0, right: 0, zIndex: 999, left: collapsed ? 80 : 260, transition: 'left 0.3s ease' }}>
-                        <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>
-                            <Link to="/manager/residents" style={{ marginRight: 15, color: 'rgba(0, 0, 0, 0.65)' }}>
-                                <ArrowLeftOutlined />
-                            </Link>
-                            Chi tiết sinh viên
-                        </Title>
-                    </Header>
+                    <Row gutter={[24, 24]}>
+                        <Col xs={24} md={16}>
+                            <Card title="Thông tin cá nhân" bordered={false}>
+                                <Descriptions column={1} layout="horizontal">
+                                    <Descriptions.Item label="Họ và tên">{residentData.fullName || 'N/A'}</Descriptions.Item>
+                                    <Descriptions.Item label="Mã SV">{residentData.userCode || 'N/A'}</Descriptions.Item>
+                                    <Descriptions.Item label="Ngày sinh">{residentData.dob ? dayjs(residentData.dob).format('DD/MM/YYYY') : 'N/A'}</Descriptions.Item>
+                                    <Descriptions.Item label="Giới tính">{translateGender(residentData.gender)}</Descriptions.Item>
+                                </Descriptions>
+                            </Card>
+                        </Col>
 
-                    {/* Content cần thêm marginTop để tránh bị Header cố định che */}
-                    <Content style={{ margin: '24px 16px', padding: 24, background: '#f0f2f5', marginTop: 80 }}>
-                        {/* === 1. THẺ PROFILE HEADER === */}
-                        <Card bordered={false} style={{ marginBottom: 24 }}>
-                            <Space align="center" size={24}>
-                                {/* Dùng residentData.image để load ảnh */}
-                                <Avatar
-                                    size={80}
-                                    icon={<UserOutlined />}
-                                    src={residentData.image}
-                                />
-                                <div>
-                                    <Title level={3} style={{ marginBottom: 4 }}>
-                                        {residentData.fullName || 'N/A'}
-                                    </Title>
-                                    <Text type="secondary" style={{ fontSize: '16px' }}>
-                                        @{residentData.username || 'N/A'}
-                                    </Text>
-                                </div>
-                                <Tag color="blue" style={{ fontSize: '14px', padding: '5px 10px', marginLeft: 32 }}>
-                                    {translateRole(residentData.role)}
-                                </Tag>
-                            </Space>
-                        </Card>
-
-                        {/* === 2. BỐ CỤC 2 CỘT === */}
-                        <Row gutter={[24, 24]}>
-
-                            {/* CỘT BÊN TRÁI: Thông tin cá nhân */}
-                            <Col xs={24} md={16}>
-                                <Card title="Thông tin cá nhân" bordered={false}>
-                                    <Descriptions column={1} layout="horizontal">
-                                        <Descriptions.Item label="Họ và tên">{residentData.fullName || 'N/A'}</Descriptions.Item>
-                                        <Descriptions.Item label="Mã SV">{residentData.userCode || 'N/A'}</Descriptions.Item>
-                                        <Descriptions.Item label="Ngày sinh">
-                                            {residentData.dob ? dayjs(residentData.dob).format('DD/MM/YYYY') : 'N/A'}
-                                        </Descriptions.Item>
-                                        <Descriptions.Item label="Giới tính">{translateGender(residentData.gender)}</Descriptions.Item>
-                                    </Descriptions>
-                                </Card>
-                            </Col>
-
-                            {/* CỘT BÊN PHẢI: Thông tin liên lạc */}
-                            <Col xs={24} md={8}>
-                                <Card title="Thông tin liên lạc" bordered={false}>
-                                    <Descriptions column={1} layout="horizontal">
-                                        <Descriptions.Item label="Email">{residentData.email || 'N/A'}</Descriptions.Item>
-                                        <Descriptions.Item label="Số điện thoại">{residentData.phoneNumber || 'N/A'}</Descriptions.Item>
-                                    </Descriptions>
-                                </Card>
-                            </Col>
-                        </Row>
-
-                    </Content>
-                </Layout>
-            </Layout>
+                        <Col xs={24} md={8}>
+                            <Card title="Thông tin liên lạc" bordered={false}>
+                                <Descriptions column={1} layout="horizontal">
+                                    <Descriptions.Item label="Email">{residentData.email || 'N/A'}</Descriptions.Item>
+                                    <Descriptions.Item label="Số điện thoại">{residentData.phoneNumber || 'N/A'}</Descriptions.Item>
+                                </Descriptions>
+                            </Card>
+                        </Col>
+                    </Row>
+                </div>
+            </LayoutManager>
         </RequireRole>
     );
 }
