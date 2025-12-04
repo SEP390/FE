@@ -126,6 +126,7 @@ export default function UserEWUsage() {
                         }
                     },
                 ]} onChange={onChange} pagination={{
+                    showTotal: (total) => <span>Tổng cộng <span className={"font-medium"}>{total}</span> bản ghi</span>,
                     current: page + 1,
                     total: data?.page?.totalElements,
                 }}/>

@@ -197,6 +197,7 @@ const SemesterPage = () => {
                                    )
                                }
                            ]} pagination={{
+                        showTotal: (total) => <span>Tổng cộng <span className={"font-medium"}>{total}</span> bản ghi</span>,
                         current: page + 1,
                         pageSize: 5,
                         total: data?.page?.totalElements,

@@ -79,6 +79,7 @@ function RecentRecord() {
                 render: (val) => <span className={"flex gap-1 items-center"}><CalendarDays size={14}/>{formatDate(val)}</span>,
             },
         ]} pagination={{
+            showTotal: (total) => <span>Tổng cộng <span className={"font-medium"}>{total}</span> bản ghi</span>,
             current: page + 1,
             total: data?.page?.totalElements,
         }} onChange={onChange}/>
