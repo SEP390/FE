@@ -164,7 +164,7 @@ function ConfirmSelect() {
         </div>
         <div className={"section flex flex-col gap-3"}>
             <div className={"font-medium"}>Thanh toán</div>
-            <Form layout={"vertical"} form={form2}>
+            <Form className={"flex flex-col gap-3 h-full"} layout={"vertical"} form={form2}>
                 <div className={"flex gap-3 *:flex-grow flex-wrap"}>
                     <Form.Item label={"Giá điện"} name={"electricPrice"}>
                         <InputNumber suffix={"vnđ/kW"} className={"!w-full"}/>
@@ -181,12 +181,12 @@ function ConfirmSelect() {
                         <InputNumber suffix={"m3"} className={"!w-full"}/>
                     </Form.Item>
                 </div>
-                <div className={"flex gap-3 items-end"}>
-                    <SlotPaymentButton size={"large"} slotId={selectedSlot?.id}/>
+                <div className={"flex flex-grow flex-col gap-3 justify-between"}>
                     <div className={"ml-auto"}>
                         <div>Giá</div>
                         <div className={"font-medium text-2xl"}>{formatPrice(selectedRoom.pricing.price)}</div>
                     </div>
+                    <SlotPaymentButton type={"primary"} size={"large"} slotId={selectedSlot?.id}/>
                 </div>
             </Form>
         </div>
@@ -219,7 +219,7 @@ export function CreateBookingY1() {
                 <div className={"font-medium text-lg"}>Đặt phòng</div>
             </div>
             <div className={"section"}>
-                <Alert showIcon type={"error"} message={"Chưa đến thời gian đặt phòng"}/>
+                <Alert showIcon type={"info"} message={"Chưa đến thời gian đặt phòng"}/>
             </div>
         </>
     )
@@ -238,8 +238,9 @@ export function CreateBookingY1() {
                     <div className={"font-medium text-lg"}>Đặt phòng</div>
                 </div>
                 <div className={"section"}>
-                    <Alert showIcon type={"error"}
-                           message={`Chưa đến thời gian đặt phòng (${formatDate(startBookingDate)} - ${formatDate(endBookingDate)})`}/>
+                    <Alert showIcon type={"info"}
+                           message={"Thông tin"}
+                           description={`Chưa đến thời gian đặt phòng (${formatDate(startBookingDate)} - ${formatDate(endBookingDate)})`}/>
                 </div>
             </>
         )
@@ -254,7 +255,7 @@ export function CreateBookingY1() {
                 <Skeleton active={isLoading}/>
             </>}
             {isError && <>
-                <Alert showIcon type={"error"} message={"Lỗi"} closable={true}
+                <Alert showIcon type={"info"} message={"Thông tin"} closable={true}
                        description={{
                            SURVEY_NOT_FOUND: "Bạn không thể đặt phòng nếu chưa hoàn thành khảo sát",
                            BOOKING_DATE_NOT_START: "Chưa đến thời gian đặt phòng",

@@ -22,5 +22,5 @@ export function SlotPaymentButton({slotId, ...props}) {
     const onClick = async () => {
         mutate({slotId})
     }
-    return <Button {...props} onClick={onClick}>Thanh toán</Button>
+    return <Button {...props} onClick={onClick}>Đặt chỗ</Button>
 }
