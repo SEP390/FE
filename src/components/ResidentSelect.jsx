@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {Select} from "antd";
-import {useQuery} from "@tanstack/react-query";
+import {useInfiniteQuery} from "@tanstack/react-query";
 import axiosClient from "../api/axiosClient/axiosClient.js";
 
 export function ResidentSelect({value, onChange}) {
@@ -8,22 +8,34 @@ export function ResidentSelect({value, onChange}) {
 
     const searchTrim = search ? search.trim() : ""
 
-    const {data} = useQuery({
+    const {data, fetchNextPage, hasNextPage, isFetchingNextPage} = useInfiniteQuery({
         queryKey: ["residents", searchTrim, value],
-        queryFn: () => axiosClient.get("/residents/search", {
+        queryFn: ({pageParam = 0}) => axiosClient.get("/residents/search", {
             params: {
+                page: pageParam,
                 userCode: !value ? searchTrim : undefined,
                 id: value ? value : undefined,
             }
-        }).then(res => res.data)
+        }).then(res => res.data),
+        getNextPageParam: (lastPage) => {
+            return lastPage.page.number <= lastPage.page.totalPages ? lastPage.page.number + 1 : undefined
+        },
     })
-
-    const options = data ? data.content.map(item => ({
+    const options = data ? data.pages.map(item => item.content).flat().map(item => ({
         label: `${item.userCode} - ${item.fullName}`,
         value: item.id,
     })) : null
-
-    return <Select value={value} onChange={onChange} className={"w-45"} allowClear filterOption={false}
+    const onPopupScroll = (e) => {
+        const {target} = e;
+        if (
+            target.scrollTop + target.offsetHeight === target.scrollHeight &&
+            hasNextPage && !isFetchingNextPage
+        ) {
+            fetchNextPage();
+        }
+    }
+    return <Select onPopupScroll={onPopupScroll} value={value} onChange={onChange} className={"w-45"} allowClear
+                   filterOption={false}
                    options={options} showSearch onSearch={setSearch}
                    placeholder={"Chọn sinh viên"}/>
 }

@@ -264,7 +264,7 @@ function InvoiceTable() {
             render: (val) => <InvoiceStatusTag value={val}/>,
         },
         {
-            title: "Action",
+            title: "Hành động",
             render: (val, row) => {
                 const btns = [<DetailAction key={"detail"} invoice={row}/>]
                 if (row.status === "PENDING") btns.push(<CancelAction key="cancel" invoice={row}/>)
@@ -272,6 +272,7 @@ function InvoiceTable() {
             }
         },
     ]} pagination={{
+        showTotal: (total) => <span>Tổng cộng <span className={"font-medium"}>{total}</span> bản ghi</span>,
         current: data?.page?.page,
         pageSize: 5,
         total: data?.page?.totalElements,

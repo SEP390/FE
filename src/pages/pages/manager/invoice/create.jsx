@@ -88,7 +88,7 @@ export default function ManagerCreateInvoice() {
                                 </>
                             )}
                             <Form.Item
-                                label="Chủ thể"
+                                label="Đối tượng"
                                 name="subject"
                                 rules={[{required: true, message: 'Bạn phải chọn sinh viên'}]}
                             >

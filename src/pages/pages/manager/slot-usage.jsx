@@ -10,6 +10,7 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import useErrorNotification from "../../../hooks/useErrorNotification.js";
 import {create} from "zustand";
 import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
+import {SemesterFilter} from "../../../components/SemesterSelect.jsx";
 
 function CheckoutButton({slotHistory}) {
     const queryClient = useQueryClient();
@@ -41,17 +42,23 @@ function SwapSlotButton({userId}) {
 
 const useFilterStore = create(set => ({
     page: 0,
+    userId: null,
+    setUserId: (userId) => set({userId}),
+    semesterId: null,
+    setSemesterId: (semesterId) => set({semesterId}),
+    roomId: null,
+    setRoomId: (roomId) => set({roomId}),
     setPage: (page) => set({page})
 }))
 
 export default function SlotUsageManage() {
-    const {page, setPage} = useFilterStore();
+    const {page, setPage, userId, setUserId, roomId, setRoomId, semesterId, setSemesterId} = useFilterStore();
 
     const {data} = useQuery({
-        queryKey: ["slot-history", page],
+        queryKey: ["slot-history", page, userId, roomId, semesterId],
         queryFn: () => axiosClient.get("/slot-history", {
             params: {
-                page
+                page, size: 5, userId, roomId, semesterId
             }
         }).then(res => res.data)
     })
@@ -62,8 +69,9 @@ export default function SlotUsageManage() {
             <div className={"section"}>
                 <div className={"font-medium mb-3 text-lg"}>Bộ lọc</div>
                 <div className={"flex gap-3 flex-wrap"}>
-                    <ResidentFilter/>
-                    <RoomFilter/>
+                    <ResidentFilter value={userId} onChange={setUserId}/>
+                    <RoomFilter value={roomId} onChange={setRoomId}/>
+                    <SemesterFilter value={semesterId} onChange={setSemesterId} />
                 </div>
             </div>
             <div className={"section"}>
@@ -115,6 +123,8 @@ export default function SlotUsageManage() {
                 ]} onChange={({current}) => {
                     setPage(current - 1)
                 }} pagination={{
+                    showTotal: (total) => <span>Tổng cộng <span className={"font-medium"}>{total}</span> bản ghi</span>,
+                    pageSize: 5,
                     current: page + 1,
                     total: data?.page?.totalElements
                 }}/>
