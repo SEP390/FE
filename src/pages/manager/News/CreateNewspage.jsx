@@ -1,21 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {Layout, Typography, Form, Input, Button, Card, Upload, App} from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import {Layout, Typography, Form, Input, Button, Card, Upload, App, Tabs} from "antd";
+import { UploadOutlined, EditOutlined, CodeOutlined } from "@ant-design/icons";
 import * as mammoth from "mammoth";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { useCollapsed } from "../../../hooks/useCollapsed.js";
+import {AppHeader} from "../../../components/layout/AppHeader.jsx";
+import { RichTextEditor } from "../../../components/editor/RichTextEditor.jsx";
+import DOMPurify from "dompurify";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 const { TextArea } = Input;
 
 export function CreateNewsPage() {
-    // use global collapsed state so sidebar toggle is consistent app-wide
     const collapsed = useCollapsed(state => state.collapsed);
     const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [loading, setLoading] = useState(false);
     const [htmlContent, setHtmlContent] = useState("");
+    const [editorMode, setEditorMode] = useState("visual"); // "visual" hoặc "html"
     const [form] = Form.useForm();
     const token = localStorage.getItem("token");
     const navigate = useNavigate();
@@ -29,10 +32,23 @@ export function CreateNewsPage() {
             const result = await mammoth.convertToHtml({ arrayBuffer });
             const html = result.value;
             setHtmlContent(html);
-            form.setFieldValue("content", html); // Lưu vào form luôn
+            form.setFieldValue("content", html);
         };
         reader.readAsArrayBuffer(file);
-        return false; // Ngăn antd tự upload
+        return false;
+    };
+
+    // Xử lý thay đổi nội dung từ Rich Editor
+    const handleEditorChange = (content) => {
+        setHtmlContent(content);
+        form.setFieldValue("content", content);
+    };
+
+    // Xử lý thay đổi HTML thủ công
+    const handleHtmlChange = (e) => {
+        const content = e.target.value;
+        setHtmlContent(content);
+        form.setFieldValue("content", content);
     };
 
     const handleSubmit = async (values) => {
@@ -46,7 +62,7 @@ export function CreateNewsPage() {
                 },
                 body: JSON.stringify({
                     title: values.title,
-                    content: values.content, // HTML string
+                    content: values.content,
                     userId: "",
                     status: "VISIBLE",
                 }),
@@ -64,33 +80,78 @@ export function CreateNewsPage() {
         }
     };
 
+    const toggleSideBar = () => {
+        setCollapsed(prev => !prev);
+    }
+
+    const tabItems = [
+        {
+            key: 'visual',
+            label: (
+                <span>
+                    <EditOutlined /> Chế độ soạn thảo
+                </span>
+            ),
+            children: (
+                <div>
+                    <RichTextEditor
+                        value={htmlContent}
+                        onChange={handleEditorChange}
+                        placeholder="Nhập nội dung hoặc import từ Word..."
+                    />
+                </div>
+            ),
+        },
+        {
+            key: 'html',
+            label: (
+                <span>
+                    <CodeOutlined /> Chế độ HTML
+                </span>
+            ),
+            children: (
+                <TextArea
+                    rows={15}
+                    value={htmlContent}
+                    onChange={handleHtmlChange}
+                    placeholder="Nhập hoặc chỉnh sửa mã HTML..."
+                />
+            ),
+        },
+        {
+            key: 'preview',
+            label: 'Xem trước',
+            children: (
+                <div
+                    style={{
+                        padding: 16,
+                        border: "1px solid #d9d9d9",
+                        borderRadius: 8,
+                        minHeight: 400,
+                        background: '#fff'
+                    }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
+                />
+            ),
+        },
+    ];
+
     return (
         <Layout style={{ minHeight: "100vh" }}>
             <SideBarManager collapsed={collapsed} active="manager-news" />
             <Layout
                 style={{
-                    marginTop: 64, // account for fixed Header
+                    marginTop: 64,
                     marginLeft: collapsed ? 80 : 260,
                     transition: 'margin-left 0.3s ease',
                 }}
             >
-                <Header
-                    style={{
-                        background: "#fff",
-                        padding: "0 24px",
-                        borderBottom: "1px solid #f0f0f0",
-                        height: 64,
-                    }}
-                >
-                    <Title level={2} style={{ margin: 0, lineHeight: "64px" }}>
-                        Tạo tin tức mới
-                    </Title>
-                </Header>
+                <AppHeader header={"Tạo tin tức mới"} toggleSideBar={toggleSideBar}/>
 
                 <Content style={{ margin: "24px", padding: 24 }}>
                     <Card
                         style={{
-                            maxWidth: 800,
+                            maxWidth: 1200,
                             margin: "0 auto",
                             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                         }}
@@ -106,41 +167,36 @@ export function CreateNewsPage() {
                                 name="title"
                                 rules={[{ required: true, message: "Nhập tiêu đề tin tức" }]}
                             >
-                                <Input placeholder="Nhập tiêu đề..." />
+                                <Input placeholder="Nhập tiêu đề..." size="large" />
                             </Form.Item>
 
-                            <Form.Item label="Nhập nội dung hoặc import từ Word" name="content" rules={[{ required: true }]}>
-                                <TextArea
-                                    rows={6}
-                                    placeholder="Nhập nội dung..."
-                                    onChange={(e) => setHtmlContent(e.target.value)}
+                            <Form.Item
+                                label={
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                                        <span>Nội dung</span>
+                                        <Upload beforeUpload={handleWordUpload} showUploadList={false}>
+                                            <Button icon={<UploadOutlined />} size="small">
+                                                Import file Word (.docx)
+                                            </Button>
+                                        </Upload>
+                                    </div>
+                                }
+                                name="content"
+                                rules={[{ required: true, message: "Nhập nội dung tin tức" }]}
+                            >
+                                <Tabs
+                                    activeKey={editorMode}
+                                    onChange={setEditorMode}
+                                    items={tabItems}
                                 />
                             </Form.Item>
-
-                            <Upload beforeUpload={handleWordUpload} showUploadList={false}>
-                                <Button icon={<UploadOutlined />}>Import file Word (.docx)</Button>
-                            </Upload>
-
-                            {htmlContent && (
-                                <div
-                                    style={{
-                                        marginTop: 20,
-                                        padding: 16,
-                                        border: "1px solid #d9d9d9",
-                                        borderRadius: 8,
-                                    }}
-                                >
-                                    <div
-                                        dangerouslySetInnerHTML={{ __html: htmlContent }}
-                                    />
-                                </div>
-                            )}
 
                             <Form.Item style={{ marginTop: 20 }}>
                                 <Button
                                     type="primary"
                                     htmlType="submit"
                                     loading={loading}
+                                    size="large"
                                     block
                                 >
                                     Tạo tin
@@ -148,6 +204,7 @@ export function CreateNewsPage() {
                                 <Button
                                     onClick={() => navigate("/manager/news")}
                                     style={{ marginTop: 10 }}
+                                    size="large"
                                     block
                                 >
                                     Hủy

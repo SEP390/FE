@@ -1,6 +1,8 @@
-import { Modal, Form, Input, Select, Divider, App } from "antd";
+import { Modal, Form, Input, Select, Tabs, App } from "antd";
 import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
+import { RichTextEditor } from "../editor/RichTextEditor.jsx";
+import { EditOutlined, CodeOutlined } from "@ant-design/icons";
 
 const { TextArea } = Input;
 
@@ -8,7 +10,9 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
     const [form] = Form.useForm();
     const token = localStorage.getItem("token");
     const [htmlPreview, setHtmlPreview] = useState("");
+    const [editorMode, setEditorMode] = useState("visual");
     const { message } = App.useApp();
+
     useEffect(() => {
         if (news) {
             form.setFieldsValue(news);
@@ -38,6 +42,69 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
         }
     };
 
+    const handleEditorChange = (content) => {
+        setHtmlPreview(content);
+        form.setFieldValue("content", content);
+    };
+
+    const handleHtmlChange = (e) => {
+        const content = e.target.value;
+        setHtmlPreview(content);
+        form.setFieldValue("content", content);
+    };
+
+    const tabItems = [
+        {
+            key: 'visual',
+            label: (
+                <span>
+                    <EditOutlined /> Chế độ soạn thảo
+                </span>
+            ),
+            children: (
+                <RichTextEditor
+                    value={htmlPreview}
+                    onChange={handleEditorChange}
+                    placeholder="Nhập nội dung..."
+                />
+            ),
+        },
+        {
+            key: 'html',
+            label: (
+                <span>
+                    <CodeOutlined /> Chế độ HTML
+                </span>
+            ),
+            children: (
+                <TextArea
+                    rows={10}
+                    value={htmlPreview}
+                    onChange={handleHtmlChange}
+                    placeholder="Nhập hoặc chỉnh sửa mã HTML..."
+                />
+            ),
+        },
+        {
+            key: 'preview',
+            label: 'Xem trước',
+            children: (
+                <div
+                    style={{
+                        border: "1px solid #d9d9d9",
+                        borderRadius: 8,
+                        padding: 12,
+                        minHeight: 300,
+                        background: "#fff",
+                        overflowY: "auto",
+                        maxHeight: 400,
+                    }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlPreview) }}
+                />
+            ),
+        },
+    ];
+
     return (
         <Modal
             title="Chỉnh sửa tin tức"
@@ -46,29 +113,30 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
             onOk={handleSubmit}
             okText="Lưu thay đổi"
             cancelText="Hủy"
-            width={800}
+            width={1000}
         >
             <Form
                 form={form}
                 layout="vertical"
-                onValuesChange={(changed) => {
-                    if (changed.content) setHtmlPreview(changed.content);
-                }}
             >
                 <Form.Item
                     label="Tiêu đề"
                     name="title"
                     rules={[{ required: true, message: "Vui lòng nhập tiêu đề" }]}
                 >
-                    <Input />
+                    <Input size="large" />
                 </Form.Item>
 
                 <Form.Item
-                    label="Nội dung (HTML)"
+                    label="Nội dung"
                     name="content"
                     rules={[{ required: true, message: "Vui lòng nhập nội dung" }]}
                 >
-                    <TextArea rows={6} placeholder="Nhập hoặc dán nội dung HTML..." />
+                    <Tabs
+                        activeKey={editorMode}
+                        onChange={setEditorMode}
+                        items={tabItems}
+                    />
                 </Form.Item>
 
                 <Form.Item label="Trạng thái" name="status">
@@ -80,20 +148,6 @@ export function UpdateNewsModal({ open, onCancel, news, onUpdated }) {
                     />
                 </Form.Item>
             </Form>
-
-            <Divider orientation="left">Xem trước nội dung</Divider>
-            <div
-                style={{
-                    border: "1px solid #d9d9d9",
-                    borderRadius: 8,
-                    padding: 12,
-                    minHeight: 120,
-                    background: "#fff",
-                    overflowY: "auto",
-                    maxHeight: 400,
-                }}
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlPreview)}}
-            />
         </Modal>
     );
 }
