@@ -440,8 +440,9 @@ export function StaffManager() {
                                 rules={[{ required: true, message: 'Vui lòng chọn chức vụ!' }]}
                             >
                                 <Select placeholder="Chọn chức vụ">
-                                    <Option value="MANAGER">MANAGER</Option>
-                                    <Option value="STAFF">STAFF</Option>
+                                    <Option value="GUARD">Bảo Vệ</Option>
+                                    <Option value="CLEANER">Lao Công</Option>
+                                    <Option value="TECHNICAL">Kĩ thuật</Option>
                                 </Select>
                             </Form.Item>
 
@@ -520,8 +521,9 @@ export function StaffManager() {
                                 rules={[{ required: true, message: 'Vui lòng chọn chức vụ!' }]}
                             >
                                 <Select placeholder="Chọn chức vụ">
-                                    <Option value="MANAGER">MANAGER</Option>
-                                    <Option value="STAFF">STAFF</Option>
+                                    <Option value="Bảo Vệ">GUARD</Option>
+                                    <Option value="Lao Công ">CLEANER</Option>
+                                    <Option value="Kĩ thuật">TECHNICAL</Option>
                                 </Select>
                             </Form.Item>
 
