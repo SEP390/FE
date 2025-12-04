@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
-import {Layout, Typography, Spin, Descriptions, Button, Image, Row, Col, Tag, App} from 'antd';
+import {Typography, Spin, Descriptions, Button, Image, Row, Col, Tag, App} from 'antd';
 import { ArrowLeftOutlined, UserOutlined, ContactsOutlined, FileTextOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { SideBarManager } from '../../../components/layout/SideBarManger.jsx';
+import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
 import { useCollapsed } from '../../../hooks/useCollapsed.js';
 import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
-const { Header, Content } = Layout;
 const { Title } = Typography;
 
 // --- HELPERS: CHUẨN HÓA DỮ LIỆU HIỂN THỊ ---
@@ -182,23 +181,10 @@ export function StaffDetailPage() {
         );
     };
 
-    // --- CẤU TRÚC CHÍNH (Layout có Sidebar) ---
+    // Use LayoutManager for consistent header/sidebar behavior
     return (
-        <Layout style={{ minHeight: '100vh' }}>
-            <SideBarManager collapsed={collapsed} active={activeKey} />
-
-            <Layout
-                style={{
-                    marginLeft: collapsed ? 80 : 260,
-                    transition: 'margin-left 0.3s ease',
-                }}
-            >
-                <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 80, position: 'fixed', top: 0, right: 0, zIndex: 999, left: collapsed ? 80 : 260, transition: 'left 0.3s ease' }}>
-                    <Title level={2} style={{ margin: 0, lineHeight: '80px' }}>Chi tiết nhân viên</Title>
-                </Header>
-
-                {renderContent()}
-            </Layout>
-         </Layout>
-     );
+        <LayoutManager active={activeKey} header={"Chi tiết nhân viên"}>
+            {renderContent()}
+        </LayoutManager>
+    );
 }

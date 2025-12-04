@@ -1,28 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {Layout, Typography, Form, Input, Button, Card, Upload, App, Tabs} from "antd";
+import { Typography, Form, Input, Button, Card, Upload, App, Tabs } from "antd";
 import { UploadOutlined, EditOutlined, CodeOutlined } from "@ant-design/icons";
 import * as mammoth from "mammoth";
-import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
-import { useCollapsed } from "../../../hooks/useCollapsed.js";
-import {AppHeader} from "../../../components/layout/AppHeader.jsx";
+import { LayoutManager } from "../../../components/layout/LayoutManager.jsx";
 import { RichTextEditor } from "../../../components/editor/RichTextEditor.jsx";
 import DOMPurify from "dompurify";
 
-const { Header, Content } = Layout;
 const { Title } = Typography;
 const { TextArea } = Input;
 
 export function CreateNewsPage() {
-    const collapsed = useCollapsed(state => state.collapsed);
-    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [loading, setLoading] = useState(false);
     const [htmlContent, setHtmlContent] = useState("");
-    const [editorMode, setEditorMode] = useState("visual"); // "visual" hoặc "html"
+    const [editorMode, setEditorMode] = useState("visual");
     const [form] = Form.useForm();
     const token = localStorage.getItem("token");
     const navigate = useNavigate();
-    const {message} = App.useApp();
+    const { message } = App.useApp();
 
     // Xử lý upload file Word
     const handleWordUpload = async (file) => {
@@ -80,10 +75,6 @@ export function CreateNewsPage() {
         }
     };
 
-    const toggleSideBar = () => {
-        setCollapsed(prev => !prev);
-    }
-
     const tabItems = [
         {
             key: 'visual',
@@ -137,83 +128,70 @@ export function CreateNewsPage() {
     ];
 
     return (
-        <Layout style={{ minHeight: "100vh" }}>
-            <SideBarManager collapsed={collapsed} active="manager-news" />
-            <Layout
+        <LayoutManager active="manager-news" header="Tạo tin tức mới">
+            <Card
                 style={{
-                    marginTop: 64,
-                    marginLeft: collapsed ? 80 : 260,
-                    transition: 'margin-left 0.3s ease',
+                    maxWidth: 1200,
+                    margin: "0 auto",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
             >
-                <AppHeader header={"Tạo tin tức mới"} toggleSideBar={toggleSideBar}/>
-
-                <Content style={{ margin: "24px", padding: 24 }}>
-                    <Card
-                        style={{
-                            maxWidth: 1200,
-                            margin: "0 auto",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        }}
+                <Form
+                    form={form}
+                    layout="vertical"
+                    onFinish={handleSubmit}
+                    autoComplete="off"
+                >
+                    <Form.Item
+                        label="Tiêu đề"
+                        name="title"
+                        rules={[{ required: true, message: "Nhập tiêu đề tin tức" }]}
                     >
-                        <Form
-                            form={form}
-                            layout="vertical"
-                            onFinish={handleSubmit}
-                            autoComplete="off"
+                        <Input placeholder="Nhập tiêu đề..." size="large" />
+                    </Form.Item>
+
+                    <Form.Item
+                        label={
+                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                                <span>Nội dung</span>
+                                <Upload beforeUpload={handleWordUpload} showUploadList={false}>
+                                    <Button icon={<UploadOutlined />} size="small">
+                                        Import file Word (.docx)
+                                    </Button>
+                                </Upload>
+                            </div>
+                        }
+                        name="content"
+                        rules={[{ required: true, message: "Nhập nội dung tin tức" }]}
+                    >
+                        <Tabs
+                            activeKey={editorMode}
+                            onChange={setEditorMode}
+                            items={tabItems}
+                        />
+                    </Form.Item>
+
+                    <Form.Item style={{ marginTop: 20 }}>
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            loading={loading}
+                            size="large"
+                            block
                         >
-                            <Form.Item
-                                label="Tiêu đề"
-                                name="title"
-                                rules={[{ required: true, message: "Nhập tiêu đề tin tức" }]}
-                            >
-                                <Input placeholder="Nhập tiêu đề..." size="large" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label={
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                                        <span>Nội dung</span>
-                                        <Upload beforeUpload={handleWordUpload} showUploadList={false}>
-                                            <Button icon={<UploadOutlined />} size="small">
-                                                Import file Word (.docx)
-                                            </Button>
-                                        </Upload>
-                                    </div>
-                                }
-                                name="content"
-                                rules={[{ required: true, message: "Nhập nội dung tin tức" }]}
-                            >
-                                <Tabs
-                                    activeKey={editorMode}
-                                    onChange={setEditorMode}
-                                    items={tabItems}
-                                />
-                            </Form.Item>
-
-                            <Form.Item style={{ marginTop: 20 }}>
-                                <Button
-                                    type="primary"
-                                    htmlType="submit"
-                                    loading={loading}
-                                    size="large"
-                                    block
-                                >
-                                    Tạo tin
-                                </Button>
-                                <Button
-                                    onClick={() => navigate("/manager/news")}
-                                    style={{ marginTop: 10 }}
-                                    size="large"
-                                    block
-                                >
-                                    Hủy
-                                </Button>
-                            </Form.Item>
-                        </Form>
-                    </Card>
-                </Content>
-            </Layout>
-        </Layout>
+                            Tạo tin
+                        </Button>
+                        <Button
+                            onClick={() => navigate("/manager/news")}
+                            style={{ marginTop: 10 }}
+                            size="large"
+                            block
+                        >
+                            Hủy
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Card>
+        </LayoutManager>
     );
 }

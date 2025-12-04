@@ -1,40 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Layout, Typography, Row, Col, Table, Input, Select, Button, Tag, Space,
-    Dropdown, Menu, message, Spin
+    Row, Col, Table, Input, Button, Space, message
 } from "antd";
-import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
-import { Link, useNavigate } from 'react-router-dom';
-// === THÊM MỚI: Thêm icon Search, Clear, Logout và MenuOutlined ===
-import { EyeOutlined, SearchOutlined, ClearOutlined, LogoutOutlined, MenuOutlined } from "@ant-design/icons";
-// Import AppHeader (Giả định path đúng)
-import { AppHeader } from '../../../components/layout/AppHeader.jsx';
-// Thêm import hook quản lý state global (Giả định hook này có tồn tại)
-import { useCollapsed } from '../../../hooks/useCollapsed.js';
+import { Link } from 'react-router-dom';
+import { EyeOutlined, SearchOutlined, ClearOutlined } from "@ant-design/icons";
+// Use LayoutManager to get consistent header/sidebar/layout behavior
+import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
 // === KẾT THÚC THÊM MỚI ===
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
 
-const { Header, Content } = Layout;
-const { Title } = Typography;
-const { Option } = Select;
-
 export function ResidentManagerPage() {
-    // === SỬ DỤNG HOOK GLOBAL CHO COLLAPSED (THAY THẾ useState) ===
-    const collapsed = useCollapsed(state => state.collapsed);
-    const setCollapsed = useCollapsed(state => state.setCollapsed);
-
     const [loading, setLoading] = useState(false);
     const [residents, setResidents] = useState([]);
     const [searchText, setSearchText] = useState('');
-
-    const navigate = useNavigate();
-
-    // === LOGIC TOGGLE SIDEBAR (ĐÃ SỬA DÙNG CALLBACK) ===
-    const toggleSideBar = () => {
-        setCollapsed(prev => !prev);
-    }
-    // === KẾT THÚC LOGIC TOGGLE ===
 
     // Hàm gọi API lấy danh sách sinh viên (Giữ nguyên)
     const fetchResidents = async () => {
@@ -70,14 +49,8 @@ export function ResidentManagerPage() {
     };
 
     const filteredData = residents.filter(item => {
-        const searchTarget = `
-            ${item.fullName || ''} 
-            ${item.userName || ''} 
-            ${item.email || ''} 
-            ${item.phoneNumber || ''}
-        `.toLowerCase();
-        const matchesSearch = searchTarget.includes(searchText.toLowerCase());
-        return matchesSearch;
+        const searchTarget = `${item.fullName || ''} ${item.userName || ''} ${item.email || ''} ${item.phoneNumber || ''}`.toLowerCase();
+        return searchTarget.includes(searchText.toLowerCase());
     });
 
     // === CỘT (Giữ nguyên) ===
@@ -128,24 +101,8 @@ export function ResidentManagerPage() {
 
     return (
         <RequireRole role = "MANAGER">
-        <Layout className={"!h-screen"}>
-            <SideBarManager active={"manager-residents"} collapsed={collapsed}/>
-            <Layout
-                style={{
-                    marginTop: 64,
-                    marginLeft: collapsed ? 80 : 260,
-                    transition: 'margin-left 0.3s ease',
-                }}
-            >
-                 {/* === SỬ DỤNG APPHEADER THAY THẾ HEADER CŨ === */}
-                 <AppHeader
-                     header={"Quản lý sinh viên"}
-                     toggleSideBar={toggleSideBar}
-                 />
-                 {/* === KẾT THÚC APPHEADER === */}
-                 <Content className={"!overflow-auto h-full p-5 flex flex-col"}>
-
-                    {/* === SỬA LẠI: Thêm thanh tìm kiếm === */}
+            <LayoutManager active={"manager-residents"} header={"Quản lý sinh viên"}>
+                <div className="!overflow-auto h-full p-5 flex flex-col">
                     <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
                         <Col flex="400px">
                             <Input
@@ -161,7 +118,6 @@ export function ResidentManagerPage() {
                             </Button>
                         </Col>
                     </Row>
-                    {/* === KẾT THÚC SỬA === */}
 
                     <Table
                         columns={columns}
@@ -170,9 +126,8 @@ export function ResidentManagerPage() {
                         pagination={{ pageSize: 10, showSizeChanger: true }}
                         bordered
                     />
-                </Content>
-            </Layout>
-        </Layout>
+                </div>
+            </LayoutManager>
         </RequireRole>
     )
 }

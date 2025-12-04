@@ -1,14 +1,10 @@
 import {useEffect, useState} from "react";
-import {Layout, Typography, Table, Button, Space, message, Tag, Dropdown, Modal, Input,} from "antd";
+import {Typography, Table, Button, Space, message, Tag, Dropdown, Modal, Input, Card} from "antd";
 import {EllipsisOutlined} from "@ant-design/icons";
-import {SideBarManager} from "../../../components/layout/SideBarManger.jsx";
+import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import axios from "axios";
-import {useCollapsed} from "../../../hooks/useCollapsed.js";
-import {AppHeader} from "../../../components/layout/AppHeader.jsx";
 import { ReportDetailModal } from "../../../components/report/ReportDetailModal.jsx";
 
-
-const {Header, Content} = Layout;
 const {Title} = Typography;
 const {TextArea} = Input;
 
@@ -18,8 +14,6 @@ export function ReportManagePage() {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
     const [responseMessage, setResponseMessage] = useState("");
-    const collapsed = useCollapsed(state => state.collapsed);
-    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const [detailVisible, setDetailVisible] = useState(false);
     const [detailReport, setDetailReport] = useState(null);
 
@@ -168,51 +162,41 @@ export function ReportManagePage() {
         await updateReportStatus(selectedReport.reportId, "CONFIRMED", responseMessage);
         setModalVisible(false);
     };
-    const toggleSideBar = () => {
-        setCollapsed(prev => !prev);
-    }
 
     return (
-        <Layout className="!h-screen">
-            <SideBarManager active="manager-reports" collapsed={collapsed}/>
-            <Layout
-                style={{
-                    marginLeft: collapsed ? 80 : 260,
-                    transition: 'margin-left 0.3s ease',
-                }}
+        <LayoutManager active="manager-reports" header="Quản lý báo cáo">
+            <Card className="h-full">
+                <Table
+                    rowKey="reportId"
+                    columns={columns}
+                    dataSource={reports}
+                    loading={loading}
+                    pagination={{pageSize: 6}}
+                />
+            </Card>
+
+            <ReportDetailModal
+                open={detailVisible}
+                onClose={() => setDetailVisible(false)}
+                report={detailReport}
+            />
+
+            <Modal
+                title="Trả lời báo cáo"
+                open={modalVisible}
+                onCancel={() => setModalVisible(false)}
+                onOk={handleReplySubmit}
+                okText="Gửi phản hồi"
             >
-                <AppHeader header={"Quản lí báo cáo"} toggleSideBar={toggleSideBar}/>
-                    <Content style={{ margin: "24px", background: "#fff", padding: 24, marginTop: 64 }}>
-                        <Table
-                            rowKey="reportId"
-                            columns={columns}
-                            dataSource={reports}
-                            loading={loading}
-                            pagination={{pageSize: 6}}
-                        />
-                    </Content>
-                 <ReportDetailModal
-                     open={detailVisible}
-                     onClose={() => setDetailVisible(false)}
-                     report={detailReport}
-                 />
-                 <Modal
-                     title="Trả lời báo cáo"
-                     open={modalVisible}
-                     onCancel={() => setModalVisible(false)}
-                     onOk={handleReplySubmit}
-                     okText="Gửi phản hồi"
-                 >
-                     <p>Báo cáo từ: {selectedReport?.employeeName}</p>
-                     <p>Nội dung: {selectedReport?.content}</p>
-                     <TextArea
-                         rows={4}
-                         placeholder="Nhập nội dung phản hồi..."
-                         value={responseMessage}
-                         onChange={(e) => setResponseMessage(e.target.value)}
-                     />
-                 </Modal>
-            </Layout>
-         </Layout>
-     );
+                <p>Báo cáo từ: {selectedReport?.employeeName}</p>
+                <p>Nội dung: {selectedReport?.content}</p>
+                <TextArea
+                    rows={4}
+                    placeholder="Nhập nội dung phản hồi..."
+                    value={responseMessage}
+                    onChange={(e) => setResponseMessage(e.target.value)}
+                />
+            </Modal>
+        </LayoutManager>
+    );
 }

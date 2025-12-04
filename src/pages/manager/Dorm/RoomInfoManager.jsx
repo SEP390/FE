@@ -124,7 +124,9 @@ export function RoomInfoManager() {
         message.success('Đã đăng xuất thành công!');
         navigate('/');
     };
-    const toggleSideBar = () => { setCollapsed(prev => !prev); }
+    // === LOGIC TOGGLE SIDEBAR ===
+    // useCollapsed.setCollapsed expects a boolean; pass the negated current value
+    const toggleSideBar = () => { setCollapsed(!collapsed); }
     // === KẾT THÚC LOGIC LOGOUT VÀ TOGGLE ===
 
 
