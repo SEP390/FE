@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Table, Button, Tag, Dropdown, Modal, Space, Input, App } from "antd";
+import {Table, Button, Tag, Dropdown, Modal, Space, Input, App, Layout} from "antd";
 import { EllipsisOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { NewsDetailModal } from "../../../components/news/NewsDetailModal.jsx";
 import { useNavigate } from "react-router-dom";
@@ -190,6 +190,7 @@ export function NewsManagePage() {
 
     return (
         <LayoutManager active="manager-news" header="Quản lý tin tức">
+            <Layout style={{ padding: 24, background: "#fff", minHeight: 600 }}>
             <Space
                 style={{
                     marginBottom: 16,
@@ -240,6 +241,7 @@ export function NewsManagePage() {
                     setFilteredNews(prev => prev.map(n => n.newsid === updated.newsid ? updated : n));
                 }}
             />
+            </Layout>
         </LayoutManager>
     );
 }

@@ -131,7 +131,7 @@ export function CreateNewsPage() {
         <LayoutManager active="manager-news" header="Tạo tin tức mới">
             <Card
                 style={{
-                    maxWidth: 1200,
+                    Width: 1200,
                     margin: "0 auto",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
@@ -152,7 +152,7 @@ export function CreateNewsPage() {
 
                     <Form.Item
                         label={
-                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                            <div style={{  justifyContent: 'space-between', width: '100%' }}>
                                 <span>Nội dung</span>
                                 <Upload beforeUpload={handleWordUpload} showUploadList={false}>
                                     <Button icon={<UploadOutlined />} size="small">
