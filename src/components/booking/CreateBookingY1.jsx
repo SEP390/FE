@@ -1,7 +1,7 @@
 import {useQuery} from "@tanstack/react-query";
 import axiosClient from "../../api/axiosClient/axiosClient.js";
 import dayjs from "dayjs";
-import {Alert, Button, Form, Input, InputNumber, Skeleton} from "antd";
+import {Alert, Button, Skeleton} from "antd";
 import {formatDate} from "../../util/formatTime.js";
 import {Link} from "react-router-dom";
 import {create} from "zustand";
@@ -9,9 +9,7 @@ import isBetween from "dayjs/plugin/isBetween";
 import {formatPrice} from "../../util/formatPrice.js";
 import {cn} from "../../util/cn.js";
 import {Bed} from "lucide-react";
-import {SlotPaymentButton} from "./SlotPaymentButton.jsx";
-import {useEffect} from "react";
-import {DateRangeSelect} from "../DateRangeSelect.jsx";
+import {ConfirmSelect} from "../../pages/booking/ConfirmSelect.jsx";
 
 dayjs.extend(isBetween);
 const useSelectStore = create(set => ({
@@ -86,110 +84,6 @@ function SlotItem({data}) {
             "bg-gray-100 select-none": data.status !== "AVAILABLE",
         })}>
         <Bed/><span>{data.slotName}</span>
-    </div>
-}
-
-function ConfirmSelect() {
-    const {data: nextSemester} = useQuery({
-        queryKey: ["next-semester"],
-        queryFn: () => axiosClient.get("/semesters/next").then(res => res.data)
-    })
-    const {data: profile} = useQuery({
-        queryKey: ["profile"],
-        queryFn: () => axiosClient.get("/users/profile").then(res => res.data)
-    })
-
-    const {data: ewPrice} = useQuery({
-        queryKey: ["ew-price"],
-        queryFn: () => axiosClient.get("/ew/price").then(res => res.data)
-    })
-    const {selectedSlot, selectedRoom} = useSelectStore();
-    const [form] = Form.useForm()
-    const [form2] = Form.useForm()
-
-    useEffect(() => {
-        form2.setFieldsValue({
-            price: selectedRoom.pricing.price,
-            electricPrice: ewPrice?.electricPrice,
-            waterPrice: ewPrice?.waterPrice,
-            maxElectricIndex: ewPrice?.maxElectricIndex,
-            maxWaterIndex: ewPrice?.maxWaterIndex,
-        })
-    }, [form2, selectedRoom, ewPrice]);
-
-    useEffect(() => {
-        form.setFieldsValue({
-            dormName: selectedRoom.dorm.dormName,
-            roomNumber: selectedRoom.roomNumber,
-            slotName: selectedSlot.slotName,
-            username: profile?.username,
-            userCode: profile?.studentId,
-            semesterName: nextSemester?.name,
-            semesterDate: nextSemester ? [dayjs(nextSemester.startDate), dayjs(nextSemester.endDate)] : null,
-        })
-    }, [selectedSlot, selectedRoom, form, nextSemester, profile, ewPrice]);
-
-    return <div className={"grid md:grid-cols-2 gap-3"}>
-        <div className={"section"}>
-            <div className={"mb-3 font-medium"}>Xác nhận</div>
-            <Form layout={"vertical"} form={form}>
-                <div className={"flex gap-3 *:flex-grow flex-wrap"}>
-                    <Form.Item label={"Mã sinh viên"} name={"userCode"}>
-                        <Input/>
-                    </Form.Item>
-                    <Form.Item label={"Sinh viên"} name={"username"}>
-                        <Input/>
-                    </Form.Item>
-                </div>
-                <div className={"flex gap-3 *:flex-grow flex-wrap"}>
-                    <Form.Item label={"Dorm"} name={"dormName"}>
-                        <Input/>
-                    </Form.Item>
-                    <Form.Item label={"Phòng"} name={"roomNumber"}>
-                        <Input/>
-                    </Form.Item>
-                    <Form.Item label={"Slot"} name={"slotName"}>
-                        <Input/>
-                    </Form.Item>
-                </div>
-                <div className={"flex gap-3 *:flex-grow flex-wrap"}>
-                    <Form.Item label={"Kỳ"} name={"semesterName"}>
-                        <Input/>
-                    </Form.Item>
-                    <Form.Item label={"Thời gian"} name={"semesterDate"}>
-                        <DateRangeSelect format={"DD/MM/YYYY"} className={"w-full"}/>
-                    </Form.Item>
-                </div>
-            </Form>
-        </div>
-        <div className={"section flex flex-col gap-3"}>
-            <div className={"font-medium"}>Thanh toán</div>
-            <Form className={"flex flex-col gap-3 h-full"} layout={"vertical"} form={form2}>
-                <div className={"flex gap-3 *:flex-grow flex-wrap"}>
-                    <Form.Item label={"Giá điện"} name={"electricPrice"}>
-                        <InputNumber suffix={"vnđ/kW"} className={"!w-full"}/>
-                    </Form.Item>
-                    <Form.Item label={"Giá nước"} name={"waterPrice"}>
-                        <InputNumber suffix={"vnđ/m3"} className={"!w-full"}/>
-                    </Form.Item>
-                </div>
-                <div className={"flex gap-3 *:flex-grow flex-wrap"}>
-                    <Form.Item label={"Số điện miễn phí"} name={"maxElectricIndex"}>
-                        <InputNumber suffix={"kW"} className={"!w-full"}/>
-                    </Form.Item>
-                    <Form.Item label={"Số nước miễn phí"} name={"maxWaterIndex"}>
-                        <InputNumber suffix={"m3"} className={"!w-full"}/>
-                    </Form.Item>
-                </div>
-                <div className={"flex flex-grow flex-col gap-3 justify-between"}>
-                    <div className={"ml-auto"}>
-                        <div>Giá</div>
-                        <div className={"font-medium text-2xl"}>{formatPrice(selectedRoom.pricing.price)}</div>
-                    </div>
-                    <SlotPaymentButton type={"primary"} size={"large"} slotId={selectedSlot?.id}/>
-                </div>
-            </Form>
-        </div>
     </div>
 }
 
@@ -277,6 +171,6 @@ export function CreateBookingY1() {
             </>}
         </div>
         {selectedRoom && <SelectSlot/>}
-        {selectedRoom && selectedSlot && <ConfirmSelect/>}
+        {selectedRoom && selectedSlot && <ConfirmSelect room={selectedRoom} slot={selectedSlot}/>}
     </>
 }
