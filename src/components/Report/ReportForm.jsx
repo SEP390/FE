@@ -6,6 +6,8 @@ export function ReportForm({ onSubmit, loading, form }) {
     const [residents, setResidents] = useState([]);
     const [rooms, setRooms] = useState([]);
     const reportType = Form.useWatch("reportType", form);
+    const [loadingResidents, setLoadingResidents] = useState(false);
+    const [loadingRooms, setLoadingRooms] = useState(false);
 
     useEffect(() => {
         fetchResidents();
