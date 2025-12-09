@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Descriptions, Typography, Divider, Card, Button, Form, Input, InputNumber, Select, message as antMessage } from "antd";
+import { Modal, Descriptions, Typography, Divider, Card, Button, Form, Input, InputNumber, Select, message as antMessage, Tag } from "antd";
 import { warehouseItemApi } from "../../api/Warehouse/warehouseApi.js";
-import { useApi } from "../../hooks/useApi"; // Import useApi hook
+import { useApi } from "../../hooks/useApi";
 
 const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-export function ReportDetailModal({ open, onClose, report }) {
+export function ReportDetailModal({ open, onClose, report, residents = [], rooms = [] }) {
     const [invoiceVisible, setInvoiceVisible] = useState(false);
     const [invoiceForm] = Form.useForm();
     const [warehouseItems, setWarehouseItems] = useState([]);
@@ -14,26 +14,20 @@ export function ReportDetailModal({ open, onClose, report }) {
     const [exportingStock, setExportingStock] = useState(false);
     const [userRole, setUserRole] = useState(null);
 
-    // Use useApi hook for fetching user info
     const userInfoApi = useApi();
 
-    // Fetch user information when modal opens
     useEffect(() => {
         if (open) {
             userInfoApi.get('/users/profile');
         }
     }, [open]);
 
-    // Set user role when data is loaded
     useEffect(() => {
         if (userInfoApi.isSuccess && userInfoApi.data) {
-            console.log('User info API response:', userInfoApi.data);
-            console.log('User role:', userInfoApi.data.role);
             setUserRole(userInfoApi.data.role);
         }
     }, [userInfoApi.isSuccess, userInfoApi.data]);
 
-    // Handle API error
     useEffect(() => {
         if (userInfoApi.isError) {
             console.error('Error fetching user info:', userInfoApi.error);
@@ -41,7 +35,6 @@ export function ReportDetailModal({ open, onClose, report }) {
         }
     }, [userInfoApi.isError]);
 
-    // Fetch warehouse items when opening export modal
     useEffect(() => {
         if (invoiceVisible) {
             fetchWarehouseItems();
@@ -124,12 +117,46 @@ export function ReportDetailModal({ open, onClose, report }) {
 
     if (!report) return null;
 
-    // Determine if export button should be shown
-    const showExportButton = userRole === 'TECHNICAL';
+    const showExportButton = userRole === 'TECHNICAL' && report.reportType === 'MAINTENANCE_REQUEST';
 
-    console.log('Current user role:', userRole);
-    console.log('Show export button:', showExportButton);
-    console.log('Is TECHNICAL?:', userRole === 'TECHNICAL');
+    const renderReportTypeTag = (type) => {
+        switch (type) {
+            case "MAINTENANCE_REQUEST":
+                return <Tag color="blue">Yêu cầu bảo trì</Tag>;
+            case "VIOLATION":
+                return <Tag color="red">Vi phạm</Tag>;
+            case "OTHER":
+                return <Tag color="default">Khác</Tag>;
+            default:
+                return <Tag>{type}</Tag>;
+        }
+    };
+
+    const renderStatusTag = (status) => {
+        switch (status) {
+            case "PENDING":
+                return <Tag color="orange">Đang chờ xử lý</Tag>;
+            case "CONFIRMED":
+                return <Tag color="green">Đã xác nhận</Tag>;
+            default:
+                return <Tag>{status}</Tag>;
+        }
+    };
+
+    const getResidentName = (residentId) => {
+        if (!residentId) return "-";
+        const resident = residents.find(r => r.residentId === residentId);
+        return resident ? `${resident.fullName} (${resident.email})` : residentId;
+    };
+
+    const getRoomName = (roomId) => {
+        if (!roomId) return "-";
+        const room = rooms.find(r => r.id === roomId);
+        return room ? room.roomNumber : roomId;
+    };
+
+    // Check if this is a violation report (has resident and room info)
+    const isViolationReport = report.reportType === 'VIOLATION' && (report.residentId || report.roomId);
 
     return (
         <>
@@ -138,7 +165,7 @@ export function ReportDetailModal({ open, onClose, report }) {
                 onCancel={onClose}
                 footer={[
                     showExportButton && (
-                        <Button key="export" onClick={handleOpenInvoice}>
+                        <Button key="export" type="primary" onClick={handleOpenInvoice}>
                             Tạo đơn xuất kho
                         </Button>
                     ),
@@ -146,34 +173,49 @@ export function ReportDetailModal({ open, onClose, report }) {
                         Đóng
                     </Button>
                 ].filter(Boolean)}
-                width={650}
+                width={700}
                 title="Chi tiết báo cáo"
             >
                 <Descriptions
                     column={1}
                     bordered
                     size="middle"
-                    labelStyle={{ fontWeight: "600", width: "30%" }}
+                    labelStyle={{ fontWeight: "600", width: "35%" }}
                 >
-                    <Descriptions.Item label="Người báo cáo">
-                        {report.employeeName}
+                    <Descriptions.Item label="Mã báo cáo">
+                        <Text copyable={{ text: report.reportId }}>
+                            {report.reportId.substring(0, 8)}...
+                        </Text>
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="Mã người dùng">
-                        {report.userCode}
+                    <Descriptions.Item label="Người báo cáo">
+                        {report.employeeName} ({report.userCode})
                     </Descriptions.Item>
 
                     <Descriptions.Item label="Loại báo cáo">
-                        {report.reportType}
+                        {renderReportTypeTag(report.reportType)}
                     </Descriptions.Item>
 
+                    {isViolationReport && report.residentId && (
+                        <Descriptions.Item label="Sinh viên vi phạm">
+                            {getResidentName(report.residentId)}
+                        </Descriptions.Item>
+                    )}
+
+                    {isViolationReport && report.roomId && (
+                        <Descriptions.Item label="Phòng">
+                            {getRoomName(report.roomId)}
+                        </Descriptions.Item>
+                    )}
+
                     <Descriptions.Item label="Trạng thái">
-                        {report.reportStatus}
+                        {renderStatusTag(report.reportStatus)}
                     </Descriptions.Item>
 
                     <Descriptions.Item label="Ngày tạo">
                         {new Date(report.createdDate).toLocaleString("vi-VN")}
                     </Descriptions.Item>
+
                 </Descriptions>
 
                 <Divider />
@@ -185,13 +227,19 @@ export function ReportDetailModal({ open, onClose, report }) {
                 </Card>
 
                 <Card size="small" title="Phản hồi từ quản lý">
-                    <Paragraph style={{ whiteSpace: "pre-wrap", marginBottom: 0 , opacity: report.responseMessage ? 1 : 0.5 }} >
-                        {report.responseMessage ? report.responseMessage : "Chưa có phản hồi"}
+                    <Paragraph
+                        style={{
+                            whiteSpace: "pre-wrap",
+                            marginBottom: 0,
+                            opacity: report.responseMessage ? 1 : 0.5,
+                            fontStyle: report.responseMessage ? "normal" : "italic"
+                        }}
+                    >
+                        {report.responseMessage || "Chưa có phản hồi"}
                     </Paragraph>
                 </Card>
             </Modal>
 
-            {/* Export Warehouse Modal - Only accessible if user is TECHNICAL */}
             {showExportButton && (
                 <Modal
                     title="Tạo đơn xuất kho"

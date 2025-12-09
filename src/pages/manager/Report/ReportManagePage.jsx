@@ -326,9 +326,8 @@ export function ReportManagePage() {
                                     }}
                                 >
                                     {residents.map(resident => (
-                                        <Option key={resident.residentId} value={resident.residentId}>
-                                            {resident.fullName} ({resident.email})
-
+                                        <Option key={resident.residentId} value={resident.email}>
+                                            {resident.fullName} ({resident.userCode})
                                         </Option>
                                     ))}
                                 </Select>
@@ -338,13 +337,14 @@ export function ReportManagePage() {
                                     placeholder="Lọc theo phòng"
                                     allowClear
                                     showSearch
-                                    optionFilterProp="children"
                                     loading={loadingRooms}
                                     value={selectedRoom}
                                     onChange={setSelectedRoom}
-                                    filterOption={(input, option) =>
-                                        (option?.children?.toLowerCase() ?? '').includes(input.toLowerCase())
-                                    }
+                                    filterOption={(input, option) => {
+                                        const room = rooms.find(r => r.id === option.value);
+                                        if (!room) return false;
+                                        return room.roomName.toLowerCase().includes(input.toLowerCase());
+                                    }}
                                 >
                                     {rooms.map(room => (
                                         <Option key={room.id} value={room.id}>
@@ -374,6 +374,8 @@ export function ReportManagePage() {
                 open={detailVisible}
                 onClose={() => setDetailVisible(false)}
                 report={detailReport}
+                residents={residents}
+                rooms={rooms}
             />
 
             <Modal
