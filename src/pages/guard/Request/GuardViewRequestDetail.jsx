@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Input, Select, App } from "antd";
+import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Input, Select, App, Checkbox, Row, Col, Radio } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, SaveOutlined, EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
 import { useCollapsed } from "../../../hooks/useCollapsed.js";
 
@@ -21,6 +21,16 @@ export function GuardViewRequestDetail() {
     const [requestData, setRequestData] = useState(null);
     const [residentInfo, setResidentInfo] = useState(null);
     const [form] = Form.useForm();
+    const [showAcceptanceForm, setShowAcceptanceForm] = useState(false);
+
+    // State for acceptance form
+    const [acceptanceForm, setAcceptanceForm] = useState({
+        giuong: { tot: false, hong: false },
+        ghe: { tot: false, hong: false },
+        ban: { tot: false, hong: false },
+        tu: { tot: false, hong: false },
+        ghichu: ""
+    });
 
     // API hooks for getting request
     const {
@@ -79,9 +89,48 @@ export function GuardViewRequestDetail() {
                     requestStatus: requestData.requestStatus || requestData.responseStatus || "PENDING",
                     responseMessage: requestData.responseMessageByEmployee || requestData.responseMessage || requestData.ResponseMessage || ""
                 });
+
+                // Parse acceptance form if exists in responseMessage for CHECKOUT type
+                if (requestData.requestType === "CHECKOUT" && requestData.responseMessageByEmployee) {
+                    parseAcceptanceFormFromText(requestData.responseMessageByEmployee);
+                    setShowAcceptanceForm(true);
+                }
             }
         }
     }, [isRequestSuccess, requestResponse, form]);
+
+    // Parse acceptance form from text
+    const parseAcceptanceFormFromText = (text) => {
+        const parsed = {
+            giuong: { tot: false, hong: false },
+            ghe: { tot: false, hong: false },
+            ban: { tot: false, hong: false },
+            tu: { tot: false, hong: false },
+            ghichu: ""
+        };
+
+        // Parse the structured text
+        const lines = text.split('\n');
+        lines.forEach(line => {
+            if (line.includes('Giường:')) {
+                parsed.giuong.tot = line.includes('☑ Tốt');
+                parsed.giuong.hong = line.includes('☑ Hỏng');
+            } else if (line.includes('Ghế:')) {
+                parsed.ghe.tot = line.includes('☑ Tốt');
+                parsed.ghe.hong = line.includes('☑ Hỏng');
+            } else if (line.includes('Bàn:')) {
+                parsed.ban.tot = line.includes('☑ Tốt');
+                parsed.ban.hong = line.includes('☑ Hỏng');
+            } else if (line.includes('Tủ:')) {
+                parsed.tu.tot = line.includes('☑ Tốt');
+                parsed.tu.hong = line.includes('☑ Hỏng');
+            } else if (line.includes('Ghi chú:')) {
+                parsed.ghichu = line.replace('Ghi chú:', '').trim();
+            }
+        });
+
+        setAcceptanceForm(parsed);
+    };
 
     // Fetch resident info by userId once request data is available
     useEffect(() => {
@@ -137,6 +186,22 @@ export function GuardViewRequestDetail() {
         }
     }, [isUpdateComplete, isUpdateSuccess, notification]);
 
+    // Convert acceptance form to text
+    const convertAcceptanceFormToText = () => {
+        let text = "=== BIÊN BẢN NGHIỆM THU TÌNH TRẠNG PHÒNG ===\n\n";
+
+        text += `Giường: ${acceptanceForm.giuong.tot ? '☑ Tốt' : '☐ Tốt'} | ${acceptanceForm.giuong.hong ? '☑ Hỏng' : '☐ Hỏng'}\n`;
+        text += `Ghế: ${acceptanceForm.ghe.tot ? '☑ Tốt' : '☐ Tốt'} | ${acceptanceForm.ghe.hong ? '☑ Hỏng' : '☐ Hỏng'}\n`;
+        text += `Bàn: ${acceptanceForm.ban.tot ? '☑ Tốt' : '☐ Tốt'} | ${acceptanceForm.ban.hong ? '☑ Hỏng' : '☐ Hỏng'}\n`;
+        text += `Tủ: ${acceptanceForm.tu.tot ? '☑ Tốt' : '☐ Tốt'} | ${acceptanceForm.tu.hong ? '☑ Hỏng' : '☐ Hỏng'}\n`;
+
+        if (acceptanceForm.ghichu) {
+            text += `\nGhi chú: ${acceptanceForm.ghichu}`;
+        }
+
+        return text;
+    };
+
     // Status color mapping
     const statusColor = (status) => {
         if (status === "APPROVED" || status === "COMPLETED" || status === "ACCEPTED" || status === "CHECKED") return "green";
@@ -190,16 +255,107 @@ export function GuardViewRequestDetail() {
     const handleUpdateRequest = async (values) => {
         console.log("Updating request with values:", values);
 
+        let responseMessage = values.responseMessage;
+
+        // If request type is CHECKOUT and acceptance form is shown, convert it to text
+        if (requestData.requestType === "CHECKOUT" && showAcceptanceForm) {
+            responseMessage = convertAcceptanceFormToText();
+        }
+
         const updatePayload = {
             requestStatus: values.requestStatus || "CHECKED",
-            responseMessage: values.responseMessage
+            responseMessage: responseMessage
         };
 
         updateRequest(`/requests/${requestId}`, updatePayload);
     };
 
+    // Handle radio change for each item
+    const handleRadioChange = (item, value) => {
+        setAcceptanceForm(prev => ({
+            ...prev,
+            [item]: {
+                tot: value === 'tot',
+                hong: value === 'hong'
+            }
+        }));
+    };
+
+    // Get current radio value
+    const getRadioValue = (item) => {
+        if (acceptanceForm[item].tot) return 'tot';
+        if (acceptanceForm[item].hong) return 'hong';
+        return null;
+    };
+
     const toggleSideBar = () => {
         setCollapsed(prev => !prev);
+    };
+
+    // Render acceptance form for CHECKOUT type
+    const renderAcceptanceForm = () => {
+        if (requestData?.requestType !== "CHECKOUT") return null;
+
+        return (
+            <Card
+                title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Biên bản nghiệm thu tình trạng</span>
+                        <Button
+                            type={showAcceptanceForm ? "default" : "primary"}
+                            icon={showAcceptanceForm ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                            onClick={() => setShowAcceptanceForm(!showAcceptanceForm)}
+                            size="small"
+                        >
+                            {showAcceptanceForm ? 'Ẩn form' : 'Hiện form'}
+                        </Button>
+                    </div>
+                }
+                className="mb-6"
+            >
+                {showAcceptanceForm && (
+                    <div style={{ padding: '16px', background: '#f9f9f9', borderRadius: '8px' }}>
+                        {['giuong', 'ghe', 'ban', 'tu'].map((item) => (
+                            <Row key={item} style={{ marginBottom: 16 }} align="middle">
+                                <Col span={6}>
+                                    <strong style={{ textTransform: 'capitalize' }}>
+                                        {item === 'giuong' ? 'Giường' : item === 'ghe' ? 'Ghế' : item === 'ban' ? 'Bàn' : 'Tủ'}:
+                                    </strong>
+                                </Col>
+                                <Col span={18}>
+                                    <Radio.Group
+                                        value={getRadioValue(item)}
+                                        onChange={(e) => handleRadioChange(item, e.target.value)}
+                                    >
+                                        <Radio value="tot">Tốt</Radio>
+                                        <Radio value="hong">Hỏng</Radio>
+                                    </Radio.Group>
+                                </Col>
+                            </Row>
+                        ))}
+
+                        <div style={{ marginTop: 24 }}>
+                            <strong>Ghi chú:</strong>
+                            <Input
+                                style={{ marginTop: 8 }}
+                                placeholder="Nhập ghi chú (nếu có)"
+                                value={acceptanceForm.ghichu}
+                                onChange={(e) => setAcceptanceForm(prev => ({
+                                    ...prev,
+                                    ghichu: e.target.value
+                                }))}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {!showAcceptanceForm && (
+                    <div style={{ textAlign: 'center', padding: '24px', color: '#8c8c8c' }}>
+                        <p>Nhấn nút "Hiện form" để điền biên bản nghiệm thu</p>
+                    </div>
+                )}
+            </Card>
+        );
     };
 
     return (
@@ -305,16 +461,18 @@ export function GuardViewRequestDetail() {
                                             </Select>
                                         </Form.Item>
 
-                                        <Form.Item
-                                            label="Tin nhắn phản hồi"
-                                            name="responseMessage"
-                                            rules={[{ required: true, message: 'Vui lòng nhập tin nhắn phản hồi!' }]}
-                                        >
-                                            <TextArea
-                                                rows={4}
-                                                placeholder="Nhập tin nhắn phản hồi cho sinh viên..."
-                                            />
-                                        </Form.Item>
+                                        {requestData.requestType !== "CHECKOUT" && (
+                                            <Form.Item
+                                                label="Tin nhắn phản hồi"
+                                                name="responseMessage"
+                                                rules={[{ required: true, message: 'Vui lòng nhập tin nhắn phản hồi!' }]}
+                                            >
+                                                <TextArea
+                                                    rows={4}
+                                                    placeholder="Nhập tin nhắn phản hồi cho sinh viên..."
+                                                />
+                                            </Form.Item>
+                                        )}
 
                                         <Form.Item>
                                             <Button
@@ -331,6 +489,9 @@ export function GuardViewRequestDetail() {
                                     </Form>
                                 </Card>
                             </div>
+
+                            {/* Acceptance Form for CHECKOUT type */}
+                            {renderAcceptanceForm()}
 
                             {/* Request Content */}
                             <Card title="Nội dung Request" className="mt-6">
