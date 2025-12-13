@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Button, Tag, Form, Select, Input, message, Space, Spin, Descriptions } from "antd";
+import { Layout, Typography, Card, Button, Tag, Form, Select, Input, message, Space, Spin, Descriptions, Row, Col } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, SaveOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
 
 const { Content } = Layout;
@@ -19,6 +19,7 @@ export function RequestDetailPage() {
     const [requestData, setRequestData] = useState(null);
     const [residentInfo, setResidentInfo] = useState(null);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [acceptanceFormData, setAcceptanceFormData] = useState(null);
 
     // API hooks
     const {
@@ -45,6 +46,42 @@ export function RequestDetailPage() {
         isComplete: isUserComplete,
         isLoading: isUserLoading
     } = useApi();
+
+    // Parse acceptance form from text
+    const parseAcceptanceFormFromText = (text) => {
+        if (!text || !text.includes('BIÊN BẢN NGHIỆM THU')) {
+            return null;
+        }
+
+        const parsed = {
+            giuong: { tot: false, hong: false },
+            ghe: { tot: false, hong: false },
+            ban: { tot: false, hong: false },
+            tu: { tot: false, hong: false },
+            ghichu: ""
+        };
+
+        const lines = text.split('\n');
+        lines.forEach(line => {
+            if (line.includes('Giường:')) {
+                parsed.giuong.tot = line.includes('☑ Tốt');
+                parsed.giuong.hong = line.includes('☑ Hỏng');
+            } else if (line.includes('Ghế:')) {
+                parsed.ghe.tot = line.includes('☑ Tốt');
+                parsed.ghe.hong = line.includes('☑ Hỏng');
+            } else if (line.includes('Bàn:')) {
+                parsed.ban.tot = line.includes('☑ Tốt');
+                parsed.ban.hong = line.includes('☑ Hỏng');
+            } else if (line.includes('Tủ:')) {
+                parsed.tu.tot = line.includes('☑ Tốt');
+                parsed.tu.hong = line.includes('☑ Hỏng');
+            } else if (line.includes('Ghi chú:')) {
+                parsed.ghichu = line.replace('Ghi chú:', '').trim();
+            }
+        });
+
+        return parsed;
+    };
 
     // Fetch request details on mount
     useEffect(() => {
@@ -74,6 +111,11 @@ export function RequestDetailPage() {
                     responseMessageByManager: requestData.responseMessageByManager || ""
                 });
 
+                // Parse acceptance form if exists and request type is CHECKOUT
+                if (requestData.requestType === "CHECKOUT" && requestData.responseMessageByEmployee) {
+                    const parsedForm = parseAcceptanceFormFromText(requestData.responseMessageByEmployee);
+                    setAcceptanceFormData(parsedForm);
+                }
             }
         }
     }, [isRequestSuccess, requestResponse]);
@@ -177,6 +219,69 @@ export function RequestDetailPage() {
             hour: '2-digit',
             minute: '2-digit'
         });
+    };
+
+    // Render acceptance form display
+    const renderAcceptanceFormDisplay = () => {
+        if (!acceptanceFormData || requestData?.requestType !== "CHECKOUT") {
+            return null;
+        }
+
+        const items = [
+            { key: 'giuong', label: 'Giường' },
+            { key: 'ghe', label: 'Ghế' },
+            { key: 'ban', label: 'Bàn' },
+            { key: 'tu', label: 'Tủ' }
+        ];
+
+        return (
+            <Card
+                title="Biên bản nghiệm thu tình trạng phòng"
+                className="mt-6"
+                style={{ background: '#f0f7ff', borderColor: '#1890ff' }}
+            >
+                <div style={{ padding: '16px' }}>
+                    {items.map(item => (
+                        <Row key={item.key} style={{ marginBottom: 16, padding: '12px', background: 'white', borderRadius: '8px' }} align="middle">
+                            <Col span={6}>
+                                <strong style={{ fontSize: '16px' }}>{item.label}:</strong>
+                            </Col>
+                            <Col span={9}>
+                                <Space>
+                                    {acceptanceFormData[item.key].tot ? (
+                                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '18px' }} />
+                                    ) : (
+                                        <CloseCircleOutlined style={{ color: '#d9d9d9', fontSize: '18px' }} />
+                                    )}
+                                    <span style={{ color: acceptanceFormData[item.key].tot ? '#52c41a' : '#8c8c8c' }}>
+                                        Tốt
+                                    </span>
+                                </Space>
+                            </Col>
+                            <Col span={9}>
+                                <Space>
+                                    {acceptanceFormData[item.key].hong ? (
+                                        <CheckCircleOutlined style={{ color: '#ff4d4f', fontSize: '18px' }} />
+                                    ) : (
+                                        <CloseCircleOutlined style={{ color: '#d9d9d9', fontSize: '18px' }} />
+                                    )}
+                                    <span style={{ color: acceptanceFormData[item.key].hong ? '#ff4d4f' : '#8c8c8c' }}>
+                                        Hỏng
+                                    </span>
+                                </Space>
+                            </Col>
+                        </Row>
+                    ))}
+
+                    {acceptanceFormData.ghichu && (
+                        <div style={{ marginTop: 24, padding: '12px', background: '#fff9e6', borderRadius: '8px', border: '1px solid #ffd666' }}>
+                            <strong style={{ display: 'block', marginBottom: 8 }}>Ghi chú:</strong>
+                            <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{acceptanceFormData.ghichu}</p>
+                        </div>
+                    )}
+                </div>
+            </Card>
+        );
     };
 
     return (
@@ -321,8 +426,11 @@ export function RequestDetailPage() {
                                     </div>
                                 </Card>
 
-                                {/* Response Message from Employee */}
-                                {requestData.responseMessageByEmployee && (
+                                {/* Display Acceptance Form if available */}
+                                {renderAcceptanceFormDisplay()}
+
+                                {/* Response Message from Employee (show raw text if not acceptance form) */}
+                                {requestData.responseMessageByEmployee && !acceptanceFormData && (
                                     <Card title="Tin nhắn phản hồi từ nhân viên" className="mt-6">
                                         <div className="bg-blue-50 p-4 rounded-lg">
                                             <p className="whitespace-pre-wrap">{requestData.responseMessageByEmployee}</p>
