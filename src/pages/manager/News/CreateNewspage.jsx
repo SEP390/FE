@@ -131,7 +131,7 @@ export function CreateNewsPage() {
         <LayoutManager active="manager-news" header="Tạo tin tức mới">
             <Card
                 style={{
-                    Width: 1200,
+                    width: 1000,
                     margin: "0 auto",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
@@ -164,11 +164,13 @@ export function CreateNewsPage() {
                         name="content"
                         rules={[{ required: true, message: "Nhập nội dung tin tức" }]}
                     >
-                        <Tabs
-                            activeKey={editorMode}
-                            onChange={setEditorMode}
-                            items={tabItems}
-                        />
+                        <div className="news-editor-wrapper">
+                            <Tabs
+                                activeKey={editorMode}
+                                onChange={setEditorMode}
+                                items={tabItems}
+                            />
+                        </div>
                     </Form.Item>
 
                     <Form.Item style={{ marginTop: 20 }}>
