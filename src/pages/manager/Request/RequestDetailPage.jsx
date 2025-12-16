@@ -353,9 +353,6 @@ export function RequestDetailPage() {
                                             <Descriptions.Item label="Học kỳ">
                                                 {requestData.semesterName || 'N/A'}
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Username người ở">
-                                                {residentInfo?.username || (isUserLoading ? 'Đang tải...' : 'N/A')}
-                                            </Descriptions.Item>
                                             <Descriptions.Item label="Mã người ở">
                                                 {residentInfo?.userCode || (isUserLoading ? 'Đang tải...' : 'N/A')}
                                             </Descriptions.Item>
