@@ -20,7 +20,7 @@ const {Sider} = Layout;
 
 const managerItems = [
     {
-        label: <Link to={"/manager/residents"}>Quản lí sinh viên</Link>,
+        label: <Link to={"/manager/residents"}>Quản lý sinh viên</Link>,
         icon: <UserOutlined/>,
         key: "manager-students",
     },
@@ -35,17 +35,17 @@ const managerItems = [
         key: "manager-time-config",
     },
     {
-        label: <Link to={'/pages/manager/invoice'}>Quản lí hóa đơn</Link>,
+        label: <Link to={'/pages/manager/invoice'}>Quản lý hóa đơn</Link>,
         icon: <ReadOutlined/>,
         key: 'manager-invoice'
     },
     {
-        label: <Link to={"/manager/requests"}>Quản lí yêu cầu</Link>,
+        label: <Link to={"/manager/requests"}>Quản lý yêu cầu</Link>,
         icon: <ContainerOutlined/>,
         key: "manager-requests",
     },
     {
-        label: <Link to={"/pages/manager/slot-usage"}>Quản lí slot</Link>,
+        label: <Link to={"/pages/manager/slot-usage"}>Quản lý slot</Link>,
         icon: <ContainerOutlined/>,
         key: "manager-slot",
     },
@@ -55,32 +55,32 @@ const managerItems = [
         key: "manager-rooms",
     },
     {
-        label: <Link to={"/manager/news"}>Quản lí tin tức</Link>,
+        label: <Link to={"/manager/news"}>Quản lý tin tức</Link>,
         icon: <ReadOutlined/>,
         key: "manager-news",
     },
     {
-        label: <Link to={"/manager/schedule"}>Quản lí lịch làm việc</Link>,
+        label: <Link to={"/manager/schedule"}>Quản lý lịch làm việc</Link>,
         icon: <ScheduleOutlined/>,
         key: "manager-schedule",
     },
     {
-        label: <Link to={"/manager/staff"}>Quản lí nhân viên</Link>,
+        label: <Link to={"/manager/staff"}>Quản lý nhân viên</Link>,
         icon: <TeamOutlined/>,
         key: "manager-staff",
     },
     {
-        label: <Link to={"/manager/reports"}>Quản lí báo cáo</Link>,
+        label: <Link to={"/manager/reports"}>Quản lý báo cáo</Link>,
         icon: <WarningOutlined/>,
         key: "manager-reports",
     },
     {
-        label: <Link to={"/manager/surveys"}>Quản lí khảo sát</Link>,
+        label: <Link to={"/manager/surveys"}>Quản lý khảo sát</Link>,
         icon: <FileSearchOutlined/>,
         key: "manager-surveys",
     },
     {
-        label: <Link to={"/pages/manager/semester"}>Quản lí kỳ</Link>,
+        label: <Link to={"/pages/manager/semester"}>Quản lý kỳ</Link>,
         icon: <FileSearchOutlined/>,
         key: "semester",
     },
