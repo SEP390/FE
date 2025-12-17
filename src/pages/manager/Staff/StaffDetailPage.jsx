@@ -1,190 +1,98 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
-import {Typography, Spin, Descriptions, Button, Image, Row, Col, Tag, App} from 'antd';
+import { Typography, Spin, Descriptions, Button, Image, Row, Col, Tag, App, Card } from 'antd';
 import { ArrowLeftOutlined, UserOutlined, ContactsOutlined, FileTextOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
-import { useCollapsed } from '../../../hooks/useCollapsed.js';
-import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
+import { RequireRole } from "../../../components/authorize/RequireRole.jsx";
 
-const { Title } = Typography;
-
-// --- HELPERS: CHUẨN HÓA DỮ LIỆU HIỂN THỊ ---
-
-// 1. Chuẩn hóa vai trò (Bao gồm TECHNICAL)
-const getRoleText = (role) => {
-    switch (role) {
-        case 'GUARD':
-            return <Tag color="blue">Bảo vệ</Tag>;
-        case 'CLEANER':
-            return <Tag color="green">Lao công</Tag>;
-        case 'TECHNICAL':
-            return <Tag color="orange">Kỹ thuật</Tag>;
-        case 'MANAGER':
-            return <Tag color="red">Quản lý</Tag>;
-        default:
-            return <Tag color="default">N/A</Tag>;
-    }
-};
-
-// 2. Chuẩn hóa giới tính
-const getGenderText = (gender) => {
-    switch (gender) {
-        case 'MALE':
-            return 'Nam';
-        case 'FEMALE':
-            return 'Nữ';
-        default:
-            return 'Khác';
-    }
-};
-
+const { Title, Text } = Typography;
 
 export function StaffDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const {message}=App.useApp();
+    const { message } = App.useApp();
     const [staff, setStaff] = useState(null);
     const [loading, setLoading] = useState(true);
-
-    // use global collapsed state
-    const collapsed = useCollapsed(state => state.collapsed);
-    const setCollapsed = useCollapsed(state => state.setCollapsed);
     const activeKey = 'manager-staff';
 
     useEffect(() => {
         if (id) {
             setLoading(true);
-
             axiosClient.get(`/employees/${id}`)
                 .then(response => {
                     if (response && response.data) {
                         setStaff(response.data);
                     } else {
-                        setStaff(null);
-                        message.error("Đã nhận được phản hồi nhưng cấu trúc dữ liệu không đúng.");
+                        message.error("Cấu trúc dữ liệu không hợp lệ.");
                     }
                 })
                 .catch(error => {
-                    console.error("Lỗi khi tải chi tiết nhân viên:", error);
                     message.error("Không thể tải thông tin nhân viên!");
-                    setStaff(null);
                 })
-                .finally(() => {
-                    setLoading(false);
-                });
-        } else {
-            setLoading(false);
-            message.error("Không tìm thấy ID nhân viên trong URL.");
+                .finally(() => setLoading(false));
         }
-    }, [id]);
+    }, [id, message]);
 
-    // --- Hàm render nội dung chính ---
+    const getRoleTag = (role) => {
+        const colors = { GUARD: 'blue', CLEANER: 'green', TECHNICAL: 'orange', MANAGER: 'red' };
+        const labels = { GUARD: 'Bảo vệ', CLEANER: 'Lao công', TECHNICAL: 'Kỹ thuật', MANAGER: 'Quản lý' };
+        return <Tag color={colors[role] || 'default'}>{labels[role] || role}</Tag>;
+    };
+
     const renderContent = () => {
-        if (loading) {
-            return (
-                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', textAlign: 'center', marginTop: 80 }}>
-                    <Spin tip="Đang tải..." size="large" />
-                </Content>
-            );
-        }
-
-        if (!staff) {
-            return (
-                <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', marginTop: 80 }}>
-                    <Button
-                        onClick={() => navigate('/manager/staff')}
-                        icon={<ArrowLeftOutlined />}
-                        style={{ marginBottom: 20 }}
-                    >
-                        Quay lại danh sách
-                    </Button>
-                    <Title level={3}>Không tìm thấy thông tin nhân viên.</Title>
-                </Content>
-            );
-        }
-
-        // Sử dụng trường 'imageUrl' từ Backend
-        const imageUrl = staff.imageUrl;
+        if (loading) return <div style={{ textAlign: 'center', padding: '50px' }}><Spin size="large" tip="Đang tải dữ liệu..." /></div>;
+        if (!staff) return <Card><Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/manager/staff')}>Quay lại</Button><Title level={3}>Không tìm thấy dữ liệu.</Title></Card>;
 
         return (
-            <RequireRole role = "MANAGER">
-            <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', marginTop: 80 }}>
-                <Button
-                    onClick={() => navigate('/manager/staff')}
-                    icon={<ArrowLeftOutlined />}
-                    style={{ marginBottom: 20 }}
-                >
+            <Card bordered={false}>
+                <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/manager/staff')} style={{ marginBottom: 24 }}>
                     Quay lại danh sách
                 </Button>
 
-                <Title level={2} style={{ marginBottom: 30 }}>Chi tiết nhân viên: {staff.fullName || 'N/A'}</Title>
-
-                <Row gutter={32}>
-                    {/* Cột 1: Hình ảnh */}
-                    <Col span={6} style={{ textAlign: 'center' }}>
+                <Row gutter={[32, 32]}>
+                    <Col xs={24} md={6} style={{ textAlign: 'center' }}>
                         <div style={{ marginBottom: 20 }}>
-                            {/* Dùng imageUrl và kiểm tra tính hợp lệ */}
-                            {imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('http') ? (
-                                <Image
-                                    width={200}
-                                    height={200}
-                                    style={{ objectFit: 'cover', borderRadius: '50%' }}
-                                    src={imageUrl}
-                                    alt={`Ảnh của ${staff.fullName}`}
-                                />
+                            {staff.imageUrl ? (
+                                <Image width={200} height={200} style={{ objectFit: 'cover', borderRadius: '50%' }} src={staff.imageUrl} />
                             ) : (
-                                <div style={{
-                                    width: 200,
-                                    height: 200,
-                                    borderRadius: '50%',
-                                    backgroundColor: '#f0f0f0',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
+                                <div style={{ width: 200, height: 200, borderRadius: '50%', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
                                     <UserOutlined style={{ fontSize: 80, color: '#999' }} />
                                 </div>
                             )}
                         </div>
-                        <Title level={4}>{staff.fullName || 'N/A'}</Title>
-                        <Typography.Text type="secondary">{getRoleText(staff.role)}</Typography.Text>
+                        <Title level={3}>{staff.fullName || 'N/A'}</Title>
+                        {getRoleTag(staff.role)}
                     </Col>
 
-                    {/* Cột 2: Chi tiết mô tả */}
-                    <Col span={18}>
-                        <Title level={4} style={{ marginTop: 0 }}><ContactsOutlined /> Thông tin cá nhân & Liên hệ</Title>
-                        <Descriptions bordered column={2} size="middle" style={{ marginBottom: 20 }}>
+                    <Col xs={24} md={18}>
+                        <Title level={4}><ContactsOutlined /> Thông tin cá nhân & Liên hệ</Title>
+                        <Descriptions bordered column={{ xs: 1, sm: 2 }} size="middle" style={{ marginBottom: 30 }}>
                             <Descriptions.Item label="Mã NV">{staff.userCode || 'N/A'}</Descriptions.Item>
-                            <Descriptions.Item label="Chức vụ">{getRoleText(staff.role)}</Descriptions.Item>
-
+                            <Descriptions.Item label="Chức vụ">{getRoleTag(staff.role)}</Descriptions.Item>
                             <Descriptions.Item label="Email" span={2}>{staff.email || 'N/A'}</Descriptions.Item>
                             <Descriptions.Item label="SĐT">{staff.phoneNumber || 'N/A'}</Descriptions.Item>
-                            <Descriptions.Item label="Giới tính">{getGenderText(staff.gender)}</Descriptions.Item>
-
-                            {/* Sử dụng dob từ BE */}
+                            <Descriptions.Item label="Giới tính">{staff.gender === 'MALE' ? 'Nam' : staff.gender === 'FEMALE' ? 'Nữ' : 'Khác'}</Descriptions.Item>
                             <Descriptions.Item label="Ngày sinh" span={2}>{staff.dob ? dayjs(staff.dob).format('DD/MM/YYYY') : 'N/A'}</Descriptions.Item>
                         </Descriptions>
 
                         <Title level={4}><FileTextOutlined /> Thông tin Hợp đồng</Title>
                         <Descriptions bordered column={1} size="middle">
-                            {/* Sử dụng hireDate từ BE */}
                             <Descriptions.Item label="Ngày bắt đầu HĐ">{staff.hireDate ? dayjs(staff.hireDate).format('DD/MM/YYYY') : 'N/A'}</Descriptions.Item>
-                            {/* Sử dụng contractEndDate từ BE */}
                             <Descriptions.Item label="Ngày kết thúc HĐ">{staff.contractEndDate ? dayjs(staff.contractEndDate).format('DD/MM/YYYY') : 'N/A'}</Descriptions.Item>
                         </Descriptions>
                     </Col>
                 </Row>
-            </Content>
-            </RequireRole>
+            </Card>
         );
     };
 
-    // Use LayoutManager for consistent header/sidebar behavior
     return (
-        <LayoutManager active={activeKey} header={"Chi tiết nhân viên"}>
-            {renderContent()}
-        </LayoutManager>
+        <RequireRole role="MANAGER">
+            <LayoutManager active={activeKey} header="Chi tiết nhân viên">
+                {renderContent()}
+            </LayoutManager>
+        </RequireRole>
     );
 }
