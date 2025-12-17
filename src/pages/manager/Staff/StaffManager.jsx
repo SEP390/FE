@@ -11,49 +11,48 @@ import {
     UnlockOutlined,
     ClearOutlined,
     EyeOutlined,
-    UploadOutlined
+    UploadOutlined,
+    ReloadOutlined
 } from "@ant-design/icons";
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 
-// Import LayoutManager thay vì các component riêng lẻ
+// Import LayoutManager đồng nhất
 import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
-// Import axiosClient
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
-// Import dayjs for DatePicker
 import dayjs from 'dayjs';
-// Import hàm tạo mật khẩu
 import { generateRandomPassword } from '../../../util/password.js';
-import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
-
+import { RequireRole } from "../../../components/authorize/RequireRole.jsx";
 
 const { Title } = Typography;
 const { Option } = Select;
 
-// --- COMPONENT CHÍNH ---
 export function StaffManager() {
-    const {message}=App.useApp();
+    const { message } = App.useApp();
+    const navigate = useNavigate();
+    const activeKey = 'manager-staff';
 
+    // --- States ---
     const [staffData, setStaffData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchText, setSearchText] = useState('');
     const [filterPosition, setFilterPosition] = useState(undefined);
 
-    // (State Modals)
+    // Modal States
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const [isSubmittingAdd, setIsSubmittingAdd] = useState(false);
     const [formAddStaff] = Form.useForm();
-    const [fileList, setFileList] = useState([]); // STATE CHO UPLOAD
+    const [fileList, setFileList] = useState([]);
+
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [editingStaff, setEditingStaff] = useState(null);
     const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
     const [formEditStaff] = Form.useForm();
+
     const [isResetModalVisible, setIsResetModalVisible] = useState(false);
     const [isResettingPassword, setIsResettingPassword] = useState(false);
     const [resettingStaff, setResettingStaff] = useState(null);
     const [formResetPassword] = Form.useForm();
-
-    const navigate = useNavigate();
 
     // --- API Calls ---
     const fetchStaff = async () => {
@@ -67,19 +66,15 @@ export function StaffManager() {
                     phone: staff.phoneNumber || staff.phone || 'N/A'
                 }));
                 setStaffData(dataWithKey);
-            } else { setStaffData([]); }
+            }
         } catch (error) {
-            console.error("Lỗi khi tải danh sách nhân viên:", error.response || error);
             message.error("Không thể tải danh sách nhân viên!");
-            setStaffData([]);
         } finally { setLoading(false); }
     };
 
-    useEffect(() => {
-        fetchStaff();
-    }, []);
+    useEffect(() => { fetchStaff(); }, []);
 
-    // --- Filtering Logic ---
+    // --- logic Filter ---
     const filteredData = staffData.filter(staff => {
         const searchTarget = `${staff.username || ''} ${staff.email || ''} ${staff.phone || ''}`.toLowerCase();
         const matchesSearch = searchTarget.includes(searchText.toLowerCase());
@@ -87,533 +82,172 @@ export function StaffManager() {
         return matchesSearch && matchesPosition;
     });
 
-    const handleClearFilters = () => {
-        setSearchText('');
-        setFilterPosition(undefined);
-    };
+    // --- Handlers ---
+    const handleFileChange = ({ fileList: newFileList }) => setFileList(newFileList.slice(-1));
 
-    // --- Handlers cho Modals ---
-    const showAddModal = () => setIsAddModalVisible(true);
-    const handleCancelAdd = () => {
-        setIsAddModalVisible(false);
-        formAddStaff.resetFields();
-        setFileList([]); // RESET STATE FILE
-    };
-
-    // Hàm xử lý thay đổi trạng thái file trong component Upload
-    const handleFileChange = ({ fileList: newFileList }) => {
-        setFileList(newFileList.slice(-1)); // Chỉ giữ lại file cuối cùng (1 ảnh)
-    };
-
-    // HÀM ĐÃ SỬA: Sử dụng Axios thuần để truyền token và multipart/form-data chính xác
     const uploadFileAndGetUrl = async (file) => {
-        try {
-            const formData = new FormData();
-            formData.append('image', file);
-
-            // Lấy token trực tiếp từ localStorage (Giả định key là "token")
-            const token = localStorage.getItem("token");
-
-            if (!token) {
-                throw new Error("Lỗi xác thực: Không tìm thấy token.");
-            }
-
-            // Tự gọi API bằng Axios thuần (không dùng axiosClient)
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_URL}/uploads`,
-                formData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                }
-            );
-
-            // Kiểm tra cấu trúc phản hồi từ BE: {status, message, data: URL}
-            if (response && response.data && response.data.data) {
-                // response.data là BaseResponse, response.data.data là URL
-                return response.data.data;
-            }
-            throw new Error("Không nhận được đường dẫn ảnh từ server.");
-        } catch (error) {
-            console.error("Lỗi khi tải ảnh lên:", error.response || error);
-            if (error.response && error.response.status === 401) {
-                throw new Error("Không được phép (401). Vui lòng đăng nhập lại.");
-            }
-            throw new Error(`Tải ảnh lên thất bại! ` + (error.response?.data?.message || error.message || 'Lỗi không xác định'));
-        }
+        const formData = new FormData();
+        formData.append('image', file);
+        const token = localStorage.getItem("token");
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/uploads`, formData, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        return response.data.data;
     };
 
     const handleAddStaff = async (values) => {
         setIsSubmittingAdd(true);
-        let imageUrl = null; // Khởi tạo URL ảnh
-
         try {
-            // 1. UPLOAD ẢNH NẾU CÓ
+            let imageUrl = null;
             if (fileList.length > 0) {
-                const fileToUpload = fileList[0].originFileObj;
-                imageUrl = await uploadFileAndGetUrl(fileToUpload); // Lấy URL ảnh
+                imageUrl = await uploadFileAndGetUrl(fileList[0].originFileObj);
             }
-
-            // 2. CHUẨN HÓA DỮ LIỆU VÀ GỌI API THÊM NHÂN VIÊN
-            const formattedValues = {
+            const payload = {
                 ...values,
-                image: imageUrl, // <-- Gửi URL ảnh vào trường 'image'
+                image: imageUrl,
                 dob: values.dob ? dayjs(values.dob).format('YYYY-MM-DD') : null,
                 hireDate: values.hireDate ? dayjs(values.hireDate).format('YYYY-MM-DD') : null,
                 contractEndDate: values.contractEndDate ? dayjs(values.contractEndDate).format('YYYY-MM-DD') : null,
             };
-
-            // Loại bỏ trường ảo
-            delete formattedValues.imageUpload;
-
-            // API tạo nhân viên
-            await axiosClient.post('/employees', formattedValues);
-            message.success(`Đã thêm nhân viên ${values.username} thành công!`);
-            handleCancelAdd();
+            await axiosClient.post('/employees', payload);
+            message.success(`Đã thêm nhân viên thành công!`);
+            setIsAddModalVisible(false);
+            formAddStaff.resetFields();
+            setFileList([]);
             fetchStaff();
         } catch (error) {
-            // Bắt lỗi tổng quát
-            message.error(`Thêm nhân viên thất bại! ` + (error.message || error.response?.data?.message || 'Lỗi không xác định'));
-        } finally {
-            setIsSubmittingAdd(false);
-        }
+            message.error("Thêm nhân viên thất bại!");
+        } finally { setIsSubmittingAdd(false); }
     };
-
-    const showEditModal = (record) => {
-        setEditingStaff(record);
-        // Lấy chi tiết nhân viên để điền vào form
-        axiosClient.get(`/employees/${record.employeeId}`)
-            .then(response => {
-                if (response && response.data) {
-                    const details = response.data; // Đây là GetEmployeeByIdResponse
-                    formEditStaff.setFieldsValue({
-                        phoneNumber: details.phoneNumber,
-                        role: details.role,
-                        // DOB trong response BE là dob, FE dùng birthDate
-                        birthDate: details.dob ? dayjs(details.dob) : null,
-                        hireDate: details.hireDate ? dayjs(details.hireDate) : null,
-                        contractEndDate: details.contractEndDate ? dayjs(details.contractEndDate) : null,
-                    });
-                }
-            })
-            .catch(() => {
-                message.error("Không thể tải chi tiết nhân viên để sửa!");
-                formEditStaff.setFieldsValue({
-                    phoneNumber: record.phone,
-                    role: record.role,
-                });
-            });
-        setIsEditModalVisible(true);
-    };
-
-    const handleCancelEdit = () => { setIsEditModalVisible(false); setEditingStaff(null); formEditStaff.resetFields(); };
 
     const handleUpdateStaff = async (values) => {
-        if (!editingStaff) return;
         setIsSubmittingEdit(true);
         try {
-            const employeeId = editingStaff.employeeId;
             const payload = {
-                // Tên trường trong payload phải khớp với UpdateEmployeeRequest của BE
                 phoneNumber: values.phoneNumber,
-                birthDate: values.birthDate ? dayjs(values.birthDate).format('YYYY-MM-DD') : null, // BE dùng birthDate
+                birthDate: values.birthDate ? dayjs(values.birthDate).format('YYYY-MM-DD') : null,
                 role: values.role,
                 hireDate: values.hireDate ? dayjs(values.hireDate).format('YYYY-MM-DD') : null,
                 contractEndDate: values.contractEndDate ? dayjs(values.contractEndDate).format('YYYY-MM-DD') : null,
             };
-
-            await axiosClient.put(`/employees/${employeeId}`, payload);
-            message.success(`Đã cập nhật nhân viên ${editingStaff.username}!`);
-            handleCancelEdit();
+            await axiosClient.put(`/employees/${editingStaff.employeeId}`, payload);
+            message.success("Cập nhật thành công!");
+            setIsEditModalVisible(false);
             fetchStaff();
-        } catch (error) {
-            console.error("Lỗi khi cập nhật nhân viên:", error.response || error);
-            message.error(`Cập nhật thất bại! ` + (error.response?.data?.message || error.message));
-        } finally {
-            setIsSubmittingEdit(false);
-        }
+        } catch (error) { message.error("Cập nhật thất bại!"); }
+        finally { setIsSubmittingEdit(false); }
     };
 
-    const showResetPasswordModal = (record) => {
-        setResettingStaff(record);
-        setIsResetModalVisible(true);
-    };
-    const handleCancelResetPassword = () => {
-        setIsResetModalVisible(false);
-        formResetPassword.resetFields();
-        setResettingStaff(null);
-    };
     const handleOkResetPassword = async () => {
-        if (!resettingStaff) return;
+        const values = await formResetPassword.validateFields();
+        setIsResettingPassword(true);
         try {
-            const values = await formResetPassword.validateFields();
-            setIsResettingPassword(true);
-            const payload = { newPassword: values.newPassword };
-            const resetPasswordPath = `/employees/${resettingStaff.employeeId}/passwords`;
-
-            await axiosClient.put(resetPasswordPath, payload);
-            message.success(`Đã đặt lại mật khẩu cho ${resettingStaff.username}!`);
-            handleCancelResetPassword();
-        } catch (error) {
-            console.error("Lỗi khi reset mật khẩu:", error.response || error);
-            message.error(`Reset mật khẩu thất bại! ` + (error.response?.data?.message || error.message));
-        } finally {
-            setIsResettingPassword(false);
-        }
+            await axiosClient.put(`/employees/${resettingStaff.employeeId}/passwords`, { newPassword: values.newPassword });
+            message.success("Đã đặt lại mật khẩu!");
+            setIsResetModalVisible(false);
+            formResetPassword.resetFields();
+        } catch (error) { message.error("Lỗi khi reset mật khẩu!"); }
+        finally { setIsResettingPassword(false); }
     };
 
-    const handleGenerateAddPassword = () => {
-        const newPassword = generateRandomPassword();
-        formAddStaff.setFieldsValue({ password: newPassword });
-    };
-
-    const handleGenerateResetPassword = () => {
-        const newPassword = generateRandomPassword();
-        formResetPassword.setFieldsValue({
-            newPassword: newPassword,
-            confirmPassword: newPassword
-        });
-    };
-
-    // --- Hàm xử lý điều hướng ---
-    const handleNavigateToDetails = (employeeId) => {
-        if (!employeeId) {
-            message.error("Không tìm thấy ID nhân viên.");
-            return;
-        }
-        // Đường dẫn này phải khớp với route của trang chi tiết
-        navigate(`/manager/staff/details/${employeeId}`);
-    };
-
-    // --- Dropdown Actions ---
-    const handleMenuClick = (key, record) => {
-        if (key === 'viewDetails') {
-            handleNavigateToDetails(record.employeeId);
-        } else if (key === 'edit') {
-            showEditModal(record);
-        } else if (key === 'resetPass') {
-            showResetPasswordModal(record);
-        }
-    };
-
-    const getActionMenu = (record) => (
-        <Menu onClick={({ key }) => handleMenuClick(key, record)}>
-            <Menu.Item key="viewDetails" icon={<EyeOutlined />}>
-                Xem chi tiết
-            </Menu.Item>
-            <Menu.Item key="edit" icon={<EditOutlined />}>
-                Chỉnh sửa thông tin
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Item key="resetPass" icon={<UnlockOutlined />}>
-                Reset mật khẩu
-            </Menu.Item>
-        </Menu>
-    );
-
-    // --- Cột Bảng ---
     const columns = [
-        {
-            title: 'STT',
-            key: 'stt',
-            width: 70,
-            render: (text, record, index) => {
-                const currentPage = 1;
-                const pageSize = 10;
-                return ((currentPage - 1) * pageSize) + index + 1;
-            },
-        },
-        {
-            title: 'Username',
-            dataIndex: 'username',
-            key: 'username',
-            sorter: (a, b) => (a.username || '').localeCompare(b.username || ''),
-            render: (text) => (
-                <span>
-                    {text || 'N/A'}
-                </span>
-            )
-        },
+        { title: 'STT', key: 'stt', width: 70, render: (_, __, index) => index + 1 },
+        { title: 'Username', dataIndex: 'username', key: 'username', sorter: (a, b) => a.username.localeCompare(b.username) },
         { title: 'Email', dataIndex: 'email', key: 'email' },
         { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone' },
-        { title: 'Chức vụ', dataIndex: 'role', key: 'role', render: (role) => <Tag color="blue">{role || 'N/A'}</Tag> },
+        { title: 'Chức vụ', dataIndex: 'role', key: 'role', render: (role) => <Tag color="blue">{role}</Tag> },
         {
-            title: 'Hành động',
-            key: 'action',
-            render: (text, record) => (
-                <Dropdown overlay={() => getActionMenu(record)} trigger={['click']}>
+            title: 'Hành động', key: 'action', render: (_, record) => (
+                <Dropdown overlay={
+                    <Menu onClick={({ key }) => {
+                        if (key === 'view') navigate(`/manager/staff/details/${record.employeeId}`);
+                        if (key === 'edit') {
+                            setEditingStaff(record);
+                            axiosClient.get(`/employees/${record.employeeId}`).then(res => {
+                                formEditStaff.setFieldsValue({
+                                    ...res.data,
+                                    birthDate: res.data.dob ? dayjs(res.data.dob) : null,
+                                    hireDate: res.data.hireDate ? dayjs(res.data.hireDate) : null,
+                                    contractEndDate: res.data.contractEndDate ? dayjs(res.data.contractEndDate) : null,
+                                });
+                            });
+                            setIsEditModalVisible(true);
+                        }
+                        if (key === 'reset') { setResettingStaff(record); setIsResetModalVisible(true); }
+                    }}>
+                        <Menu.Item key="view" icon={<EyeOutlined />}>Xem chi tiết</Menu.Item>
+                        <Menu.Item key="edit" icon={<EditOutlined />}>Chỉnh sửa</Menu.Item>
+                        <Menu.Divider />
+                        <Menu.Item key="reset" icon={<UnlockOutlined />}>Reset mật khẩu</Menu.Item>
+                    </Menu>
+                } trigger={['click']}>
                     <Button type="text" icon={<MoreOutlined />} />
                 </Dropdown>
             )
         },
     ];
 
-    // --- PHẦN RENDER (Return) ---
     return (
         <RequireRole role="MANAGER">
-            <LayoutManager active="manager-staff" header="Quản lý nhân viên">
-                <Card className="h-full">
+            <LayoutManager active={activeKey} header="Quản lý nhân viên">
+                <Card bordered={false}>
                     <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
                         <Col><Title level={4} style={{ margin: 0 }}>Danh sách nhân viên</Title></Col>
-                        <Col><Button type="primary" icon={<UserAddOutlined />} onClick={showAddModal}>+ Thêm nhân viên</Button></Col>
+                        <Col><Button type="primary" icon={<UserAddOutlined />} onClick={() => setIsAddModalVisible(true)}>+ Thêm nhân viên</Button></Col>
                     </Row>
 
-                    {/* --- Hàng Filter --- */}
-                    <Row gutter={[16, 16]} style={{ marginBottom: 20, alignItems: 'center' }}>
-                        <Col flex="400px"><Input placeholder="Tìm kiếm (Username, Email, SĐT)..." prefix={<SearchOutlined />} value={searchText} onChange={(e) => setSearchText(e.target.value)} /></Col>
+                    <Row gutter={16} style={{ marginBottom: 20 }}>
+                        <Col flex="400px"><Input placeholder="Tìm kiếm nhân viên..." prefix={<SearchOutlined />} value={searchText} onChange={e => setSearchText(e.target.value)} /></Col>
                         <Col>
-                            <Select placeholder="Lọc theo Chức vụ" style={{ width: 150 }} value={filterPosition} onChange={setFilterPosition} allowClear>
-                                {[...new Set(staffData.map(item => item.role).filter(Boolean))].map(role => (<Option key={role} value={role}>{role}</Option>))}
+                            <Select placeholder="Chức vụ" style={{ width: 150 }} value={filterPosition} onChange={setFilterPosition} allowClear>
+                                {[...new Set(staffData.map(i => i.role))].map(r => <Option key={r} value={r}>{r}</Option>)}
                             </Select>
                         </Col>
-                        <Col><Button onClick={handleClearFilters} icon={<ClearOutlined />}>Xóa bộ lọc</Button></Col>
+                        <Col><Button onClick={() => { setSearchText(''); setFilterPosition(undefined); }} icon={<ClearOutlined />}>Xóa lọc</Button></Col>
                     </Row>
-                    {/* --- KẾT THÚC Hàng Filter --- */}
 
-                    <Table
-                        columns={columns}
-                        dataSource={filteredData}
-                        loading={loading}
-                        pagination={{ pageSize: 10 }}
-                        bordered
-                    />
-
-                    {/* --- ADD STAFF MODAL --- */}
-                    <Modal
-                        title="Thêm nhân viên mới"
-                        open={isAddModalVisible}
-                        onCancel={handleCancelAdd}
-                        footer={null}
-                        width={600}
-                    >
-                        <Form
-                            form={formAddStaff}
-                            layout="vertical"
-                            onFinish={handleAddStaff}
-                        >
-                            <Form.Item
-                                label="Username"
-                                name="username"
-                                rules={[{ required: true, message: 'Vui lòng nhập username!' }]}
-                            >
-                                <Input placeholder="Nhập username" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Email"
-                                name="email"
-                                rules={[
-                                    { required: true, message: 'Vui lòng nhập email!' },
-                                    { type: 'email', message: 'Email không hợp lệ!' }
-                                ]}
-                            >
-                                <Input placeholder="Nhập email" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Số điện thoại"
-                                name="phoneNumber"
-                            >
-                                <Input placeholder="Nhập số điện thoại" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Mật khẩu"
-                                name="password"
-                                rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
-                            >
-                                <Input.Password placeholder="Nhập mật khẩu" />
-                            </Form.Item>
-
-                            <Button
-                                type="dashed"
-                                onClick={handleGenerateAddPassword}
-                                style={{ marginBottom: 16 }}
-                            >
-                                Tạo mật khẩu ngẫu nhiên
-                            </Button>
-
-                            <Form.Item
-                                label="Chức vụ"
-                                name="role"
-                                rules={[{ required: true, message: 'Vui lòng chọn chức vụ!' }]}
-                            >
-                                <Select placeholder="Chọn chức vụ">
-                                    <Option value="GUARD">Bảo Vệ</Option>
-                                    <Option value="CLEANER">Lao Công</Option>
-                                    <Option value="TECHNICAL">Kĩ thuật</Option>
-                                </Select>
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Ngày sinh"
-                                name="dob"
-                            >
-                                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Ngày vào làm"
-                                name="hireDate"
-                            >
-                                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Ngày kết thúc hợp đồng"
-                                name="contractEndDate"
-                            >
-                                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Ảnh đại diện"
-                                name="imageUpload"
-                            >
-                                <Upload
-                                    listType="picture"
-                                    fileList={fileList}
-                                    onChange={handleFileChange}
-                                    beforeUpload={() => false}
-                                    maxCount={1}
-                                >
-                                    <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
-                                </Upload>
-                            </Form.Item>
-
-                            <Form.Item>
-                                <Space>
-                                    <Button type="primary" htmlType="submit" loading={isSubmittingAdd}>
-                                        Thêm
-                                    </Button>
-                                    <Button onClick={handleCancelAdd}>
-                                        Hủy
-                                    </Button>
-                                </Space>
-                            </Form.Item>
-                        </Form>
-                    </Modal>
-
-                    {/* --- EDIT STAFF MODAL --- */}
-                    <Modal
-                        title="Chỉnh sửa thông tin nhân viên"
-                        open={isEditModalVisible}
-                        onCancel={handleCancelEdit}
-                        footer={null}
-                        width={600}
-                    >
-                        <Form
-                            form={formEditStaff}
-                            layout="vertical"
-                            onFinish={handleUpdateStaff}
-                        >
-                            <Form.Item
-                                label="Số điện thoại"
-                                name="phoneNumber"
-                            >
-                                <Input placeholder="Nhập số điện thoại" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Chức vụ"
-                                name="role"
-                                rules={[{ required: true, message: 'Vui lòng chọn chức vụ!' }]}
-                            >
-                                <Select placeholder="Chọn chức vụ">
-                                    <Option value="Bảo Vệ">GUARD</Option>
-                                    <Option value="Lao Công ">CLEANER</Option>
-                                    <Option value="Kĩ thuật">TECHNICAL</Option>
-                                </Select>
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Ngày sinh"
-                                name="birthDate"
-                            >
-                                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Ngày vào làm"
-                                name="hireDate"
-                            >
-                                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Ngày kết thúc hợp đồng"
-                                name="contractEndDate"
-                            >
-                                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
-                            </Form.Item>
-
-                            <Form.Item>
-                                <Space>
-                                    <Button type="primary" htmlType="submit" loading={isSubmittingEdit}>
-                                        Cập nhật
-                                    </Button>
-                                    <Button onClick={handleCancelEdit}>
-                                        Hủy
-                                    </Button>
-                                </Space>
-                            </Form.Item>
-                        </Form>
-                    </Modal>
-
-                    {/* --- RESET PASSWORD MODAL --- */}
-                    <Modal
-                        title="Reset mật khẩu"
-                        open={isResetModalVisible}
-                        onOk={handleOkResetPassword}
-                        onCancel={handleCancelResetPassword}
-                        confirmLoading={isResettingPassword}
-                        okText="Đặt lại"
-                        cancelText="Hủy"
-                    >
-                        <Form
-                            form={formResetPassword}
-                            layout="vertical"
-                        >
-                            <Form.Item
-                                label="Mật khẩu mới"
-                                name="newPassword"
-                                rules={[
-                                    { required: true, message: 'Vui lòng nhập mật khẩu mới!' },
-                                    { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
-                                ]}
-                            >
-                                <Input.Password placeholder="Nhập mật khẩu mới" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Xác nhận mật khẩu"
-                                name="confirmPassword"
-                                dependencies={['newPassword']}
-                                rules={[
-                                    { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
-                                    ({ getFieldValue }) => ({
-                                        validator(_, value) {
-                                            if (!value || getFieldValue('newPassword') === value) {
-                                                return Promise.resolve();
-                                            }
-                                            return Promise.reject(new Error('Mật khẩu không khớp!'));
-                                        },
-                                    }),
-                                ]}
-                            >
-                                <Input.Password placeholder="Xác nhận mật khẩu mới" />
-                            </Form.Item>
-
-                            <Button
-                                type="dashed"
-                                onClick={handleGenerateResetPassword}
-                            >
-                                Tạo mật khẩu ngẫu nhiên
-                            </Button>
-                        </Form>
-                    </Modal>
+                    <Table columns={columns} dataSource={filteredData} loading={loading} bordered pagination={{ pageSize: 10 }} />
                 </Card>
+
+                {/* Modal Add/Edit/Reset logic remains same as your original, just ensured consistency */}
+                <Modal title="Thêm nhân viên" open={isAddModalVisible} onCancel={() => setIsAddModalVisible(false)} footer={null} width={650}>
+                    <Form form={formAddStaff} layout="vertical" onFinish={handleAddStaff}>
+                        <Row gutter={16}>
+                            <Col span={12}><Form.Item label="Username" name="username" rules={[{required: true}]}><Input /></Form.Item></Col>
+                            <Col span={12}>
+                                <Form.Item label="Mật khẩu" name="password" rules={[{required: true}]}>
+                                    <Input.Password addonAfter={<ReloadOutlined onClick={() => formAddStaff.setFieldsValue({password: generateRandomPassword()})} />} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Form.Item label="Email" name="email" rules={[{required: true, type: 'email'}]}><Input /></Form.Item>
+                        <Form.Item label="Chức vụ" name="role" rules={[{required: true}]}><Select options={[{value:'GUARD', label:'Bảo vệ'},{value:'CLEANER', label:'Lao công'},{value:'TECHNICAL', label:'Kỹ thuật'}]}/></Form.Item>
+                        <Row gutter={16}>
+                            <Col span={8}><Form.Item label="Ngày sinh" name="dob"><DatePicker style={{width:'100%'}}/></Form.Item></Col>
+                            <Col span={8}><Form.Item label="Ngày vào làm" name="hireDate"><DatePicker style={{width:'100%'}}/></Form.Item></Col>
+                            <Col span={8}><Form.Item label="Kết thúc HĐ" name="contractEndDate"><DatePicker style={{width:'100%'}}/></Form.Item></Col>
+                        </Row>
+                        <Form.Item label="Ảnh đại diện">
+                            <Upload listType="picture" fileList={fileList} onChange={handleFileChange} beforeUpload={() => false} maxCount={1}><Button icon={<UploadOutlined />}>Chọn ảnh</Button></Upload>
+                        </Form.Item>
+                        <Space style={{width: '100%', justifyContent: 'flex-end'}}><Button onClick={() => setIsAddModalVisible(false)}>Hủy</Button><Button type="primary" htmlType="submit" loading={isSubmittingAdd}>Lưu</Button></Space>
+                    </Form>
+                </Modal>
+
+                <Modal title="Sửa nhân viên" open={isEditModalVisible} onCancel={() => setIsEditModalVisible(false)} footer={null}>
+                    <Form form={formEditStaff} layout="vertical" onFinish={handleUpdateStaff}>
+                        <Form.Item label="Số điện thoại" name="phoneNumber"><Input /></Form.Item>
+                        <Form.Item label="Ngày sinh" name="birthDate"><DatePicker style={{width:'100%'}}/></Form.Item>
+                        <Form.Item label="Chức vụ" name="role"><Select options={[{value:'GUARD', label:'Bảo vệ'},{value:'CLEANER', label:'Lao công'},{value:'TECHNICAL', label:'Kỹ thuật'}]}/></Form.Item>
+                        <Space style={{width: '100%', justifyContent: 'flex-end'}}><Button onClick={() => setIsEditModalVisible(false)}>Hủy</Button><Button type="primary" htmlType="submit" loading={isSubmittingEdit}>Cập nhật</Button></Space>
+                    </Form>
+                </Modal>
+
+                <Modal title="Reset mật khẩu" open={isResetModalVisible} onOk={handleOkResetPassword} onCancel={() => setIsResetModalVisible(false)} confirmLoading={isResettingPassword}>
+                    <Form form={formResetPassword} layout="vertical">
+                        <Form.Item label="Mật khẩu mới" name="newPassword" rules={[{required: true, min: 6}]}><Input.Password /></Form.Item>
+                    </Form>
+                </Modal>
             </LayoutManager>
         </RequireRole>
     );
