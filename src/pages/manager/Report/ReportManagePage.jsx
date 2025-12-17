@@ -101,21 +101,24 @@ export function ReportManagePage() {
 
     const applyFilters = () => {
         let filtered = [...reports];
-
         if (selectedResident) {
-            filtered = filtered.filter(r => r.residentId === selectedResident);
+            filtered = filtered.filter(
+                (r) => r.residentId === selectedResident
+            );
         }
-
         if (selectedRoom) {
-            filtered = filtered.filter(r => r.roomId === selectedRoom);
+            filtered = filtered.filter(
+                (r) => r.roomId === selectedRoom
+            );
         }
-
         if (selectedReportType) {
-            filtered = filtered.filter(r => r.reportType === selectedReportType);
+            filtered = filtered.filter(
+                (r) => r.reportType === selectedReportType
+            );
         }
-
         setFilteredReports(filtered);
     };
+
 
     const clearFilters = () => {
         setSelectedResident(null);
@@ -318,40 +321,46 @@ export function ReportManagePage() {
                                     loading={loadingResidents}
                                     value={selectedResident}
                                     onChange={setSelectedResident}
-                                    filterOption={(input, option) => {
-                                        const resident = residents.find(r => r.residentId === option.value);
-                                        if (!resident) return false;
-                                        const searchText = `${resident.fullName} ${resident.userCode}`.toLowerCase();
-                                        return searchText.includes(input.toLowerCase());
-                                    }}
+                                    filterOption={(input, option) =>
+                                        option.children
+                                            .toString()
+                                            .toLowerCase()
+                                            .includes(input.toLowerCase())
+                                    }
                                 >
                                     {residents.map(resident => (
-                                        <Option key={resident.residentId} value={resident.email}>
-                                            {resident.fullName} ({resident.userCode})
+                                        <Option key={resident.residentId} value={resident.residentId}>
+                                            {resident.fullName} ({resident.email})
                                         </Option>
                                     ))}
                                 </Select>
 
                                 <Select
-                                    style={{width: 200}}
+                                    style={{ width: 200 }}
                                     placeholder="Lọc theo phòng"
                                     allowClear
                                     showSearch
                                     loading={loadingRooms}
                                     value={selectedRoom}
                                     onChange={setSelectedRoom}
-                                    filterOption={(input, option) => {
-                                        const room = rooms.find(r => r.id === option.value);
-                                        if (!room) return false;
-                                        return room.roomName.toLowerCase().includes(input.toLowerCase());
-                                    }}
+                                    filterOption={(input, option) =>
+                                        option.children
+                                            .toString()
+                                            .toLowerCase()
+                                            .includes(input.toLowerCase())
+                                    }
                                 >
-                                    {rooms.map(room => (
-                                        <Option key={room.id} value={room.id}>
+                                    {rooms.map((room) => (
+                                        <Option
+                                            key={room.id}
+                                            value={room.id}
+                                        >
                                             {room.roomNumber}
                                         </Option>
                                     ))}
                                 </Select>
+
+
                             </>
                         )}
 
