@@ -42,7 +42,7 @@ export function GuestPage() {
                 />
                 <div className="flex gap-2">
                     <Link to={"/login"}><Button type="default" icon={<LoginOutlined />}>Đăng Nhập</Button></Link>
-                    <Link to={"/register"}><Button type="default" icon={<UserPlus size={14} />}>Đăng ký</Button></Link>
+                    {/*<Link to={"/register"}><Button type="default" icon={<UserPlus size={14} />}>Đăng ký</Button></Link>*/}
                 </div>
             </Header>
 
@@ -56,7 +56,7 @@ export function GuestPage() {
                         tin tức mới nhất.
                     </p>
                     <div className="mt-6">
-                        <Button size="large">Xem Tin Tức</Button>
+                        {/*<Button size="large">Xem Tin Tức</Button>*/}
                     </div>
                 </div>
 
