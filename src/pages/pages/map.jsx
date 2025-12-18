@@ -165,8 +165,8 @@ function SVGLayer() {
         ]}>
             <rect x="0" y="0" width="100%" height="100%" fill={"rgba(0,0,0,0)"}/>
             <svg viewBox="0 0 480 238" width="100%" height="100%">
-                <polygon points="50,0 200,0 440,100 440 200 400 230 0 230" fill="rgba(0, 0, 0, 0.4)" stroke={"red"}></polygon>
-                <text fill={"white"} fontSize={30} x="10%" y="50%">
+                <polygon points="50,0 200,0 440,100 440 200 400 230 0 230" fill="#AAD3DF"></polygon>
+                <text fill={"black"} fontSize={30} x="10%" y="50%">
                     Hoàng sa (Việt Nam)
                 </text>
             </svg>
@@ -177,8 +177,8 @@ function SVGLayer() {
         ]}>
             <rect x="0" y="0" width="100%" height="100%" fill={"rgba(0,0,0,0)"}/>
             <svg viewBox="0 0 500 500" width="100%" height="100%">
-                <polygon points="0,250 250,0 500,100 500,250 240,470 0,400" fill="rgba(0, 0, 0, 0.4)" stroke={"red"}></polygon>
-                <text fill={"white"} fontSize={30} x="10%" y="50%">
+                <polygon points="0,250 250,0 500,100 500,250 240,470 0,400" fill="#AAD3DF"></polygon>
+                <text fill={"black"} fontSize={30} x="10%" y="50%">
                     Trường sa (Việt Nam)
                 </text>
             </svg>
