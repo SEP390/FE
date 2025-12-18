@@ -3,7 +3,7 @@ import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import dormIcon from "../../assets/images/dormimg1.png"
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-import {MapContainer, Marker, Popup, TileLayer, useMap} from 'react-leaflet';
+import {MapContainer, Marker, Popup, SVGOverlay, TileLayer, useMap} from 'react-leaflet';
 import {AppLayout} from "../../components/layout/AppLayout.jsx";
 import {Card} from "antd";
 import {useEffect, useRef, useState} from "react";
@@ -157,12 +157,42 @@ function DormMarker({title, position}) {
     )
 }
 
+function SVGLayer() {
+    return <>
+        <SVGOverlay bounds={[
+            [17.454, 110.720],
+            [15.069, 115.521]
+        ]}>
+            <rect x="0" y="0" width="100%" height="100%" fill={"rgba(0,0,0,0)"}/>
+            <svg viewBox="0 0 480 238" width="100%" height="100%">
+                <polygon points="50,0 200,0 440,100 440 200 400 230 0 230" fill="rgba(0, 0, 0, 0.4)" stroke={"red"}></polygon>
+                <text fill={"white"} fontSize={30} x="10%" y="50%">
+                    Hoàng sa (Việt Nam)
+                </text>
+            </svg>
+        </SVGOverlay>
+        <SVGOverlay bounds={[
+            [11.99, 111.16],
+            [6.61, 117.14]
+        ]}>
+            <rect x="0" y="0" width="100%" height="100%" fill={"rgba(0,0,0,0)"}/>
+            <svg viewBox="0 0 500 500" width="100%" height="100%">
+                <polygon points="0,250 250,0 500,100 500,250 240,470 0,400" fill="rgba(0, 0, 0, 0.4)" stroke={"red"}></polygon>
+                <text fill={"white"} fontSize={30} x="10%" y="50%">
+                    Trường sa (Việt Nam)
+                </text>
+            </svg>
+        </SVGOverlay>
+    </>
+}
+
 function OpenStreetMap() {
     const {startPoint, endPoint, setEndPoint, setSlot} = useWaypointsStore()
     const {data} = useQuery({
         queryKey: ["current-slot"],
         queryFn: () => axiosClient.get("/slots/current").then(res => res.data)
     })
+
 
     useEffect(() => {
         if (data) {
@@ -185,16 +215,15 @@ function OpenStreetMap() {
             {dorms.map(({title, position}) => <DormMarker key={title} position={position} title={title}/>)}
             {startPoint && endPoint && <RoutingMachine/>}
             <CurrentLocationMarker/>
+            <SVGLayer />
         </MapContainer>
     );
 }
 
 export default function MapPage() {
     return <>
-        <RequireRole role={"RESIDENT"}><AppLayout activeSidebar={"map"}>
             <Card title={"Bản đồ trường học"} className={"!h-full !box-border"}>
                 <OpenStreetMap/>
             </Card>
-        </AppLayout></RequireRole>
     </>
 }
