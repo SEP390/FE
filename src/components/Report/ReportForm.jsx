@@ -5,9 +5,10 @@ import axios from "axios";
 export function ReportForm({ onSubmit, loading, form }) {
     const [residents, setResidents] = useState([]);
     const [rooms, setRooms] = useState([]);
-    const reportType = Form.useWatch("reportType", form);
     const [loadingResidents, setLoadingResidents] = useState(false);
     const [loadingRooms, setLoadingRooms] = useState(false);
+
+    const reportType = Form.useWatch("reportType", form);
 
     useEffect(() => {
         fetchResidents();
@@ -18,19 +19,17 @@ export function ReportForm({ onSubmit, loading, form }) {
         try {
             setLoadingResidents(true);
             const token = localStorage.getItem("token");
-            const response = await axios.get(
+            const res = await axios.get(
                 "http://localhost:8080/api/users/residents",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
-            // Filter out residents with null residentId
-            const validResidents = (response.data.data || []).filter(r => r.residentId != null);
+
+            const validResidents = (res.data.data || []).filter(
+                (r) => r.residentId != null
+            );
             setResidents(validResidents);
-        } catch (err) {
-            console.error("Lỗi khi tải danh sách cư dân:", err);
+        } catch (e) {
+            console.error("Lỗi tải cư dân", e);
         } finally {
             setLoadingResidents(false);
         }
@@ -40,51 +39,33 @@ export function ReportForm({ onSubmit, loading, form }) {
         try {
             setLoadingRooms(true);
             const token = localStorage.getItem("token");
-            const response = await axios.get(
+            const res = await axios.get(
                 "http://localhost:8080/api/rooms?page=0&size=1000",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
-            // Filter out rooms with null id
-            const validRooms = (response.data.data?.content || []).filter(r => r.id != null);
+
+            const validRooms = (res.data.data?.content || []).filter(
+                (r) => r.id != null
+            );
             setRooms(validRooms);
-        } catch (err) {
-            console.error("Lỗi khi tải danh sách phòng:", err);
+        } catch (e) {
+            console.error("Lỗi tải phòng", e);
         } finally {
             setLoadingRooms(false);
         }
     };
 
-    const filterResidentOption = (input, option) => {
-        const searchText = input.toLowerCase();
-        const resident = residents.find(r => r.residentId === option.value);
-        if (!resident) return false;
+    const filterResidentOption = (input, option) =>
+        option.children
+            .toString()
+            .toLowerCase()
+            .includes(input.toLowerCase());
 
-        const fullName = (resident.fullName || "").toLowerCase();
-        const userName = (resident.userName || "").toLowerCase();
-        const email = (resident.email || "").toLowerCase();
-
-        return fullName.includes(searchText) ||
-            userName.includes(searchText) ||
-            email.includes(searchText);
-    };
-
-    const filterRoomOption = (input, option) => {
-        const searchText = input.toLowerCase();
-        const room = rooms.find(r => r.id === option.value);
-        if (!room) return false;
-
-        const roomNumber = String(room.roomNumber || "").toLowerCase();
-        const floor = String(room.floor || "").toLowerCase();
-        const dormName = (room.dormName || "").toLowerCase();
-
-        return roomNumber.includes(searchText) ||
-            floor.includes(searchText) ||
-            dormName.includes(searchText);
-    };
+    const filterRoomOption = (input, option) =>
+        option.children
+            .toString()
+            .toLowerCase()
+            .includes(input.toLowerCase());
 
     return (
         <Form
@@ -105,7 +86,6 @@ export function ReportForm({ onSubmit, loading, form }) {
                 </Select>
             </Form.Item>
 
-            {/* Chỉ hiển thị khi là VIOLATION */}
             {reportType === "VIOLATION" && (
                 <>
                     <Form.Item
@@ -116,10 +96,15 @@ export function ReportForm({ onSubmit, loading, form }) {
                         <Select
                             placeholder="Chọn cư dân"
                             showSearch
+                            loading={loadingResidents}
+                            filterOption={filterResidentOption}
                         >
-                            {residents.map((resident) => (
-                                <Select.Option key={resident.residentId} value={resident.residentId}>
-                                    {resident.fullName || resident.userName} - {resident.email}
+                            {residents.map((r) => (
+                                <Select.Option
+                                    key={r.residentId}
+                                    value={r.residentId}
+                                >
+                                    {r.fullName || r.userName} ({r.email})
                                 </Select.Option>
                             ))}
                         </Select>
@@ -130,10 +115,19 @@ export function ReportForm({ onSubmit, loading, form }) {
                         name="roomId"
                         rules={[{ required: true, message: "Vui lòng chọn phòng" }]}
                     >
-                        <Select placeholder="Chọn phòng" showSearch>
+                        <Select
+                            placeholder="Chọn phòng"
+                            showSearch
+                            loading={loadingRooms}
+                            filterOption={filterRoomOption}
+                        >
                             {rooms.map((room) => (
-                                <Select.Option key={room.id} value={room.id}>
-                                    Phòng {room.roomNumber} - Tầng {room.floor} ({room.dorm.dormName})
+                                <Select.Option
+                                    key={room.id}
+                                    value={room.id}
+                                >
+                                    Phòng {room.roomNumber} - Tầng {room.floor} (
+                                    {room.dorm?.dormName})
                                 </Select.Option>
                             ))}
                         </Select>
@@ -150,7 +144,12 @@ export function ReportForm({ onSubmit, loading, form }) {
             </Form.Item>
 
             <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loading} block>
+                <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={loading}
+                    block
+                >
                     Gửi báo cáo
                 </Button>
             </Form.Item>
