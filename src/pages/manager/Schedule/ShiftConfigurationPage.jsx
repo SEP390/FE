@@ -1,102 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Table, Button, Space, Modal, Form, Input, TimePicker, App } from 'antd';
-import { PlusOutlined, EditOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import { Typography, Table, Button, Space, Modal, Form, Input, TimePicker, App, Row, Col, Alert } from 'antd';
+import { PlusOutlined, EditOutlined, ArrowLeftOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
 import dayjs from 'dayjs';
-
 import { useNavigate } from 'react-router-dom';
-
-// Import các plugin
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-dayjs.extend(isSameOrAfter);
-dayjs.extend(isSameOrBefore);
-
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
-import {RequireRole} from "../../../components/authorize/RequireRole.jsx";
+import { RequireRole } from "../../../components/authorize/RequireRole.jsx";
+
+const { Text } = Typography;
 
 export function ShiftConfigurationPage() {
+    // ... (Các phần state và fetch data giữ nguyên như cũ)
     const activeKey = 'manager-schedule';
-    const {message}=App.useApp();
+    const { message } = App.useApp();
     const navigate = useNavigate();
-
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingShift, setEditingShift] = useState(null);
     const [form] = Form.useForm();
-
     const [shifts, setShifts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    // --- LOAD DATA ---
     const fetchShifts = async () => {
         setLoading(true);
         try {
             const response = await axiosClient.get('/shifts');
-
             if (response && response.data) {
-                const formattedData = response.data.map(shift => {
-                    const validStartTime = dayjs(`2000-01-01T${shift.startTime}`);
-                    const validEndTime = dayjs(`2000-01-01T${shift.endTime}`);
-
-                    return {
-                        ...shift,
-                        key: shift.id,
-                        startTime: validStartTime.format('HH:mm'),
-                        endTime: validEndTime.format('HH:mm'),
-                    };
-                });
+                const actualData = response.data.data || response.data;
+                const formattedData = actualData.map(shift => ({
+                    ...shift,
+                    key: shift.id || shift.shiftId,
+                    startTime: shift.startTime.substring(0, 5),
+                    endTime: shift.endTime.substring(0, 5),
+                }));
                 setShifts(formattedData);
-            } else {
-                setShifts([]);
             }
         } catch (error) {
-            if (error.response?.status === 401) {
-                message.error('Phiên đăng nhập đã hết hạn. Vui lòng F5 và đăng nhập lại!');
-            } else {
-                message.error("Không thể tải danh sách ca.");
-            }
+            message.error("Không thể tải danh sách ca.");
             setShifts([]);
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false); }
     };
 
-    useEffect(() => {
-        fetchShifts();
-    }, []);
+    useEffect(() => { fetchShifts(); }, []);
 
-    // --- HANDLERS ---
     const handleOpenModal = (record = null) => {
         setEditingShift(record);
         setIsModalVisible(true);
         if (record) {
-            let start = dayjs(record.startTime, 'HH:mm');
-            let end = dayjs(record.endTime, 'HH:mm');
-
-            if (end.isSameOrBefore(start)) {
-                end = end.add(1, 'day');
-            }
             form.setFieldsValue({
                 name: record.name,
-                timeRange: [start, end]
+                startTime: dayjs(record.startTime, 'HH:mm'),
+                endTime: dayjs(record.endTime, 'HH:mm')
             });
-        } else {
-            form.resetFields();
-        }
+        } else { form.resetFields(); }
     };
 
     const handleSaveShift = async (values) => {
         setSubmitting(true);
-        const [startTime, endTime] = values.timeRange;
+        const { name, startTime, endTime } = values;
         const formatString = "HH:mm:ss";
-
         const payload = {
-            name: values.name,
+            name: name,
             startTime: startTime.format(formatString),
             endTime: endTime.format(formatString),
         };
-
         try {
             if (editingShift) {
                 await axiosClient.put(`/shifts/${editingShift.key}`, payload);
@@ -105,65 +72,39 @@ export function ShiftConfigurationPage() {
                 await axiosClient.post('/shifts', payload);
                 message.success('Thêm ca làm việc mới thành công!');
             }
-
             setIsModalVisible(false);
             fetchShifts();
-
         } catch (error) {
-            console.error("Lỗi khi lưu ca:", error);
-            message.error(`Lưu ca thất bại! ` + (error.response?.data?.message || error.message));
-        } finally {
-            setSubmitting(false);
-        }
+            message.error(error.response?.data?.message || "Ca làm việc đã được phân công!");
+        } finally { setSubmitting(false); }
     };
 
     const columns = [
         { title: 'Tên Ca', dataIndex: 'name', key: 'name' },
         { title: 'Bắt đầu', dataIndex: 'startTime', key: 'startTime' },
         { title: 'Kết thúc', dataIndex: 'endTime', key: 'endTime',
-            render: (text, record) => ( <span>{text}{record.startTime > text ? ' (Hôm sau)' : ''}</span> )
+            render: (text, record) => (
+                <span>{text}{record.startTime > text ? ' (Hôm sau)' : ''}</span>
+            )
         },
         {
             title: 'Hành động',
             key: 'action',
-            render: (text, record) => (
-                <Button icon={<EditOutlined />} onClick={() => handleOpenModal(record)} />
-            ),
+            render: (_, record) => <Button icon={<EditOutlined />} onClick={() => handleOpenModal(record)} />,
         },
     ];
 
     return (
-        <RequireRole role = "MANAGER">
+        <RequireRole role="MANAGER">
             <LayoutManager active={activeKey} header={"Cấu hình Ca làm việc"}>
                 <div style={{ margin: '24px 16px', padding: 24, background: '#fff' }}>
                     <Space style={{ marginBottom: 20 }}>
-                        {/* Nút Quay Lại */}
-                        <Button
-                            icon={<ArrowLeftOutlined />}
-                            onClick={() => navigate(-1)} // Quay lại trang trước đó
-                        >
-                            Quay lại
-                        </Button>
-
-                        {/* Nút Thêm Mới */}
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => handleOpenModal()}
-                        >
-                            Thêm Ca làm việc mới
-                        </Button>
+                        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>Quay lại</Button>
+                        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal()}>Thêm Ca mới</Button>
                     </Space>
 
-                    <Table
-                        columns={columns}
-                        dataSource={shifts}
-                        loading={loading}
-                        pagination={false}
-                        bordered
-                    />
+                    <Table columns={columns} dataSource={shifts} loading={loading} pagination={false} bordered />
 
-                    {/* MODAL */}
                     <Modal
                         title={editingShift ? "Chỉnh sửa Ca làm việc" : "Thêm Ca làm việc mới"}
                         open={isModalVisible}
@@ -173,14 +114,41 @@ export function ShiftConfigurationPage() {
                         okText="Lưu"
                         cancelText="Hủy"
                         destroyOnClose
+                        width={450} // Cho Modal nhỏ lại cho cân đối
                     >
-                        <Form form={form} layout="vertical" onFinish={handleSaveShift}>
+                        <Form form={form} layout="vertical" onFinish={handleSaveShift} style={{ marginTop: 8 }}>
+                            {/* Giao diện Note thu nhỏ, tinh tế hơn */}
+                            {editingShift && (
+                                <div style={{ marginBottom: 20 }}>
+                                    <Alert
+                                        message={
+                                            <span style={{ fontSize: '13px' }}>
+                                                Ca làm việc đã được phân công lịch làm việc thì <b>không được phép</b> thay đổi thời gian.
+                                            </span>
+                                        }
+                                        type="warning"
+                                        showIcon
+                                        style={{ borderRadius: '6px', padding: '8px 12px' }}
+                                    />
+                                </div>
+                            )}
+
                             <Form.Item name="name" label="Tên Ca" rules={[{ required: true, message: 'Vui lòng nhập tên ca!' }]}>
-                                <Input />
+                                <Input placeholder="Ví dụ: Ca sáng" />
                             </Form.Item>
-                            <Form.Item name="timeRange" label="Thời gian làm việc" rules={[{ required: true, message: 'Vui lòng chọn thời gian!' }]}>
-                                <TimePicker.RangePicker format="HH:mm" style={{ width: '100%' }} />
-                            </Form.Item>
+
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="startTime" label="Giờ bắt đầu" rules={[{ required: true }]}>
+                                        <TimePicker format="HH:mm" style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="endTime" label="Giờ kết thúc" rules={[{ required: true }]}>
+                                        <TimePicker format="HH:mm" style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
                         </Form>
                     </Modal>
                 </div>
