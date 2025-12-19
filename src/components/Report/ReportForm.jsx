@@ -1,12 +1,16 @@
 import { Form, Input, Button, Select } from "antd";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
 
 export function ReportForm({ onSubmit, loading, form }) {
     const [residents, setResidents] = useState([]);
     const [rooms, setRooms] = useState([]);
     const [loadingResidents, setLoadingResidents] = useState(false);
     const [loadingRooms, setLoadingRooms] = useState(false);
+    const navigate = useNavigate();
+
 
     const reportType = Form.useWatch("reportType", form);
 
@@ -150,8 +154,18 @@ export function ReportForm({ onSubmit, loading, form }) {
                     loading={loading}
                     block
                 >
+
                     Gửi báo cáo
                 </Button>
+                <Button
+                    type="default"
+                    onClick={() => navigate(-1)}
+                    style={{ marginTop: 8 }}
+                    block
+                >
+                    Hủy
+                </Button>
+
             </Form.Item>
         </Form>
     );
