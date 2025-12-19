@@ -111,7 +111,6 @@ export default function GuardEW() {
             <PageHeader title={"Nhập điện nước"}/>
             <div className={"section flex gap-3"}>
                 <div>
-                    <div className={"font-medium mb-3 text-lg"}>Bộ lọc</div>
                     <div className={"flex gap-3 flex-wrap"}>
                         <RoomFilter value={roomId} onChange={setRoomId}/>
                         <DateRangeFilter/>

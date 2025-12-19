@@ -4,7 +4,7 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import dormIcon from "../../assets/images/dormimg1.png"
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import {MapContainer, Marker, Popup, SVGOverlay, TileLayer, useMap} from 'react-leaflet';
-import {AppLayout} from "../../components/layout/AppLayout.jsx";
+import {AppLayout} from "../../components/layout/AppLayout.jsx"; // Đã có sẵn import này
 import {Card} from "antd";
 import {useEffect, useRef, useState} from "react";
 import 'leaflet-routing-machine';
@@ -12,7 +12,6 @@ import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import {create} from 'zustand'
 import {useQuery} from "@tanstack/react-query";
 import axiosClient from "../../api/axiosClient/axiosClient.js";
-import {RequireRole} from "../../components/authorize/RequireRole.jsx";
 
 const dorms = [
     {
@@ -221,9 +220,12 @@ function OpenStreetMap() {
 }
 
 export default function MapPage() {
-    return <>
+    // Sử dụng AppLayout và truyền activeSidebar="map"
+    return (
+        <AppLayout activeSidebar="map">
             <Card title={"Bản đồ trường học"} className={"!h-full !box-border"}>
                 <OpenStreetMap/>
             </Card>
-    </>
+        </AppLayout>
+    );
 }

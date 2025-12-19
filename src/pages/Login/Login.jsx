@@ -134,9 +134,7 @@ const Login = () => {
               />
             </Form.Item>
 
-            <Form.Item name="remember" valuePropName="checked">
-              <Checkbox disabled={loading}>Ghi nhớ đăng nhập</Checkbox>
-            </Form.Item>
+
 
             <Form.Item>
               <Button
@@ -152,17 +150,8 @@ const Login = () => {
           </Form>
 
           <div className="text-center space-y-3">
-            <div>
-              <a href="#forgot-password" className="text-blue-600 hover:text-blue-800 text-sm">
-                Quên mật khẩu?
-              </a>
-            </div>
-            <div className="text-sm">
-              <span className="text-gray-600">Chưa có tài khoản? </span>
-              <a href="#register" className="text-blue-600 hover:text-blue-800 font-medium">
-                Đăng ký ngay
-              </a>
-            </div>
+
+
           </div>
           <Divider />
           <div className={"flex justify-center"}>

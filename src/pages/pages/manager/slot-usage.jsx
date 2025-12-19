@@ -67,7 +67,6 @@ export default function SlotUsageManage() {
         <div className={"flex flex-col gap-3"}>
             <PageHeader title="Quản lý giường"/>
             <div className={"section"}>
-                <div className={"font-medium mb-3 text-lg"}>Bộ lọc</div>
                 <div className={"flex gap-3 flex-wrap"}>
                     <ResidentFilter value={userId} onChange={setUserId}/>
                     <RoomFilter value={roomId} onChange={setRoomId}/>

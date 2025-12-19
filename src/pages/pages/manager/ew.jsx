@@ -55,7 +55,6 @@ export default function ManageEW() {
             </div>
             <div className={"section flex flex-wrap gap-3"}>
                 <div>
-                    <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
                     <div className={"flex gap-3 flex-wrap"}>
                         <RoomFilter value={roomId} onChange={setRoomId}/>
                         <SemesterFilter value={semesterId} onChange={setSemesterId}/>

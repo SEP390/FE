@@ -181,7 +181,6 @@ export default function InvoicesPage() {
             <PageHeader title={"Danh sách hóa đơn"}/>
             <UserInvoiceCount/>
             <div className={"section"}>
-                <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
                 <div className={"flex gap-3 flex-wrap"}>
                     <InvoiceTypeFilter onChange={setType}/>
                     <InvoiceStatusFilter onChange={setStatus}/>

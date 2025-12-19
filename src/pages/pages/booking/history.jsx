@@ -38,8 +38,7 @@ export default function BookingHistoryPage() {
         <div className={"flex flex-col gap-3"}>
             <PageHeader title={"Lịch sử đặt phòng"}/>
             <div className={"section"}>
-                <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
-                <div className={"flex gap-3 flex-wrap"}>
+                Bộ lọc                <div className={"flex gap-3 flex-wrap"}>
                     <SemesterFilter value={semesterId} onChange={setSemesterId}/>
                     <RoomFilter value={roomId} onChange={setRoomId}/>
                 </div>
