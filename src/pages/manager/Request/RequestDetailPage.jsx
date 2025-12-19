@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { SideBarManager } from "../../../components/layout/SideBarManger.jsx";
 import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Button, Tag, Form, Select, Input, message, Space, Spin, Descriptions, Row, Col } from "antd";
+import { Layout, Typography, Card, Button, Tag, Form, Select, Input, message, Space, Spin, Descriptions, Row, Col, Modal } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeftOutlined, SaveOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, SaveOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
 
 const { Content } = Layout;
@@ -20,6 +20,9 @@ export function RequestDetailPage() {
     const [residentInfo, setResidentInfo] = useState(null);
     const [isUpdating, setIsUpdating] = useState(false);
     const [acceptanceFormData, setAcceptanceFormData] = useState(null);
+
+    // State quản lý đóng mở Modal
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // API hooks
     const {
@@ -47,13 +50,15 @@ export function RequestDetailPage() {
         isLoading: isUserLoading
     } = useApi();
 
-    // Parse acceptance form from text
+    // --- CẬP NHẬT PARSER: Thêm lấy Ngày giờ và Phòng ---
     const parseAcceptanceFormFromText = (text) => {
         if (!text || !text.includes('BIÊN BẢN NGHIỆM THU')) {
             return null;
         }
 
         const parsed = {
+            ngayGio: "", // Thêm trường này
+            phong: "",   // Thêm trường này
             giuong: { tot: false, hong: false },
             ghe: { tot: false, hong: false },
             ban: { tot: false, hong: false },
@@ -63,7 +68,14 @@ export function RequestDetailPage() {
 
         const lines = text.split('\n');
         lines.forEach(line => {
-            if (line.includes('Giường:')) {
+            // Parse thông tin chung
+            if (line.includes('Ngày giờ:')) {
+                parsed.ngayGio = line.replace('Ngày giờ:', '').trim();
+            } else if (line.includes('Phòng:')) {
+                parsed.phong = line.replace('Phòng:', '').trim();
+            }
+            // Parse nội dung tài sản
+            else if (line.includes('Giường:')) {
                 parsed.giuong.tot = line.includes('☑ Tốt');
                 parsed.giuong.hong = line.includes('☑ Hỏng');
             } else if (line.includes('Ghế:')) {
@@ -82,11 +94,11 @@ export function RequestDetailPage() {
 
         return parsed;
     };
+    // ----------------------------------------------------
 
     // Fetch request details on mount
     useEffect(() => {
         if (requestId) {
-            console.log("Fetching request details for ID:", requestId);
             getRequest(`/requests/${requestId}`);
         }
     }, [requestId]);
@@ -94,8 +106,6 @@ export function RequestDetailPage() {
     // Handle request data response
     useEffect(() => {
         if (isRequestSuccess && requestResponse) {
-            console.log("Request data received:", requestResponse);
-
             let requestData = null;
             if (requestResponse.data) {
                 requestData = requestResponse.data;
@@ -105,13 +115,11 @@ export function RequestDetailPage() {
 
             if (requestData) {
                 setRequestData(requestData);
-                // Set form values
                 form.setFieldsValue({
                     requestStatus: requestData.responseStatus || requestData.requestStatus,
                     responseMessageByManager: requestData.responseMessageByManager || ""
                 });
 
-                // Parse acceptance form if exists and request type is CHECKOUT
                 if (requestData.requestType === "CHECKOUT" && requestData.responseMessageByEmployee) {
                     const parsedForm = parseAcceptanceFormFromText(requestData.responseMessageByEmployee);
                     setAcceptanceFormData(parsedForm);
@@ -120,7 +128,7 @@ export function RequestDetailPage() {
         }
     }, [isRequestSuccess, requestResponse]);
 
-    // Fetch resident info by userId once request data is available
+    // Fetch resident info
     useEffect(() => {
         if (requestData?.userId) {
             getUserById(`/users/residents/${requestData.userId}`);
@@ -150,12 +158,10 @@ export function RequestDetailPage() {
         if (isUpdateSuccess && updateResponse) {
             message.success("Cập nhật trạng thái request thành công!");
             setIsUpdating(false);
-            // Refresh request data
             getRequest(`/requests/${requestId}`);
         }
     }, [isUpdateSuccess, updateResponse]);
 
-    // Handle update error
     useEffect(() => {
         if (isUpdateComplete && !isUpdateSuccess) {
             message.error("Có lỗi xảy ra khi cập nhật request!");
@@ -163,7 +169,6 @@ export function RequestDetailPage() {
         }
     }, [isUpdateComplete, isUpdateSuccess]);
 
-    // Status color mapping
     const statusColor = (status) => {
         if (status === "ACCEPTED" || status === "CHECKED" || status === "APPROVED" || status === "COMPLETED") return "green";
         if (status === "PENDING" || status === "PROCESSING") return "blue";
@@ -171,7 +176,6 @@ export function RequestDetailPage() {
         return "default";
     };
 
-    // Format status text
     const formatStatus = (status) => {
         const statusMap = {
             PENDING: "Đang xử lý",
@@ -186,7 +190,6 @@ export function RequestDetailPage() {
         return statusMap[status] || status;
     };
 
-    // Format request type - Cập nhật đồng bộ với ManagerRequests.jsx
     const formatRequestType = (type) => {
         const typeMap = {
             CHECKOUT: "Yêu cầu trả phòng",
@@ -196,27 +199,22 @@ export function RequestDetailPage() {
             POLICY_VIOLATION_REPORT: "Báo cáo vi phạm quy định",
             CHANGEROOM: "Yêu cầu đổi phòng",
             ANONYMOUS: "Yêu cầu ẩn danh",
-            MAINTENANCE: "Bảo trì", // Giữ lại để tương thích ngược nếu có
-            COMPLAINT: "Khiếu nại", // Giữ lại để tương thích ngược nếu có
+            MAINTENANCE: "Bảo trì",
+            COMPLAINT: "Khiếu nại",
             OTHER: "Khác"
         };
         return typeMap[type] || type;
     };
 
-    // Handle form submission
     const handleUpdateRequest = async (values) => {
         setIsUpdating(true);
-        console.log("Updating request with values:", values);
-
         const updatePayload = {
             requestStatus: values.requestStatus,
             responseMessage: values.responseMessageByManager
         };
-
         updateRequest(`/requests/${requestId}`, updatePayload);
     };
 
-    // Format date
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         const date = new Date(dateString);
@@ -229,11 +227,9 @@ export function RequestDetailPage() {
         });
     };
 
-    // Render acceptance form display
-    const renderAcceptanceFormDisplay = () => {
-        if (!acceptanceFormData || requestData?.requestType !== "CHECKOUT") {
-            return null;
-        }
+    // --- CẬP NHẬT RENDER MODAL: Hiển thị Ngày giờ và Phòng ---
+    const renderAcceptanceModalContent = () => {
+        if (!acceptanceFormData) return null;
 
         const items = [
             { key: 'giuong', label: 'Giường' },
@@ -243,54 +239,68 @@ export function RequestDetailPage() {
         ];
 
         return (
-            <Card
-                title="Biên bản nghiệm thu tình trạng phòng"
-                className="mt-6"
-                style={{ background: '#f0f7ff', borderColor: '#1890ff' }}
-            >
-                <div style={{ padding: '16px' }}>
-                    {items.map(item => (
-                        <Row key={item.key} style={{ marginBottom: 16, padding: '12px', background: 'white', borderRadius: '8px' }} align="middle">
-                            <Col span={6}>
-                                <strong style={{ fontSize: '16px' }}>{item.label}:</strong>
-                            </Col>
-                            <Col span={9}>
-                                <Space>
-                                    {acceptanceFormData[item.key].tot ? (
-                                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '18px' }} />
-                                    ) : (
-                                        <CloseCircleOutlined style={{ color: '#d9d9d9', fontSize: '18px' }} />
-                                    )}
-                                    <span style={{ color: acceptanceFormData[item.key].tot ? '#52c41a' : '#8c8c8c' }}>
-                                        Tốt
-                                    </span>
-                                </Space>
-                            </Col>
-                            <Col span={9}>
-                                <Space>
-                                    {acceptanceFormData[item.key].hong ? (
-                                        <CheckCircleOutlined style={{ color: '#ff4d4f', fontSize: '18px' }} />
-                                    ) : (
-                                        <CloseCircleOutlined style={{ color: '#d9d9d9', fontSize: '18px' }} />
-                                    )}
-                                    <span style={{ color: acceptanceFormData[item.key].hong ? '#ff4d4f' : '#8c8c8c' }}>
-                                        Hỏng
-                                    </span>
-                                </Space>
-                            </Col>
-                        </Row>
-                    ))}
+            <div style={{ padding: '8px' }}>
+                {/* Phần hiển thị thông tin chung (Mới thêm) */}
+                {(acceptanceFormData.ngayGio || acceptanceFormData.phong) && (
+                    <div style={{ marginBottom: 20, padding: '12px', background: '#e6f7ff', borderRadius: '8px', border: '1px solid #91d5ff' }}>
+                        {acceptanceFormData.ngayGio && (
+                            <Row style={{ marginBottom: 8 }}>
+                                <Col span={8}><strong>Ngày giờ:</strong></Col>
+                                <Col span={16}>{acceptanceFormData.ngayGio}</Col>
+                            </Row>
+                        )}
+                        {acceptanceFormData.phong && (
+                            <Row>
+                                <Col span={8}><strong>Phòng:</strong></Col>
+                                <Col span={16}>{acceptanceFormData.phong}</Col>
+                            </Row>
+                        )}
+                    </div>
+                )}
 
-                    {acceptanceFormData.ghichu && (
-                        <div style={{ marginTop: 24, padding: '12px', background: '#fff9e6', borderRadius: '8px', border: '1px solid #ffd666' }}>
-                            <strong style={{ display: 'block', marginBottom: 8 }}>Ghi chú:</strong>
-                            <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{acceptanceFormData.ghichu}</p>
-                        </div>
-                    )}
-                </div>
-            </Card>
+                {/* Phần hiển thị tài sản (Giữ nguyên) */}
+                {items.map(item => (
+                    <Row key={item.key} style={{ marginBottom: 16, padding: '12px', background: '#f5f5f5', borderRadius: '8px' }} align="middle">
+                        <Col span={6}>
+                            <strong style={{ fontSize: '16px' }}>{item.label}:</strong>
+                        </Col>
+                        <Col span={9}>
+                            <Space>
+                                {acceptanceFormData[item.key].tot ? (
+                                    <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '18px' }} />
+                                ) : (
+                                    <CloseCircleOutlined style={{ color: '#d9d9d9', fontSize: '18px' }} />
+                                )}
+                                <span style={{ color: acceptanceFormData[item.key].tot ? '#52c41a' : '#8c8c8c' }}>
+                                    Tốt
+                                </span>
+                            </Space>
+                        </Col>
+                        <Col span={9}>
+                            <Space>
+                                {acceptanceFormData[item.key].hong ? (
+                                    <CheckCircleOutlined style={{ color: '#ff4d4f', fontSize: '18px' }} />
+                                ) : (
+                                    <CloseCircleOutlined style={{ color: '#d9d9d9', fontSize: '18px' }} />
+                                )}
+                                <span style={{ color: acceptanceFormData[item.key].hong ? '#ff4d4f' : '#8c8c8c' }}>
+                                    Hỏng
+                                </span>
+                            </Space>
+                        </Col>
+                    </Row>
+                ))}
+
+                {acceptanceFormData.ghichu && (
+                    <div style={{ marginTop: 24, padding: '12px', background: '#fff9e6', borderRadius: '8px', border: '1px solid #ffd666' }}>
+                        <strong style={{ display: 'block', marginBottom: 8 }}>Ghi chú:</strong>
+                        <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{acceptanceFormData.ghichu}</p>
+                    </div>
+                )}
+            </div>
         );
     };
+    // -------------------------------------------------------------
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
@@ -344,7 +354,6 @@ export function RequestDetailPage() {
                                     {/* Request Information */}
                                     <Card title="Thông tin Request" className="h-fit">
                                         <Descriptions column={1} bordered size="small">
-
                                             <Descriptions.Item label="Loại Request">
                                                 {formatRequestType(requestData.requestType)}
                                             </Descriptions.Item>
@@ -429,10 +438,41 @@ export function RequestDetailPage() {
                                     </div>
                                 </Card>
 
-                                {/* Display Acceptance Form if available */}
-                                {renderAcceptanceFormDisplay()}
+                                {/* BUTTON KÍCH HOẠT MODAL */}
+                                {acceptanceFormData && requestData.requestType === "CHECKOUT" && (
+                                    <Card className="mt-6 border-blue-200 bg-blue-50">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <h3 className="font-semibold text-lg text-blue-800">Biên bản nghiệm thu phòng</h3>
+                                                <p className="text-gray-600">Đã có biên bản nghiệm thu từ nhân viên bảo vệ</p>
+                                            </div>
+                                            <Button
+                                                type="primary"
+                                                icon={<EyeOutlined />}
+                                                onClick={() => setIsModalOpen(true)}
+                                            >
+                                                Xem chi tiết
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                )}
 
-                                {/* Response Message from Employee (show raw text if not acceptance form) */}
+                                {/* MODAL POPUP */}
+                                <Modal
+                                    title="Biên bản nghiệm thu tình trạng phòng"
+                                    open={isModalOpen}
+                                    onCancel={() => setIsModalOpen(false)}
+                                    footer={[
+                                        <Button key="close" onClick={() => setIsModalOpen(false)}>
+                                            Đóng
+                                        </Button>
+                                    ]}
+                                    width={600}
+                                >
+                                    {renderAcceptanceModalContent()}
+                                </Modal>
+
+                                {/* Response Message from Employee (Hiển thị text thô nếu không phải form nghiệm thu) */}
                                 {requestData.responseMessageByEmployee && !acceptanceFormData && (
                                     <Card title="Tin nhắn phản hồi từ nhân viên" className="mt-6">
                                         <div className="bg-blue-50 p-4 rounded-lg">

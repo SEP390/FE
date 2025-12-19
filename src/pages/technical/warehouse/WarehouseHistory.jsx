@@ -450,9 +450,6 @@ export function WarehouseHistory() {
                                 {requestDetail.status || requestDetail.responseStatus}
                             </Tag>
                         </Descriptions.Item>
-                        <Descriptions.Item label="Username người ở">
-                            {residentInfo?.username || (userApi.isLoading ? 'Đang tải...' : 'N/A')}
-                        </Descriptions.Item>
                         <Descriptions.Item label="Mã người ở">
                             {residentInfo?.userCode || (userApi.isLoading ? 'Đang tải...' : 'N/A')}
                         </Descriptions.Item>

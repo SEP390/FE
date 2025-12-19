@@ -193,9 +193,7 @@ export function ResidentRequestDetail() {
                         {/* Request Information Card */}
                         <Card title="Thông tin Request" className="shadow-sm">
                             <Descriptions column={1} bordered size="middle">
-                                <Descriptions.Item label="Request ID">
-                                    <span className="font-mono text-sm">{requestData.requestId || 'N/A'}</span>
-                                </Descriptions.Item>
+
                                 <Descriptions.Item label="Loại Request">
                                     <Tag color="blue" className="text-sm">
                                         {formatRequestType(requestData.requestType)}
@@ -218,9 +216,7 @@ export function ResidentRequestDetail() {
                                 <Descriptions.Item label="Học kỳ">
                                     {requestData.semesterName || 'N/A'}
                                 </Descriptions.Item>
-                                <Descriptions.Item label="Username người ở">
-                                    {residentInfo?.username || (isUserLoading ? 'Đang tải...' : 'N/A')}
-                                </Descriptions.Item>
+
                                 <Descriptions.Item label="Mã người ở">
                                     {residentInfo?.userCode || (isUserLoading ? 'Đang tải...' : 'N/A')}
                                 </Descriptions.Item>

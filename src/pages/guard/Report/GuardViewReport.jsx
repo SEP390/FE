@@ -1,22 +1,16 @@
 import { useEffect, useState } from "react";
-import {Layout, Typography, Table, Button, Tag, message} from "antd";
-import { EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
-import {AppHeader} from "../../../components/layout/AppHeader.jsx";
-import { useCollapsed } from "../../../hooks/useCollapsed.js";
+import { Table, Button, Tag, message } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
-import {ReportDetailModal} from "../../../components/Report/ReportDetailModal.jsx";
-
-const { Header, Content } = Layout;
-const { Title } = Typography;
+import { ReportDetailModal } from "../../../components/Report/ReportDetailModal.jsx";
+// Import LayoutGuard
+import { LayoutGuard } from "../../../components/layout/LayoutGuard.jsx";
 
 export function GuardViewReport() {
-    const collapsed = useCollapsed(state => state.collapsed);
-    const setCollapsed = useCollapsed(state => state.setCollapsed);
+    // Không cần quản lý state collapsed thủ công nữa
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
-
 
     const token = localStorage.getItem("token");
 
@@ -99,38 +93,28 @@ export function GuardViewReport() {
         },
     ];
 
-    const toggleSideBar = () => setCollapsed(prev => !prev);
-
     return (
-        <Layout className="!h-screen">
-            <GuardSidebar collapsed={collapsed} active="guard-reports" />
-            <Layout
-                style={{
-                    marginLeft: collapsed ? 80 : 260,
-                    transition: 'margin-left 0.3s ease',
-                }}
-            >
-                <AppHeader toggleSideBar={toggleSideBar} collapsed={collapsed} header={"Báo cáo (Bảo vệ)"} />
+        <LayoutGuard active="guard-reports" header="Báo cáo (Bảo vệ)">
+            {/* Container màu trắng bao bọc nội dung */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+                <Button
+                    style={{ marginBottom: "16px" }}
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => (window.location.href = "/guard/reports/create")}
+                >
+                    Tạo báo cáo
+                </Button>
 
-                <Content style={{margin: "24px", background: "#fff", padding: 24, marginTop: 64}}>
-                    <Button
-                        style={{marginBottom:"10px"}}
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => (window.location.href = "/guard/reports/create")}
-                    >
-                        Tạo báo cáo
-                    </Button>
-                    <Table
-                        rowKey="reportId"
-                        columns={columns}
-                        dataSource={reports}
-                        loading={loading}
-                        pagination={{ pageSize: 6 }}
-                    />
-                </Content>
+                <Table
+                    rowKey="reportId"
+                    columns={columns}
+                    dataSource={reports}
+                    loading={loading}
+                    pagination={{ pageSize: 6 }}
+                />
+            </div>
 
-            </Layout>
             {selectedReport && (
                 <ReportDetailModal
                     open={!!selectedReport}
@@ -138,6 +122,6 @@ export function GuardViewReport() {
                     onClose={() => setSelectedReport(null)}
                 />
             )}
-        </Layout>
+        </LayoutGuard>
     );
 }
