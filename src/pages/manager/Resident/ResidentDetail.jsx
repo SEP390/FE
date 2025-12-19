@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Card, Row, Col, Button, Spin, Alert, Descriptions, Tag, Space, Avatar, Typography
+    Card, Row, Col, Button, Spin, Alert, Descriptions, Tag, Space, Typography, Image, Avatar
 } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftOutlined, UserOutlined, HomeOutlined } from "@ant-design/icons";
@@ -10,19 +10,6 @@ import { RequireRole } from "../../../components/authorize/RequireRole.jsx";
 import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
 
 const { Title, Text } = Typography;
-
-// Hàm chuyển đổi dữ liệu từ BE sang hiển thị FE
-const translateGender = (gender) => {
-    if (gender === 'MALE') return 'Nam';
-    if (gender === 'FEMALE') return 'Nữ';
-    return 'Khác';
-};
-
-const translateRole = (role) => {
-    if (role === 'RESIDENT') return 'Sinh viên';
-    if (role === 'MANAGER') return 'Quản lý';
-    return role;
-};
 
 export function ResidentDetail() {
     const { residentId } = useParams();
@@ -35,23 +22,16 @@ export function ResidentDetail() {
 
     useEffect(() => {
         const fetchData = async () => {
-            if (!residentId) {
-                setError("Không tìm thấy ID sinh viên.");
-                setLoading(false);
-                return;
-            }
+            if (!residentId) return;
             setLoading(true);
             try {
-                // Gọi API lấy chi tiết theo ID
                 const response = await axiosClient.get(`/users/residents/${residentId}`);
                 if (response && response.data) {
-                    setResidentData(response.data);
-                } else {
-                    throw new Error("Không có dữ liệu trả về.");
+                    // Dữ liệu từ BaseResponse.data
+                    setResidentData(response.data.data || response.data);
                 }
             } catch (err) {
-                console.error("Lỗi tải chi tiết:", err);
-                setError("Không thể tải thông tin sinh viên.");
+                setError("Không thể tải thông tin chi tiết sinh viên.");
             } finally {
                 setLoading(false);
             }
@@ -59,15 +39,21 @@ export function ResidentDetail() {
         fetchData();
     }, [residentId]);
 
+    const translateGender = (gender) => {
+        if (gender === 'MALE') return 'Nam';
+        if (gender === 'FEMALE') return 'Nữ';
+        return 'Khác';
+    };
+
     if (loading) return (
         <LayoutManager active={activeKey} header="Chi tiết sinh viên">
-            <div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>
+            <div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" tip="Đang tải dữ liệu..." /></div>
         </LayoutManager>
     );
 
-    if (error) return (
+    if (error || !residentData) return (
         <LayoutManager active={activeKey} header="Chi tiết sinh viên">
-            <div style={{ padding: 24 }}><Alert message="Lỗi" description={error} type="error" showIcon /></div>
+            <div style={{ padding: 24 }}><Alert message="Lỗi" description={error || "Dữ liệu không tồn tại"} type="error" showIcon /></div>
         </LayoutManager>
     );
 
@@ -76,7 +62,7 @@ export function ResidentDetail() {
             <LayoutManager active={activeKey} header={"Chi tiết sinh viên"}>
                 <div style={{ padding: 24, background: '#f0f2f5', minHeight: '100vh' }}>
 
-                    {/* Nút quay lại */}
+                    {/* 1. Nút quay lại */}
                     <Button
                         icon={<ArrowLeftOutlined />}
                         onClick={() => navigate(-1)}
@@ -85,25 +71,36 @@ export function ResidentDetail() {
                         Quay lại danh sách
                     </Button>
 
-                    {/* Khối Header giống trong ảnh của bạn */}
+                    {/* 2. KHỐI HEADER (Giữ nguyên giao diện hiển thị ảnh) */}
                     <Card bordered={false} style={{ marginBottom: 24, borderRadius: '8px' }}>
                         <Space align="center" size={24}>
-                            <Avatar size={100} icon={<UserOutlined />} src={residentData.image} />
+                            {/* Hiển thị ảnh khớp với logic StaffDetailPage đã chạy được của bạn */}
+                            {residentData.image ? (
+                                <Image
+                                    width={100}
+                                    height={100}
+                                    style={{ objectFit: 'cover', borderRadius: '50%' }}
+                                    src={residentData.image}
+                                    alt="Avatar"
+                                />
+                            ) : (
+                                <Avatar size={100} icon={<UserOutlined />} />
+                            )}
+
                             <div>
                                 <Title level={3} style={{ marginBottom: 4 }}>{residentData.fullName || 'N/A'}</Title>
-                                <Text type="secondary" style={{ fontSize: '16px' }}>@{residentData.username || 'resident1'}</Text>
+                                <Text type="secondary" style={{ fontSize: '16px' }}>@{residentData.username}</Text>
                             </div>
-                            <Tag color="blue" style={{ padding: '4px 12px', marginLeft: 20 }}>
-                                {translateRole(residentData.role)}
-                            </Tag>
+                            <Tag color="blue" style={{ padding: '4px 12px', marginLeft: 20 }}>SINH VIÊN</Tag>
                         </Space>
                     </Card>
 
+                    {/* 3. CÁC KHỐI NỘI DUNG */}
                     <Row gutter={[24, 24]}>
                         {/* Khối Thông tin cá nhân */}
                         <Col xs={24} md={16}>
                             <Card title="Thông tin cá nhân" bordered={false} style={{ height: '100%', borderRadius: '8px' }}>
-                                <Descriptions column={1} layout="horizontal" labelStyle={{ color: '#8c8c8c' }}>
+                                <Descriptions column={1} layout="horizontal">
                                     <Descriptions.Item label="Họ và tên">{residentData.fullName || 'N/A'}</Descriptions.Item>
                                     <Descriptions.Item label="Mã SV">{residentData.userCode || 'N/A'}</Descriptions.Item>
                                     <Descriptions.Item label="Ngày sinh">
@@ -117,39 +114,36 @@ export function ResidentDetail() {
                         {/* Khối Thông tin liên lạc */}
                         <Col xs={24} md={8}>
                             <Card title="Thông tin liên lạc" bordered={false} style={{ height: '100%', borderRadius: '8px' }}>
-                                <Descriptions column={1} layout="horizontal" labelStyle={{ color: '#8c8c8c' }}>
+                                <Descriptions column={1} layout="horizontal">
                                     <Descriptions.Item label="Email">{residentData.email || 'N/A'}</Descriptions.Item>
                                     <Descriptions.Item label="Số điện thoại">{residentData.phoneNumber || 'N/A'}</Descriptions.Item>
                                 </Descriptions>
                             </Card>
                         </Col>
 
-                        {/* KHỐI THÔNG TIN PHÒNG Ở - BỔ SUNG MỚI */}
+                        {/* Khối Thông tin phòng ở (Đã loại bỏ Vị trí giường/Slot) */}
                         <Col span={24}>
                             <Card
                                 title={<span><HomeOutlined /> Thông tin phòng ở hiện tại</span>}
                                 bordered={false}
                                 style={{ borderRadius: '8px' }}
-                                headStyle={{ borderBottom: '1px solid #f0f0f0' }}
                             >
-                                <Descriptions column={3} bordered size="middle">
-                                    <Descriptions.Item label="Vị trí giường (Slot)">
-                                        <Tag color="volcano" style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                                            {residentData.slotName || "Chưa xếp chỗ"}
-                                        </Tag>
-                                    </Descriptions.Item>
-
-                                    {/* Các trường roomName, buildingName nếu sau này BE bổ sung sẽ tự hiện */}
+                                <Descriptions column={2} bordered size="middle">
                                     <Descriptions.Item label="Phòng">
-                                        <Text strong>{residentData.roomName || "Thông tin phòng chưa cập nhật"}</Text>
+                                        <Text strong>{residentData.roomNumber || "Thông tin phòng chưa cập nhật"}</Text>
                                     </Descriptions.Item>
 
-                                    <Descriptions.Item label="Tòa nhà">
-                                        <Text strong>{residentData.buildingName || "Thông tin tòa chưa cập nhật"}</Text>
+                                    <Descriptions.Item label="Tầng">
+                                        <Text strong>
+                                            {residentData.floor !== undefined && residentData.floor !== null
+                                                ? `Tầng ${residentData.floor}`
+                                                : "Thông tin tầng chưa cập nhật"}
+                                        </Text>
                                     </Descriptions.Item>
                                 </Descriptions>
 
-                                {!residentData.slotName && (
+                                {/* Alert chỉ hiện nếu chưa có số phòng */}
+                                {!residentData.roomNumber && (
                                     <Alert
                                         message="Thông báo"
                                         description="Sinh viên này hiện chưa được xếp vào bất kỳ phòng nào trong hệ thống."
