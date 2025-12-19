@@ -33,35 +33,21 @@ export function GuardViewRequest() {
     // Update dataSource when requests are loaded
     useEffect(() => {
         console.log("=== EFFECT TRIGGERED ===");
-        console.log("Requests data:", requestsData);
-        console.log("Is success:", isRequestsSuccess);
-        console.log("Is complete:", isRequestsComplete);
-
         if (requestsData) {
-            console.log("requestsData exists!");
-            console.log("requestsData.data:", requestsData.data);
-
             let dataArray = [];
 
             if (Array.isArray(requestsData)) {
-                console.log("requestsData is array directly");
                 dataArray = requestsData;
             } else if (requestsData.data && Array.isArray(requestsData.data)) {
-                console.log("requestsData.data is array");
                 dataArray = requestsData.data;
             } else if (requestsData.data && requestsData.data.data && Array.isArray(requestsData.data.data)) {
-                console.log("requestsData.data.data is array");
                 dataArray = requestsData.data.data;
             }
-
-            console.log("Data array length:", dataArray.length);
-            console.log("Data array:", dataArray);
 
             if (dataArray.length > 0) {
                 // Map dữ liệu từ backend response
                 const formattedData = dataArray
                     .map((item) => {
-                        console.log("Mapping item:", item);
                         return {
                             key: item.requestId,
                             requestId: item.requestId,
@@ -73,18 +59,14 @@ export function GuardViewRequest() {
                             status: item.responseStatus,
                         };
                     })
-                    .filter((item) => item.requestType !== "TECHNICAL_ISSUE"); // Loại bỏ TECHNICAL_ISSUE
+                    .filter((item) => item.requestType !== "TECHNICAL_ISSUE");
 
-                console.log("Formatted data:", formattedData);
                 setDataSource(formattedData);
                 setFilteredData(formattedData);
             } else {
-                console.log("Data array is empty");
                 setDataSource([]);
                 setFilteredData([]);
             }
-        } else {
-            console.log("requestsData is null or undefined");
         }
     }, [isRequestsSuccess, requestsData, isRequestsComplete]);
 
@@ -134,12 +116,16 @@ export function GuardViewRequest() {
         return statusMap[status] || status;
     };
 
-    // Format request type
+    // Format request type - ĐÃ CẬP NHẬT TIẾNG VIỆT
     const formatRequestType = (type) => {
         const typeMap = {
-            CHECKOUT: "Trả phòng",
+            CHECKOUT: "Yêu cầu trả phòng",
+            METER_READING_DISCREPANCY: "Kiểm tra sai số điện/nước",
             SECURITY_INCIDENT: "Sự cố an ninh",
-            METER_READING_DISCREPANCY: "Chênh lệch đồng hồ",
+            TECHNICAL_ISSUE: "Sự cố kỹ thuật",
+            POLICY_VIOLATION_REPORT: "Báo cáo vi phạm quy định",
+            CHANGEROOM: "Yêu cầu đổi phòng",
+            ANONYMOUS: "Yêu cầu ẩn danh",
             MAINTENANCE: "Bảo trì",
             COMPLAINT: "Khiếu nại",
             OTHER: "Khác"
@@ -151,23 +137,23 @@ export function GuardViewRequest() {
     const uniqueStatuses = [...new Set(dataSource.map(item => item.status))];
     const uniqueTypes = [...new Set(dataSource.map(item => item.requestType))];
 
-    // Cấu hình bảng
+    // Cấu hình bảng - ĐÃ VIỆT HÓA TIÊU ĐỀ CỘT
     const columns = [
         {
-            title: "Student Name",
+            title: "Tên sinh viên",
             dataIndex: "userName",
             key: "userName",
             width: 200,
             sorter: (a, b) => a.userName.localeCompare(b.userName),
         },
         {
-            title: "Room Name",
+            title: "Tên phòng",
             dataIndex: "roomName",
             key: "roomName",
             width: 150,
         },
         {
-            title: "Request Type",
+            title: "Loại yêu cầu",
             dataIndex: "requestType",
             key: "requestType",
             width: 180,
@@ -179,13 +165,13 @@ export function GuardViewRequest() {
             onFilter: (value, record) => record.requestType === value,
         },
         {
-            title: "Semester",
+            title: "Học kỳ",
             dataIndex: "semester",
             key: "semester",
             width: 150,
         },
         {
-            title: "Created Date",
+            title: "Ngày tạo",
             dataIndex: "createdDate",
             key: "createdDate",
             width: 180,
@@ -203,7 +189,7 @@ export function GuardViewRequest() {
             sorter: (a, b) => new Date(a.createdDate) - new Date(b.createdDate),
         },
         {
-            title: "Status",
+            title: "Trạng thái",
             dataIndex: "status",
             key: "status",
             width: 160,
@@ -219,7 +205,7 @@ export function GuardViewRequest() {
             onFilter: (value, record) => record.status === value,
         },
         {
-            title: "Action",
+            title: "Thao tác",
             key: "action",
             width: 130,
             render: (_, record) => (
@@ -228,7 +214,7 @@ export function GuardViewRequest() {
                     icon={<EyeOutlined />}
                     onClick={() => navigate(`/guard/request-detail/${record.requestId}`)}
                 >
-                    View Details
+                    Xem chi tiết
                 </Button>
             ),
         },

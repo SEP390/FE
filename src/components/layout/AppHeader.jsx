@@ -1,5 +1,5 @@
-import {LogoutOutlined, MenuOutlined, UserOutlined} from "@ant-design/icons";
-import {Button, Popconfirm, Layout, Avatar, Space} from "antd";
+import {LogoutOutlined, MenuOutlined} from "@ant-design/icons";
+import {Button, Popconfirm, Layout, Space} from "antd";
 import React from "react";
 import {useNavigate} from "react-router-dom";
 import {useToken} from "../../hooks/useToken.js";
@@ -40,11 +40,6 @@ export function AppHeader({ toggleSideBar, header, collapsed = false }) {
             </div>
 
             <Space size="middle">
-                <Avatar
-                    size="large"
-                    icon={<UserOutlined />}
-                    className="bg-blue-400 cursor-pointer hover:bg-blue-300 transition-colors"
-                />
                 <Popconfirm
                     onConfirm={onLogout}
                     title="Bạn có chắc muốn đăng xuất?"

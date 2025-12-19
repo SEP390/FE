@@ -7,7 +7,6 @@ import {
 } from "@ant-design/icons";
 import { Menu, Layout } from "antd";
 import { Link } from "react-router-dom";
-import { Bed } from "lucide-react";
 
 const { Sider } = Layout;
 
@@ -68,14 +67,10 @@ export function GuardSidebar({ collapsed, active }) {
             width={260}
             collapsedWidth={80}
         >
-            <div className="flex items-center justify-center py-4">
-                <Bed />
-            </div>
-
             <Menu
                 mode="inline"
                 selectedKeys={[active]}
-                className={"!border-0"}
+                className={"!border-0 mt-4"} // Thêm margin-top để menu không dính sát lên trên
                 items={items}
             />
         </Sider>
