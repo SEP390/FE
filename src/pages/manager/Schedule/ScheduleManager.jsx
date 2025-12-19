@@ -205,7 +205,7 @@ export function ScheduleManager() {
                             </Col>
                             <Col>
                                 <Space>
-                                    <Select placeholder="Lọc khu vực" style={{ width: 160 }} allowClear onChange={setFilterDormId}>
+                                    <Select placeholder="Lọc theo dorm" style={{ width: 160 }} allowClear onChange={setFilterDormId}>
                                         {dorms.map(d => <Option key={d.id} value={String(d.id)}>{d.dormName}</Option>)}
                                     </Select>
                                     <Select placeholder="Lọc nhân viên" style={{ width: 200 }} allowClear showSearch optionFilterProp="children" onChange={setFilterEmployeeId}>
