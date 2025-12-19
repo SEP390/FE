@@ -5,6 +5,7 @@ import { NewsDetailModal } from "../../../components/news/NewsDetailModal.jsx";
 import { useNavigate } from "react-router-dom";
 import { UpdateNewsModal } from "../../../components/news/UpdateNewsModal.jsx";
 import { LayoutManager } from "../../../components/layout/LayoutManager.jsx";
+import DOMPurify from "dompurify";
 
 const { Search } = Input;
 
@@ -159,7 +160,15 @@ export function NewsManagePage() {
             key: "content",
             width: 300,
             ellipsis: true,
-            render: (text) => truncateWords(text, 10)
+            render: (text) => {
+                const cleanText = DOMPurify.sanitize(text, { ALLOWED_TAGS: [] });
+                const normalized = cleanText
+                    .replace(/&nbsp;/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+                return truncateWords(normalized, 10);
+            }
         },
         { title: "Ngày", dataIndex: "date", key: "date" },
         { title: "Giờ", dataIndex: "time", key: "time" },

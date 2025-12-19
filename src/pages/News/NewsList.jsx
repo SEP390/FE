@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Card, List, Skeleton, Typography, Input, Modal } from "antd";
 import { AppLayout } from "../../components/layout/AppLayout.jsx";
 import { NewsDetailModal } from "../../components/news/NewsDetailModal.jsx";
+import DOMPurify from "dompurify";
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -150,8 +151,9 @@ export function NewsList() {
                                             </div>
                                         }
                                     />
-                                    <div style={{ marginLeft: 10, borderTop: "1px solid #f0f0f0", paddingTop: 10 }}>
-                                        {truncateWords(item.content, 30)}
+                                    <div style={{ marginLeft: 10, borderTop: "1px solid #f0f0f0", paddingTop: 10 }}
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(truncateWords(item.content, 20)) }}
+                                    >
                                     </div>
                                 </List.Item>
                             );
