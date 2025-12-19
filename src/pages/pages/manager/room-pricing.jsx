@@ -114,7 +114,6 @@ export default function RoomPricingManage() {
 
                 <div className={"section flex justify-between items-end"}>
                     <div>
-                        <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
                     </div>
                     <div>
                         <Button onClick={() => add()} icon={<Plus size={14}/>}>Thêm</Button>

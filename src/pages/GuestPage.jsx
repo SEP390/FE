@@ -65,9 +65,9 @@ export function GuestPage() {
                         </ul>
                     </div>
                     <div>
-                        <h4 className="font-semibold text-orange-500 mb-2">Phụ trội Điện nước/kỳ:</h4>
+                        <h4 className="font-semibold text-orange-500 mb-2">Phụ trội điện nước/kỳ:</h4>
                         <ul className="list-disc pl-5 space-y-1">
-                            <li>Định mức miễn phí: 200 số Điện & 12 số nước</li>
+                            <li>Định mức miễn phí: 200 số điện & 12 số nước</li>
                             <li>Dùng vượt định mức: Nộp phí phụ trội</li>
                             <li>Đơn giá: 2,500đ/số điện, 10,000đ/số nước</li>
                         </ul>
@@ -78,7 +78,7 @@ export function GuestPage() {
                             <li>Kích thước giường: 2000X900mm (Dom CDFH), 1930x900mm (Dom AB)</li>
                             <li>CSVC cung cấp: Giường tầng, tủ đồ, tủ giày, bàn học (tùy loại phòng), giá phơi quần áo</li>
                             <li>Thiết bị: Đèn chiếu sáng, điều hòa, bình nóng lạnh</li>
-                            <li>Dịch vụ nhà trường cung cấp: ăn uống, tiện ích (giặt là, cắt tóc, siêu thị, phòng gym): phí SV tự túc</li>
+                            <li>Dịch vụ nhà trường cung cấp: Ăn uống, tiện ích (giặt là, cắt tóc, siêu thị, phòng gym): phí SV tự túc</li>
                             <li>Internet: KTX không trực tiếp cung cấp. Hỗ trợ hạ tầng cho các nhà mạng FPT telecom, Viettel cung cấp dịch vụ cho SV</li>
                             <li>Điểm tiếp nhận đăng ký mạng: Phòng trực Dom C hoặc liên hệ hotline đặt tại sảnh các Dom</li>
                             <li>Đồ dùng cá nhân: sinh viên tự trang bị như chăn, màn, ga, gối, đệm,....</li>
@@ -144,7 +144,7 @@ export function GuestPage() {
 
     return (
         <Layout className="min-h-screen">
-            <Header className="flex justify-between items-center !bg-white shadow px-6">
+            <Header className="flex justify-between items-center !bg-white shadow px-6 fixed top-0 left-0 right-0 z-50">
                 <div className="flex items-center gap-3">
                     <span className="font-bold text-xl text-orange-500">Ký Túc Xá</span>
                 </div>
@@ -164,7 +164,8 @@ export function GuestPage() {
                 </div>
             </Header>
 
-            <Content className="p-8 bg-gray-50">
+            {/* Thêm padding-top để nội dung không bị che bởi header cố định */}
+            <Content className="p-8 bg-gray-50 mt-16">
                 <div className="text-center py-12">
                     <h1 className="text-5xl font-bold text-orange-500 mb-6">
                         Chào mừng đến với Ký Túc Xá

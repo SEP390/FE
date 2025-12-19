@@ -53,7 +53,6 @@ export default function GuardCheckinPage() {
         <div className={"flex flex-col gap-3"}>
             <PageHeader title={"Danh sách chờ checkin"}/>
             <div className={"section"}>
-                <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
                 <div className={"flex gap-3"}>
                     <ResidentFilter value={userId} onChange={setUserId}/>
                     <RoomFilter value={roomId} onChange={setRoomId}/>

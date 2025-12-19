@@ -76,7 +76,6 @@ export default function UserEWUsage() {
             <PageHeader title={'Sử dụng điện nước'}/>
             <CurrentUsage/>
             <div className={"section"}>
-                <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
                 <div className={"flex gap-3"}>
                     <SemesterFilter onChange={setSemesterId}/>
                     <DateRangeFilter onChange={setDateRange}/>

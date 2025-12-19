@@ -146,7 +146,6 @@ const SemesterPage = () => {
                 <PageHeader title={"Quản lý kỳ"}/>
                 <div className={"section flex justify-between items-end"}>
                     <div>
-                        <div className={"font-medium text-lg mb-3"}>Bộ lọc</div>
                         <div className={"flex gap-3 flex-wrap"}>
                             <SemesterFilter onChange={setSearch}/>
                         </div>
