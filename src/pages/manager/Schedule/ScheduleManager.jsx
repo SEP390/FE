@@ -1,46 +1,45 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     Layout, Typography, Calendar, Select, Button, Tag, Space, Modal, Form,
-    Input, Row, Col, Spin, DatePicker, Checkbox, App, Divider, Table
+    Input, Row, Col, Spin, DatePicker, Checkbox, App, Divider, Table, Card
 } from 'antd';
 import {
-    PlusOutlined, UserOutlined, ClockCircleOutlined,
-    EnvironmentOutlined, FilterOutlined, SettingOutlined,
-    DeleteOutlined, EditOutlined, UnorderedListOutlined
+    PlusOutlined, ClockCircleOutlined, SettingOutlined,
+    DeleteOutlined, EditOutlined, UnorderedListOutlined, FilterOutlined
 } from "@ant-design/icons";
 import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
-import { useCollapsed } from '../../../hooks/useCollapsed.js';
 import { RequireRole } from "../../../components/authorize/RequireRole.jsx";
 
 // Cấu hình Dayjs
 import isBetween from 'dayjs/plugin/isBetween';
+import 'dayjs/locale/vi';
 dayjs.extend(isBetween);
+dayjs.locale('vi');
 
 const { Content } = Layout;
 const { Option } = Select;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 export function ScheduleManager() {
-    const collapsed = useCollapsed(state => state.collapsed);
     const { modal, message } = App.useApp();
     const activeKey = 'manager-schedule';
     const navigate = useNavigate();
 
-    // Form Instances
+    // Khởi tạo Form
     const [formSingle] = Form.useForm();
     const [formEdit] = Form.useForm();
     const [formRecurring] = Form.useForm();
 
-    // Data States
+    // Trạng thái dữ liệu
     const [staffs, setStaffs] = useState([]);
     const [shifts, setShifts] = useState([]);
     const [dorms, setDorms] = useState([]);
     const [scheduleData, setScheduleData] = useState({});
 
-    // UI States
+    // Trạng thái UI
     const [loading, setLoading] = useState(false);
     const [loadingDependencies, setLoadingDependencies] = useState(true);
     const [isDailyDetailVisible, setIsDailyDetailVisible] = useState(false);
@@ -48,19 +47,16 @@ export function ScheduleManager() {
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [isRecurringModalVisible, setIsRecurringModalVisible] = useState(false);
 
-    // Selected Data
     const [selectedDate, setSelectedDate] = useState(null);
     const [editingSchedule, setEditingSchedule] = useState(null);
     const [currentMonth, setCurrentMonth] = useState(dayjs());
 
-    // Filter States
+    // Trạng thái lọc
     const [filterEmployeeId, setFilterEmployeeId] = useState(undefined);
     const [filterDormId, setFilterDormId] = useState(undefined);
-
-    // --- THÊM MỚI: State lọc khu vực trong Modal chi tiết ngày ---
     const [dailyFilterDormId, setDailyFilterDormId] = useState(undefined);
 
-    // --- 1. FETCH DATA ---
+    // --- 1. TẢI DỮ LIỆU ---
     const fetchDependencies = async () => {
         setLoadingDependencies(true);
         try {
@@ -69,10 +65,17 @@ export function ScheduleManager() {
                 axiosClient.get('/shifts'),
                 axiosClient.get('/dorms'),
             ]);
-            const filteredStaffs = (staffRes.data || []).filter(s => s.role === 'GUARD' || s.role === 'CLEANER');
-            setStaffs(filteredStaffs);
-            setShifts((shiftRes.data || []).map(s => ({ ...s, id: s.id || s.key, name: `${s.name} (${s.startTime} - ${s.endTime})` })));
-            setDorms(dormRes.data || []);
+            const staffList = staffRes.data?.data || staffRes.data || [];
+            setStaffs(staffList.filter(s => s.role === 'GUARD' || s.role === 'CLEANER'));
+
+            const shiftList = shiftRes.data?.data || shiftRes.data || [];
+            setShifts(shiftList.map(s => ({
+                ...s,
+                id: s.id || s.shiftId,
+                name: `${s.name} (${s.startTime.substring(0,5)} - ${s.endTime.substring(0,5)})`
+            })));
+
+            setDorms(dormRes.data?.data || dormRes.data || []);
         } catch (error) { message.error("Không thể tải dữ liệu hệ thống."); }
         finally { setLoadingDependencies(false); }
     };
@@ -97,44 +100,30 @@ export function ScheduleManager() {
     useEffect(() => { fetchDependencies(); }, []);
     useEffect(() => { fetchSchedule(currentMonth); }, [currentMonth]);
 
-    // --- 2. HANDLERS ---
-    const handleSelectDate = (value) => {
-        if (!isRecurringModalVisible) {
+    // --- SỬA LỖI TỰ MỞ MODAL KHI LỌC THÁNG/NĂM ---
+    const handleSelectDate = (value, info) => {
+        // info.source sẽ cho biết hành động đến từ đâu
+        // 'date' nghĩa là người dùng click trực tiếp vào ô ngày
+        if (info.source === 'date' && !isRecurringModalVisible) {
             setSelectedDate(value.format('YYYY-MM-DD'));
-            setDailyFilterDormId(undefined); // Reset bộ lọc khi mở ngày mới
+            setDailyFilterDormId(undefined);
             setIsDailyDetailVisible(true);
         }
-    };
-
-    const onOpenEditModal = (item) => {
-        setEditingSchedule(item);
-        formEdit.setFieldsValue({
-            employeeName: item.employeeName,
-            workDate: dayjs(item.workDate).format('DD/MM/YYYY'),
-            role: staffs.find(s => s.employeeId === item.employeeId)?.role,
-            shiftId: item.shiftId,
-            dormId: item.dormId,
-            note: item.note
-        });
-        setIsEditModalVisible(true);
     };
 
     const handleUpdateSchedule = async (values) => {
         setLoading(true);
         try {
-            const payload = {
+            await axiosClient.put(`/schedules/${editingSchedule.scheduleId}`, {
                 shiftId: values.shiftId,
                 note: values.note,
                 dormID: values.dormId
-            };
-            await axiosClient.put(`/schedules/${editingSchedule.scheduleId}`, payload);
+            });
             message.success("Cập nhật thành công!");
             fetchSchedule(currentMonth);
             setIsEditModalVisible(false);
             setIsDailyDetailVisible(true);
-        } catch (error) {
-            message.error("Cập nhật thất bại: " + (error.response?.data?.message || error.message));
-        }
+        } catch (error) { message.error("Cập nhật thất bại!"); }
         finally { setLoading(false); }
     };
 
@@ -142,13 +131,12 @@ export function ScheduleManager() {
         modal.confirm({
             title: 'Xác nhận xóa',
             content: 'Bạn có chắc chắn muốn xóa ca làm này?',
-            okText: 'Xóa', okType: 'danger',
+            okText: 'Xóa', okType: 'danger', cancelText: 'Hủy',
             onOk: async () => {
                 try {
-                    await axiosClient.delete(`/schedules/${id || editingSchedule.scheduleId}`);
+                    await axiosClient.delete(`/schedules/${id}`);
                     message.success("Đã xóa ca làm việc.");
                     fetchSchedule(currentMonth);
-                    setIsEditModalVisible(false);
                 } catch (e) { message.error("Xóa thất bại."); }
             }
         });
@@ -162,7 +150,7 @@ export function ScheduleManager() {
             fetchSchedule(currentMonth);
             setIsSingleModalVisible(false);
             formSingle.resetFields();
-        } catch (e) { message.error("Lỗi tạo lịch."); }
+        } catch (e) { message.error("Lỗi khi tạo lịch."); }
         finally { setLoading(false); }
     };
 
@@ -178,16 +166,9 @@ export function ScheduleManager() {
             fetchSchedule(currentMonth);
             setIsRecurringModalVisible(false);
             formRecurring.resetFields();
-        } catch (e) { message.error("Lỗi tạo lịch định kỳ."); }
+        } catch (e) { message.error("Lỗi khi tạo lịch định kỳ."); }
         finally { setLoading(false); }
     };
-
-    // --- LOGIC LỌC TRONG MODAL CHI TIẾT NGÀY ---
-    const dailySchedules = useMemo(() => {
-        const list = scheduleData[selectedDate] || [];
-        if (!dailyFilterDormId) return list;
-        return list.filter(item => String(item.dormId) === String(dailyFilterDormId));
-    }, [scheduleData, selectedDate, dailyFilterDormId]);
 
     const cellRender = (value) => {
         const dateKey = value.format('YYYY-MM-DD');
@@ -198,28 +179,28 @@ export function ScheduleManager() {
 
         return (
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                {list.slice(0, 3).map(item => (
+                {list.slice(0, 2).map(item => (
                     <li key={item.scheduleId} style={{ marginBottom: 2 }}>
-                        <Tag color="blue" style={{ width: '100%', fontSize: '11px', margin: 0 }}>
-                            {item.shiftName.split('(')[0]} - {item.employeeName.split(' ').pop()}
+                        <Tag color="blue" style={{ width: '100%', fontSize: '10px', margin: 0, overflow: 'hidden' }}>
+                            {item.shiftName.split(' ')[0]}: {item.employeeName.split(' ').pop()}
                         </Tag>
                     </li>
                 ))}
-                {list.length > 3 && <li style={{ fontSize: 10, textAlign: 'right' }}>+{list.length - 3}...</li>}
+                {list.length > 2 && <li style={{ fontSize: 9, textAlign: 'right', color: '#8c8c8c' }}>+{list.length - 2} ca</li>}
             </ul>
         );
     };
 
     return (
         <RequireRole role="MANAGER">
-            <LayoutManager active={activeKey} header="Quản lý Lịch làm việc">
-                <Content style={{ margin: '16px', padding: 24, background: '#fff' }}>
-                    <Spin spinning={loadingDependencies}>
+            <LayoutManager active={activeKey} header="Quản lý lịch làm việc">
+                <Content style={{ margin: '16px' }}>
+                    <Card bordered={false}>
                         <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
                             <Col>
                                 <Space>
-                                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsRecurringModalVisible(true)}>Tạo Lịch Định Kỳ</Button>
-                                    <Button icon={<SettingOutlined />} onClick={() => navigate('/manager/shifts')}>Cấu hình Ca</Button>
+                                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsRecurringModalVisible(true)}>Tạo lịch định kỳ</Button>
+                                    <Button icon={<SettingOutlined />} onClick={() => navigate('/manager/shifts')}>Cấu hình ca làm</Button>
                                 </Space>
                             </Col>
                             <Col>
@@ -228,167 +209,156 @@ export function ScheduleManager() {
                                         {dorms.map(d => <Option key={d.id} value={String(d.id)}>{d.dormName}</Option>)}
                                     </Select>
                                     <Select placeholder="Lọc nhân viên" style={{ width: 200 }} allowClear showSearch optionFilterProp="children" onChange={setFilterEmployeeId}>
-                                        {staffs.map(s => <Option key={s.employeeId} value={String(s.employeeId)}>{s.username} ({s.role})</Option>)}
+                                        {staffs.map(s => <Option key={s.employeeId} value={String(s.employeeId)}>{s.fullName || s.username}</Option>)}
                                     </Select>
                                 </Space>
                             </Col>
                         </Row>
 
-                        <Calendar
-                            cellRender={cellRender}
-                            onSelect={handleSelectDate}
-                            onPanelChange={setCurrentMonth}
-                            headerRender={({ value, onChange }) => {
-                                const currentYear = value.year();
-                                const currentMonth = value.month();
-                                const monthOptions = [];
-                                for (let i = 0; i < 12; i++) monthOptions.push(<Option key={i} value={i}>Tháng {i + 1}</Option>);
-                                const yearOptions = [];
-                                for (let i = currentYear - 5; i < currentYear + 5; i++) yearOptions.push(<Option key={i} value={i}>Năm {i}</Option>);
-                                return (
-                                    <div style={{ padding: '10px 0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                        <Select size="small" value={currentMonth} onChange={(m) => onChange(value.clone().month(m))} style={{ width: 150 }}>{monthOptions}</Select>
-                                        <Select size="small" value={currentYear} onChange={(y) => onChange(value.clone().year(y))} style={{ width: 150 }}>{yearOptions}</Select>
-                                    </div>
-                                );
-                            }}
-                        />
-                    </Spin>
+                        <Spin spinning={loadingDependencies || loading}>
+                            <Calendar
+                                cellRender={cellRender}
+                                onSelect={handleSelectDate}
+                                onPanelChange={(date) => {
+                                    setCurrentMonth(date);
+                                    // Khi đổi tháng từ thanh header, ta không chọn ngày
+                                }}
+                                headerRender={({ value, onChange }) => {
+                                    const currentYear = value.year();
+                                    const currentMonth = value.month();
+                                    const monthOptions = [];
+                                    for (let i = 0; i < 12; i++) monthOptions.push(<Option key={i} value={i}>Tháng {i + 1}</Option>);
+                                    const yearOptions = [];
+                                    for (let i = currentYear - 5; i < currentYear + 5; i++) yearOptions.push(<Option key={i} value={i}>Năm {i}</Option>);
+                                    return (
+                                        <div style={{ padding: '10px 0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                            {/* Đã tăng width để không bị mất chữ */}
+                                            <Select size="small" value={currentMonth} onChange={(m) => onChange(value.clone().month(m))} style={{ width: 140 }}>{monthOptions}</Select>
+                                            <Select size="small" value={currentYear} onChange={(y) => onChange(value.clone().year(y))} style={{ width: 120 }}>{yearOptions}</Select>
+                                        </div>
+                                    );
+                                }}
+                            />
+                        </Spin>
+                    </Card>
                 </Content>
-            </LayoutManager>
 
-            {/* MODAL DANH SÁCH CHI TIẾT NGÀY */}
-            <Modal
-                title={<span><UnorderedListOutlined /> Lịch ngày {dayjs(selectedDate).format('DD/MM/YYYY')}</span>}
-                open={isDailyDetailVisible}
-                onCancel={() => setIsDailyDetailVisible(false)}
-                width={750}
-                footer={[
-                    <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setIsSingleModalVisible(true); setIsDailyDetailVisible(false); }}>
-                        Phân thêm ca
-                    </Button>
-                ]}
-            >
-                {/* --- BỘ LỌC KHU VỰC TRONG MODAL --- */}
-                <Row justify="end" style={{ marginBottom: 16 }}>
-                    <Col>
-                        <Space>
-                            <FilterOutlined style={{ color: '#8c8c8c' }} />
-                            <Select
-                                placeholder="Lọc theo khu vực"
-                                style={{ width: 180 }}
-                                allowClear
-                                value={dailyFilterDormId}
-                                onChange={setDailyFilterDormId}
-                            >
-                                {dorms.map(d => <Option key={d.id} value={String(d.id)}>{d.dormName}</Option>)}
-                            </Select>
-                        </Space>
-                    </Col>
-                </Row>
-
-                <Table
-                    dataSource={dailySchedules}
-                    pagination={false} size="small"
-                    columns={[
-                        { title: 'Nhân viên', dataIndex: 'employeeName', key: 'name', render: (text) => <b>{text}</b> },
-                        { title: 'Ca làm', dataIndex: 'shiftName', key: 'shift', render: (text) => <Tag color="blue">{text}</Tag> },
-                        { title: 'Khu vực', dataIndex: 'dormName', key: 'dorm' },
-                        {
-                            title: 'Thao tác', key: 'act', align: 'center', render: (_, record) => (
-                                <Space>
-                                    <Button size="small" icon={<EditOutlined />} onClick={() => onOpenEditModal(record)} />
-                                    <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDeleteSchedule(record.scheduleId)} />
-                                </Space>
-                            )
-                        }
+                {/* MODAL CHI TIẾT NGÀY */}
+                <Modal
+                    title={<span><UnorderedListOutlined /> Chi tiết lịch ngày {dayjs(selectedDate).format('DD/MM/YYYY')}</span>}
+                    open={isDailyDetailVisible}
+                    onCancel={() => setIsDailyDetailVisible(false)}
+                    width={800}
+                    footer={[
+                        <Button key="add" type="primary" ghost onClick={() => { setIsSingleModalVisible(true); setIsDailyDetailVisible(false); }}>
+                            + Phân thêm ca làm
+                        </Button>
                     ]}
-                />
-            </Modal>
+                >
+                    <Table
+                        dataSource={useMemo(() => {
+                            const list = scheduleData[selectedDate] || [];
+                            return dailyFilterDormId ? list.filter(i => String(i.dormId) === String(dailyFilterDormId)) : list;
+                        }, [scheduleData, selectedDate, dailyFilterDormId])}
+                        pagination={false} size="middle" bordered
+                        columns={[
+                            { title: 'Nhân viên', dataIndex: 'employeeName', key: 'name', render: (t) => <b>{t}</b> },
+                            { title: 'Ca làm', dataIndex: 'shiftName', key: 'shift', render: (t) => <Tag color="cyan">{t}</Tag> },
+                            { title: 'Khu vực', dataIndex: 'dormName', key: 'dorm' },
+                            {
+                                title: 'Thao tác', key: 'act', align: 'center', render: (_, record) => (
+                                    <Space>
+                                        <Button size="small" icon={<EditOutlined />} onClick={() => {
+                                            setEditingSchedule(record);
+                                            formEdit.setFieldsValue({
+                                                employeeName: record.employeeName,
+                                                workDate: dayjs(record.workDate).format('DD/MM/YYYY'),
+                                                shiftId: record.shiftId,
+                                                dormId: record.dormId,
+                                                note: record.note
+                                            });
+                                            setIsEditModalVisible(true);
+                                        }} />
+                                        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDeleteSchedule(record.scheduleId)} />
+                                    </Space>
+                                )
+                            }
+                        ]}
+                    />
+                </Modal>
 
-            {/* MODAL TẠO LỊCH NGÀY LẺ */}
-            <Modal title={`Phân ca cho ngày: ${selectedDate}`} open={isSingleModalVisible} onOk={() => formSingle.submit()} onCancel={() => setIsSingleModalVisible(false)} confirmLoading={loading}>
-                <Form form={formSingle} layout="vertical" onFinish={handleCreateSingle}>
-                    <CommonScheduleForm staffs={staffs} shifts={shifts} dorms={dorms} form={formSingle} isEdit={false} />
-                    <Form.Item name="note" label="Ghi chú"><Input.TextArea rows={2} /></Form.Item>
-                </Form>
-            </Modal>
+                {/* MODAL SỬA LỊCH */}
+                <Modal title="Chỉnh sửa lịch" open={isEditModalVisible} onCancel={() => setIsEditModalVisible(false)} onOk={() => formEdit.submit()} confirmLoading={loading}>
+                    <Form form={formEdit} layout="vertical" onFinish={handleUpdateSchedule}>
+                        <Row gutter={16}>
+                            <Col span={12}><Form.Item name="employeeName" label="Nhân viên"><Input disabled /></Form.Item></Col>
+                            <Col span={12}><Form.Item name="workDate" label="Ngày làm"><Input disabled /></Form.Item></Col>
+                        </Row>
+                        <Row gutter={16}>
+                            <Col span={12}><Form.Item name="shiftId" label="Ca làm việc" rules={[{required: true}]}><Select>{shifts.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}</Select></Form.Item></Col>
+                            <Col span={12}><Form.Item name="dormId" label="Khu vực" rules={[{required: true}]}><Select>{dorms.map(d => <Option key={d.id} value={d.id}>{d.dormName}</Option>)}</Select></Form.Item></Col>
+                        </Row>
+                        <Form.Item name="note" label="Ghi chú"><Input.TextArea rows={2} /></Form.Item>
+                    </Form>
+                </Modal>
 
-            {/* MODAL SỬA LỊCH */}
-            <Modal
-                title="Chỉnh sửa lịch"
-                open={isEditModalVisible}
-                onCancel={() => setIsEditModalVisible(false)}
-                footer={[
-                    <Button key="cancel" onClick={() => setIsEditModalVisible(false)}>Hủy</Button>,
-                    <Button key="up" type="primary" onClick={() => formEdit.submit()} loading={loading}>Cập nhật</Button>
-                ]}
-            >
-                <Form form={formEdit} layout="vertical" onFinish={handleUpdateSchedule}>
-                    <Row gutter={16}>
-                        <Col span={12}><Form.Item name="employeeName" label="Nhân viên"><Input disabled /></Form.Item></Col>
-                        <Col span={12}><Form.Item name="workDate" label="Ngày làm"><Input disabled /></Form.Item></Col>
-                        <Col span={24}><Form.Item name="role" label="Chức vụ"><Select disabled><Option value="GUARD">Bảo vệ</Option><Option value="CLEANER">Lao công</Option></Select></Form.Item></Col>
-                    </Row>
-                    <Divider style={{ margin: '12px 0' }} />
-                    <Row gutter={16}>
-                        <Col span={12}><Form.Item name="shiftId" label="* Ca làm" rules={[{required: true}]}><Select>{shifts.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}</Select></Form.Item></Col>
-                        <Col span={12}><Form.Item name="dormId" label="* Khu vực" rules={[{required: true}]}><Select>{dorms.map(d => <Option key={d.id} value={d.id}>{d.dormName}</Option>)}</Select></Form.Item></Col>
-                    </Row>
-                    <Form.Item name="note" label="Ghi chú"><Input.TextArea rows={3} /></Form.Item>
-                </Form>
-            </Modal>
+                {/* MODAL TẠO LỊCH LẺ */}
+                <Modal title={`Phân ca cho ngày: ${dayjs(selectedDate).format('DD/MM/YYYY')}`} open={isSingleModalVisible} onOk={() => formSingle.submit()} onCancel={() => setIsSingleModalVisible(false)} confirmLoading={loading}>
+                    <Form form={formSingle} layout="vertical" onFinish={handleCreateSingle}>
+                        <CommonScheduleForm staffs={staffs} shifts={shifts} dorms={dorms} form={formSingle} />
+                        <Form.Item name="note" label="Ghi chú"><Input.TextArea rows={2} /></Form.Item>
+                    </Form>
+                </Modal>
 
-            {/* MODAL TẠO LỊCH ĐỊNH KỲ */}
-            <Modal title="Tạo Lịch Định Kỳ" open={isRecurringModalVisible} onOk={() => formRecurring.submit()} onCancel={() => setIsRecurringModalVisible(false)} width={700} confirmLoading={loading}>
-                <Form form={formRecurring} layout="vertical" onFinish={handleCreateRecurring}>
-                    <CommonScheduleForm staffs={staffs} shifts={shifts} dorms={dorms} form={formRecurring} isEdit={false} />
-                    <Row gutter={16}>
-                        <Col span={12}><Form.Item name="from" label="Từ ngày" rules={[{required:true}]}><DatePicker style={{width:'100%'}} format="DD/MM/YYYY" /></Form.Item></Col>
-                        <Col span={12}><Form.Item name="to" label="Đến ngày" rules={[{required:true}]}><DatePicker style={{width:'100%'}} format="DD/MM/YYYY" /></Form.Item></Col>
-                    </Row>
-                    <Form.Item name="repeatDays" label="Lặp lại hàng tuần" rules={[{required:true}]}>
-                        <Checkbox.Group style={{ width: '100%' }}>
-                            <Row gutter={[8, 8]}>
-                                {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].map(day => (
-                                    <Col key={day}><Checkbox value={day}><Tag color="blue">{day}</Tag></Checkbox></Col>
-                                ))}
-                            </Row>
-                        </Checkbox.Group>
-                    </Form.Item>
-                    <Form.Item name="note" label="Ghi chú"><Input.TextArea rows={2} /></Form.Item>
-                </Form>
-            </Modal>
+                {/* MODAL TẠO LỊCH ĐỊNH KỲ */}
+                <Modal title="Thiết lập lịch định kỳ" open={isRecurringModalVisible} onOk={() => formRecurring.submit()} onCancel={() => setIsRecurringModalVisible(false)} width={650} confirmLoading={loading}>
+                    <Form form={formRecurring} layout="vertical" onFinish={handleCreateRecurring}>
+                        <CommonScheduleForm staffs={staffs} shifts={shifts} dorms={dorms} form={formRecurring} />
+                        <Row gutter={16}>
+                            <Col span={12}><Form.Item name="from" label="Từ ngày" rules={[{required:true}]}><DatePicker style={{width:'100%'}} format="DD/MM/YYYY" /></Form.Item></Col>
+                            <Col span={12}><Form.Item name="to" label="Đến ngày" rules={[{required:true}]}><DatePicker style={{width:'100%'}} format="DD/MM/YYYY" /></Form.Item></Col>
+                        </Row>
+                        <Form.Item name="repeatDays" label="Lặp lại vào" rules={[{required:true}]}>
+                            <Checkbox.Group style={{ width: '100%' }}>
+                                <Row>
+                                    {[
+                                        {v: 'MONDAY', l: 'Thứ 2'}, {v: 'TUESDAY', l: 'Thứ 3'}, {v: 'WEDNESDAY', l: 'Thứ 4'},
+                                        {v: 'THURSDAY', l: 'Thứ 5'}, {v: 'FRIDAY', l: 'Thứ 6'}, {v: 'SATURDAY', l: 'Thứ 7'}, {v: 'SUNDAY', l: 'Chủ Nhật'}
+                                    ].map(day => (
+                                        <Col span={6} key={day.v}><Checkbox value={day.v}>{day.l}</Checkbox></Col>
+                                    ))}
+                                </Row>
+                            </Checkbox.Group>
+                        </Form.Item>
+                    </Form>
+                </Modal>
+            </LayoutManager>
         </RequireRole>
     );
 }
 
-const CommonScheduleForm = ({ staffs, shifts, dorms, form, isEdit }) => {
+const CommonScheduleForm = ({ staffs, shifts, dorms, form }) => {
     const [selectedRole, setSelectedRole] = useState(null);
     const filteredStaffs = useMemo(() => staffs.filter(s => s.role === selectedRole), [selectedRole, staffs]);
     return (
-        <>
-            <Row gutter={16}>
-                <Col span={12}>
-                    <Form.Item label="Chức vụ" rules={[{required: true}]}>
-                        <Select placeholder="Chọn" onChange={(v) => { setSelectedRole(v); form.setFieldsValue({ employeeId: undefined }); }} disabled={isEdit}>
-                            <Option value="GUARD">Bảo vệ</Option>
-                            <Option value="CLEANER">Lao công</Option>
-                        </Select>
-                    </Form.Item>
-                </Col>
-                <Col span={12}>
-                    <Form.Item name="employeeId" label="Nhân viên" rules={[{required: true}]}>
-                        <Select placeholder="Chọn NV" disabled={!selectedRole || isEdit} showSearch optionFilterProp="children">
-                            {filteredStaffs.map(s => <Option key={s.employeeId} value={s.employeeId}>{s.username}</Option>)}
-                        </Select>
-                    </Form.Item>
-                </Col>
-            </Row>
-            <Row gutter={16}>
-                <Col span={12}><Form.Item name="shiftId" label="Ca làm" rules={[{required: true}]}><Select>{shifts.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}</Select></Form.Item></Col>
-                <Col span={12}><Form.Item name="dormId" label="Khu vực" rules={[{required: true}]}><Select>{dorms.map(d => <Option key={d.id} value={d.id}>{d.dormName}</Option>)}</Select></Form.Item></Col>
-            </Row>
-        </>
+        <Row gutter={16}>
+            <Col span={12}>
+                <Form.Item label="Chức vụ" rules={[{required: true}]}>
+                    <Select placeholder="Chọn" onChange={(v) => { setSelectedRole(v); form.setFieldsValue({ employeeId: undefined }); }}>
+                        <Option value="GUARD">Bảo vệ</Option>
+                        <Option value="CLEANER">Lao công</Option>
+                    </Select>
+                </Form.Item>
+            </Col>
+            <Col span={12}>
+                <Form.Item name="employeeId" label="Nhân viên" rules={[{required: true}]}>
+                    <Select placeholder="Chọn nhân viên" disabled={!selectedRole} showSearch optionFilterProp="children">
+                        {filteredStaffs.map(s => <Option key={s.employeeId} value={s.employeeId}>{s.fullName || s.username}</Option>)}
+                    </Select>
+                </Form.Item>
+            </Col>
+            <Col span={12}><Form.Item name="shiftId" label="Ca làm việc" rules={[{required: true}]}><Select placeholder="Chọn ca">{shifts.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}</Select></Form.Item></Col>
+            <Col span={12}><Form.Item name="dormId" label="Khu vực trực" rules={[{required: true}]}><Select placeholder="Chọn khu vực">{dorms.map(d => <Option key={d.id} value={d.id}>{d.dormName}</Option>)}</Select></Form.Item></Col>
+        </Row>
     );
 };
