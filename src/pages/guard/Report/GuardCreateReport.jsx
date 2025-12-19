@@ -1,21 +1,17 @@
-import { Layout, Form, App } from "antd";
-import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
-import { AppHeader } from "../../../components/layout/AppHeader.jsx";
+import { Form, App } from "antd";
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useCollapsed } from "../../../hooks/useCollapsed.js";
 import { ReportForm } from "../../../components/Report/ReportForm.jsx";
+// Import LayoutGuard
+import { LayoutGuard } from "../../../components/layout/LayoutGuard.jsx";
 
 export function GuardCreateReport() {
-    const collapsed = useCollapsed(state => state.collapsed);
-    const setCollapsed = useCollapsed(state => state.setCollapsed);
+    // Không cần useCollapsed hay Layout thủ công
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
     const navigate = useNavigate();
     const { message } = App.useApp();
-
-    const toggleSideBar = () => setCollapsed(prev => !prev);
 
     const onFinish = async (values) => {
         console.log("Form values:", values);
@@ -58,34 +54,15 @@ export function GuardCreateReport() {
     };
 
     return (
-        <Layout style={{ minHeight: "100vh" }}>
-            <GuardSidebar collapsed={collapsed} active="guard-reports" />
-            <Layout
-                style={{
-                    marginLeft: collapsed ? 80 : 260,
-                    transition: 'margin-left 0.3s ease',
-                }}
-            >
-                <AppHeader
-                    toggleSideBar={toggleSideBar}
-                    collapsed={collapsed}
-                    header="Tạo báo cáo (Bảo vệ)"
+        <LayoutGuard active="guard-reports" header="Tạo báo cáo (Bảo vệ)">
+            {/* Container màu trắng bao bọc Form */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+                <ReportForm
+                    onSubmit={onFinish}
+                    loading={loading}
+                    form={form}
                 />
-                <Layout.Content
-                    style={{
-                        margin: "24px 16px",
-                        padding: 24,
-                        background: "#fff",
-                        marginTop: 64
-                    }}
-                >
-                    <ReportForm
-                        onSubmit={onFinish}
-                        loading={loading}
-                        form={form}
-                    />
-                </Layout.Content>
-            </Layout>
-        </Layout>
+            </div>
+        </LayoutGuard>
     );
 }

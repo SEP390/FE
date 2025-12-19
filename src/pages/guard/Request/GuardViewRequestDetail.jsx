@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
-import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Button, Tag, Descriptions, Spin, Form, Input, Select, App, Checkbox, Row, Col, Radio } from "antd";
+import { Typography, Card, Button, Tag, Descriptions, Spin, Form, Input, Select, App, Row, Col, Radio } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined, SaveOutlined, EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
-import { useCollapsed } from "../../../hooks/useCollapsed.js";
+// Import LayoutGuard
+import { LayoutGuard } from "../../../components/layout/LayoutGuard.jsx";
 
-const { Content } = Layout;
 const { Title } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
@@ -16,8 +14,9 @@ export function GuardViewRequestDetail() {
     const { notification } = App.useApp();
     const { requestId } = useParams();
     const navigate = useNavigate();
-    const collapsed = useCollapsed(state => state.collapsed);
-    const setCollapsed = useCollapsed(state => state.setCollapsed);
+
+    // Không cần useCollapsed hay Layout thủ công nữa
+
     const [requestData, setRequestData] = useState(null);
     const [residentInfo, setResidentInfo] = useState(null);
     const [form] = Form.useForm();
@@ -186,9 +185,15 @@ export function GuardViewRequestDetail() {
         }
     }, [isUpdateComplete, isUpdateSuccess, notification]);
 
-    // Convert acceptance form to text
+    // --- ĐÃ CHỈNH SỬA: Tự động thêm Ngày giờ và Tên phòng vào biên bản ---
     const convertAcceptanceFormToText = () => {
-        let text = "=== BIÊN BẢN NGHIỆM THU TÌNH TRẠNG PHÒNG ===\n\n";
+        let text = "=== BIÊN BẢN NGHIỆM THU TÌNH TRẠNG PHÒNG ===\n";
+
+        // Tự động thêm thời gian hiện tại
+        text += `Ngày giờ: ${new Date().toLocaleString('vi-VN')}\n`;
+
+        // Tự động thêm tên phòng từ requestData
+        text += `Phòng: ${requestData?.roomName || "Không xác định"}\n\n`;
 
         text += `Giường: ${acceptanceForm.giuong.tot ? '☑ Tốt' : '☐ Tốt'} | ${acceptanceForm.giuong.hong ? '☑ Hỏng' : '☐ Hỏng'}\n`;
         text += `Ghế: ${acceptanceForm.ghe.tot ? '☑ Tốt' : '☐ Tốt'} | ${acceptanceForm.ghe.hong ? '☑ Hỏng' : '☐ Hỏng'}\n`;
@@ -201,6 +206,7 @@ export function GuardViewRequestDetail() {
 
         return text;
     };
+    // -------------------------------------------------------------------
 
     // Status color mapping
     const statusColor = (status) => {
@@ -225,7 +231,7 @@ export function GuardViewRequestDetail() {
         return statusMap[status] || status;
     };
 
-    // Format request type - ĐÃ CẬP NHẬT TIẾNG VIỆT
+    // Format request type
     const formatRequestType = (type) => {
         const typeMap = {
             CHECKOUT: "Yêu cầu trả phòng",
@@ -261,7 +267,7 @@ export function GuardViewRequestDetail() {
 
         let responseMessage = values.responseMessage;
 
-        // If request type is CHECKOUT and acceptance form is shown, convert it to text
+        // Nếu là CHECKOUT và đang hiện form, dùng hàm convert mới có chứa ngày giờ/phòng
         if (requestData.requestType === "CHECKOUT" && showAcceptanceForm) {
             responseMessage = convertAcceptanceFormToText();
         }
@@ -290,10 +296,6 @@ export function GuardViewRequestDetail() {
         if (acceptanceForm[item].tot) return 'tot';
         if (acceptanceForm[item].hong) return 'hong';
         return null;
-    };
-
-    const toggleSideBar = () => {
-        setCollapsed(prev => !prev);
     };
 
     // Render acceptance form for CHECKOUT type
@@ -363,168 +365,150 @@ export function GuardViewRequestDetail() {
     };
 
     return (
-        <Layout style={{ minHeight: "100vh" }}>
-            <GuardSidebar collapsed={collapsed} active="guard-requests" />
-            <Layout
-                style={{
-                    marginLeft: collapsed ? 80 : 260,
-                    transition: 'margin-left 0.3s ease',
-                }}
-            >
-                <AppHeader
-                    toggleSideBar={toggleSideBar}
-                    header={
-                        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                            <Button
-                                icon={<ArrowLeftOutlined />}
-                                onClick={() => navigate("/guard/requests")}
-                            >
-                                Quay lại
-                            </Button>
-                            <Title level={2} style={{ margin: 0 }}>
-                                {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
-                            </Title>
-                        </div>
-                    }
-                    collapsed={collapsed}
-                />
+        <LayoutGuard active="guard-requests" header="Chi tiết yêu cầu">
+            {/* Wrapper cho toàn bộ nội dung */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+                {/* Header tùy chỉnh bên trong nội dung */}
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
+                    <Button
+                        icon={<ArrowLeftOutlined />}
+                        onClick={() => navigate("/guard/requests")}
+                    >
+                        Quay lại
+                    </Button>
+                    <Title level={3} style={{ margin: 0 }}>
+                        {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
+                    </Title>
+                </div>
 
-                <Content style={{ margin: "24px", background: "#fff", padding: 24, marginTop: 64 }}>
-                    {isRequestLoading && (
-                        <div style={{ textAlign: "center", padding: "60px 0" }}>
-                            <Spin size="large" />
-                            <p style={{ marginTop: 16 }}>Đang tải thông tin request...</p>
-                        </div>
-                    )}
+                {isRequestLoading && (
+                    <div style={{ textAlign: "center", padding: "60px 0" }}>
+                        <Spin size="large" />
+                        <p style={{ marginTop: 16 }}>Đang tải thông tin request...</p>
+                    </div>
+                )}
 
-                    {!isRequestLoading && !requestData && (
-                        <div style={{ textAlign: "center", padding: "60px 0" }}>
-                            <h2>Không tìm thấy request</h2>
-                            <Button type="primary" onClick={() => navigate("/guard/requests")}>
-                                Quay lại danh sách
-                            </Button>
-                        </div>
-                    )}
+                {!isRequestLoading && !requestData && (
+                    <div style={{ textAlign: "center", padding: "60px 0" }}>
+                        <h2>Không tìm thấy request</h2>
+                        <Button type="primary" onClick={() => navigate("/guard/requests")}>
+                            Quay lại danh sách
+                        </Button>
+                    </div>
+                )}
 
-                    {!isRequestLoading && requestData && (
-                        <>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Request Information */}
-                                <Card title="Thông tin Request" className="h-fit">
-                                    <Descriptions column={1} bordered size="small">
-                                        <Descriptions.Item label="Request ID">
-                                            {requestData.requestId || 'N/A'}
+                {!isRequestLoading && requestData && (
+                    <>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            {/* Request Information */}
+                            <Card title="Thông tin Request" className="h-fit">
+                                <Descriptions column={1} bordered size="small">
+                                    <Descriptions.Item label="Loại Request">
+                                        {formatRequestType(requestData.requestType)}
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Trạng thái">
+                                        <Tag color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
+                                            {formatStatus(requestData.responseStatus || requestData.requestStatus)}
+                                        </Tag>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Tên phòng">
+                                        {requestData.roomName || 'N/A'}
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Học kỳ">
+                                        {requestData.semesterName || 'N/A'}
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Mã người ở">
+                                        {residentInfo?.userCode || (isUserLoading ? 'Đang tải...' : 'N/A')}
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Ngày tạo">
+                                        {formatDate(requestData.createTime)}
+                                    </Descriptions.Item>
+                                    {requestData.executeTime && (
+                                        <Descriptions.Item label="Ngày thực hiện">
+                                            {formatDate(requestData.executeTime)}
                                         </Descriptions.Item>
-                                        <Descriptions.Item label="Loại Request">
-                                            {formatRequestType(requestData.requestType)}
-                                        </Descriptions.Item>
-                                        <Descriptions.Item label="Trạng thái">
-                                            <Tag color={statusColor(requestData.responseStatus || requestData.requestStatus)}>
-                                                {formatStatus(requestData.responseStatus || requestData.requestStatus)}
-                                            </Tag>
-                                        </Descriptions.Item>
-                                        <Descriptions.Item label="Tên phòng">
-                                            {requestData.roomName || 'N/A'}
-                                        </Descriptions.Item>
-                                        <Descriptions.Item label="Học kỳ">
-                                            {requestData.semesterName || 'N/A'}
-                                        </Descriptions.Item>
-                                        <Descriptions.Item label="Username người ở">
-                                            {residentInfo?.username || (isUserLoading ? 'Đang tải...' : 'N/A')}
-                                        </Descriptions.Item>
-                                        <Descriptions.Item label="Mã người ở">
-                                            {residentInfo?.userCode || (isUserLoading ? 'Đang tải...' : 'N/A')}
-                                        </Descriptions.Item>
-                                        <Descriptions.Item label="Ngày tạo">
-                                            {formatDate(requestData.createTime)}
-                                        </Descriptions.Item>
-                                        {requestData.executeTime && (
-                                            <Descriptions.Item label="Ngày thực hiện">
-                                                {formatDate(requestData.executeTime)}
-                                            </Descriptions.Item>
-                                        )}
-                                    </Descriptions>
-                                </Card>
-
-                                {/* Update Status Card */}
-                                <Card title="Cập nhật trạng thái" className="h-fit">
-                                    <Form
-                                        form={form}
-                                        layout="vertical"
-                                        onFinish={handleUpdateRequest}
-                                        disabled={isUpdateLoading}
-                                    >
-                                        <Form.Item
-                                            label="Trạng thái mới"
-                                            name="requestStatus"
-                                            rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
-                                        >
-                                            <Select placeholder="Chọn trạng thái cập nhật">
-                                                <Option value="PENDING">Đang xử lý (PENDING)</Option>
-                                                <Option value="CHECKED">Đã kiểm tra (CHECKED)</Option>
-                                            </Select>
-                                        </Form.Item>
-
-                                        {requestData.requestType !== "CHECKOUT" && (
-                                            <Form.Item
-                                                label="Tin nhắn phản hồi"
-                                                name="responseMessage"
-                                                rules={[{ required: true, message: 'Vui lòng nhập tin nhắn phản hồi!' }]}
-                                            >
-                                                <TextArea
-                                                    rows={4}
-                                                    placeholder="Nhập tin nhắn phản hồi cho sinh viên..."
-                                                />
-                                            </Form.Item>
-                                        )}
-
-                                        <Form.Item>
-                                            <Button
-                                                type="primary"
-                                                htmlType="submit"
-                                                icon={<SaveOutlined />}
-                                                loading={isUpdateLoading}
-                                                block
-                                                style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
-                                            >
-                                                Cập nhật trạng thái
-                                            </Button>
-                                        </Form.Item>
-                                    </Form>
-                                </Card>
-                            </div>
-
-                            {/* Acceptance Form for CHECKOUT type */}
-                            {renderAcceptanceForm()}
-
-                            {/* Request Content */}
-                            <Card title="Nội dung Request" className="mt-6">
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <p className="whitespace-pre-wrap">{requestData.content || "Không có nội dung"}</p>
-                                </div>
+                                    )}
+                                </Descriptions>
                             </Card>
 
-                            {/* Response Message from Employee */}
-                            {requestData.responseMessageByEmployee && (
-                                <Card title="Phản hồi từ nhân viên (Bảo vệ)" className="mt-6">
-                                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                        <p className="whitespace-pre-wrap text-blue-800">{requestData.responseMessageByEmployee}</p>
-                                    </div>
-                                </Card>
-                            )}
+                            {/* Update Status Card */}
+                            <Card title="Cập nhật trạng thái" className="h-fit">
+                                <Form
+                                    form={form}
+                                    layout="vertical"
+                                    onFinish={handleUpdateRequest}
+                                    disabled={isUpdateLoading}
+                                >
+                                    <Form.Item
+                                        label="Trạng thái mới"
+                                        name="requestStatus"
+                                        rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
+                                    >
+                                        <Select placeholder="Chọn trạng thái cập nhật">
+                                            <Option value="PENDING">Đang xử lý (PENDING)</Option>
+                                            <Option value="CHECKED">Đã kiểm tra (CHECKED)</Option>
+                                        </Select>
+                                    </Form.Item>
 
-                            {/* Response Message from Manager */}
-                            {requestData.responseMessageByManager && (
-                                <Card title="Phản hồi từ quản lý" className="mt-6">
-                                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                                        <p className="whitespace-pre-wrap text-green-800">{requestData.responseMessageByManager}</p>
-                                    </div>
-                                </Card>
-                            )}
-                        </>
-                    )}
-                </Content>
-            </Layout>
-        </Layout>
+                                    {requestData.requestType !== "CHECKOUT" && (
+                                        <Form.Item
+                                            label="Tin nhắn phản hồi"
+                                            name="responseMessage"
+                                            rules={[{ required: true, message: 'Vui lòng nhập tin nhắn phản hồi!' }]}
+                                        >
+                                            <TextArea
+                                                rows={4}
+                                                placeholder="Nhập tin nhắn phản hồi cho sinh viên..."
+                                            />
+                                        </Form.Item>
+                                    )}
+
+                                    <Form.Item>
+                                        <Button
+                                            type="primary"
+                                            htmlType="submit"
+                                            icon={<SaveOutlined />}
+                                            loading={isUpdateLoading}
+                                            block
+                                            style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
+                                        >
+                                            Cập nhật trạng thái
+                                        </Button>
+                                    </Form.Item>
+                                </Form>
+                            </Card>
+                        </div>
+
+                        {/* Acceptance Form for CHECKOUT type */}
+                        {renderAcceptanceForm()}
+
+                        {/* Request Content */}
+                        <Card title="Nội dung Request" className="mt-6">
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <p className="whitespace-pre-wrap">{requestData.content || "Không có nội dung"}</p>
+                            </div>
+                        </Card>
+
+                        {/* Response Message from Employee */}
+                        {requestData.responseMessageByEmployee && (
+                            <Card title="Phản hồi từ nhân viên (Bảo vệ)" className="mt-6">
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                    <p className="whitespace-pre-wrap text-blue-800">{requestData.responseMessageByEmployee}</p>
+                                </div>
+                            </Card>
+                        )}
+
+                        {/* Response Message from Manager */}
+                        {requestData.responseMessageByManager && (
+                            <Card title="Phản hồi từ quản lý" className="mt-6">
+                                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                    <p className="whitespace-pre-wrap text-green-800">{requestData.responseMessageByManager}</p>
+                                </div>
+                            </Card>
+                        )}
+                    </>
+                )}
+            </div>
+        </LayoutGuard>
     );
 }

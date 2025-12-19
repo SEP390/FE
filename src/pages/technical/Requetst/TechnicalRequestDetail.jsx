@@ -375,9 +375,6 @@ export function TechnicalRequestDetail() {
                                 {/* Request Information */}
                                 <Card title="Thông tin Request" className="h-fit">
                                     <Descriptions column={1} bordered size="small">
-                                        <Descriptions.Item label="Request ID">
-                                            {requestData.requestId || 'N/A'}
-                                        </Descriptions.Item>
                                         <Descriptions.Item label="Loại Request">
                                             {formatRequestType(requestData.requestType)}
                                         </Descriptions.Item>
@@ -391,9 +388,6 @@ export function TechnicalRequestDetail() {
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Học kỳ">
                                             {requestData.semesterName || 'N/A'}
-                                        </Descriptions.Item>
-                                        <Descriptions.Item label="Username người ở">
-                                            {residentInfo?.username || (isUserLoading ? 'Đang tải...' : 'N/A')}
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Mã người ở">
                                             {residentInfo?.userCode || (isUserLoading ? 'Đang tải...' : 'N/A')}

@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { GuardSidebar } from "../../../components/layout/GuardSidebar.jsx";
-import { AppHeader } from "../../../components/layout/AppHeader.jsx";
-import { Layout, Typography, Card, Table, Button, Tag, Select, Input, Space } from "antd";
+// Import LayoutGuard thay vì Layout thủ công
+import { LayoutGuard } from "../../../components/layout/LayoutGuard.jsx";
+import { Typography, Card, Table, Button, Tag, Select, Input, Space } from "antd";
 import { useNavigate } from "react-router-dom";
 import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { useApi } from "../../../hooks/useApi.js";
-import { useCollapsed } from "../../../hooks/useCollapsed.js";
 
-const { Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
 
 export function GuardViewRequest() {
     const navigate = useNavigate();
-    const collapsed = useCollapsed(state => state.collapsed);
-    const setCollapsed = useCollapsed(state => state.setCollapsed);
+
+    // Đã loại bỏ logic collapsed và toggleSidebar vì LayoutGuard tự xử lý
+
     const [dataSource, setDataSource] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [statusFilter, setStatusFilter] = useState("all");
@@ -32,7 +31,6 @@ export function GuardViewRequest() {
 
     // Update dataSource when requests are loaded
     useEffect(() => {
-        console.log("=== EFFECT TRIGGERED ===");
         if (requestsData) {
             let dataArray = [];
 
@@ -116,7 +114,7 @@ export function GuardViewRequest() {
         return statusMap[status] || status;
     };
 
-    // Format request type - ĐÃ CẬP NHẬT TIẾNG VIỆT
+    // Format request type
     const formatRequestType = (type) => {
         const typeMap = {
             CHECKOUT: "Yêu cầu trả phòng",
@@ -137,7 +135,7 @@ export function GuardViewRequest() {
     const uniqueStatuses = [...new Set(dataSource.map(item => item.status))];
     const uniqueTypes = [...new Set(dataSource.map(item => item.requestType))];
 
-    // Cấu hình bảng - ĐÃ VIỆT HÓA TIÊU ĐỀ CỘT
+    // Cấu hình bảng
     const columns = [
         {
             title: "Tên sinh viên",
@@ -228,115 +226,109 @@ export function GuardViewRequest() {
     const approvedRequests = dataSource.filter(d => d.status === "APPROVED" || d.status === "COMPLETED" || d.status === "ACCEPTED").length;
     const rejectedRequests = dataSource.filter(d => d.status === "REJECTED" || d.status === "CANCELLED").length;
 
-    const toggleSideBar = () => { setCollapsed(prev => !prev); };
-
     return (
-        <Layout style={{ minHeight: "100vh" }}>
-            <GuardSidebar collapsed={collapsed} active="guard-requests" />
-            <Layout
-                style={{
-                    marginLeft: collapsed ? 80 : 260,
-                    transition: 'margin-left 0.3s ease',
-                }}
-            >
-                <AppHeader toggleSideBar={toggleSideBar} collapsed={collapsed} header={"Yêu cầu của sinh viên (Bảo vệ)"} />
-                <Content style={{ margin: "24px", background: "#fff", padding: 24, marginTop: 64 }}>
-                    <Title level={2} style={{ marginBottom: 24 }}>
-                        Yêu cầu của sinh viên
-                    </Title>
+        // Sử dụng LayoutGuard bao quanh
+        <LayoutGuard
+            active="guard-requests"
+            header="Yêu cầu của sinh viên (Bảo vệ)"
+        >
+            {/* Nội dung trang được bao bởi lớp nền trắng vì LayoutGuard có nền xám */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+                <Title level={2} style={{ marginBottom: 24 }}>
+                    Yêu cầu của sinh viên
+                </Title>
 
-                    {/* Statistics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">{totalRequests}</div>
-                            <div className="text-gray-600">Tổng số yêu cầu</div>
-                        </Card>
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-orange-600">{pendingRequests}</div>
-                            <div className="text-gray-600">Đang xử lý</div>
-                        </Card>
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-green-600">{approvedRequests}</div>
-                            <div className="text-gray-600">Đã chấp nhận</div>
-                        </Card>
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-red-600">{rejectedRequests}</div>
-                            <div className="text-gray-600">Từ chối</div>
-                        </Card>
-                    </div>
+                {/* Statistics Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <Card className="text-center hover:shadow-md transition-shadow">
+                        <div className="text-2xl font-bold text-blue-600">{totalRequests}</div>
+                        <div className="text-gray-600">Tổng số yêu cầu</div>
+                    </Card>
+                    <Card className="text-center hover:shadow-md transition-shadow">
+                        <div className="text-2xl font-bold text-orange-600">{pendingRequests}</div>
+                        <div className="text-gray-600">Đang xử lý</div>
+                    </Card>
+                    <Card className="text-center hover:shadow-md transition-shadow">
+                        <div className="text-2xl font-bold text-green-600">{approvedRequests}</div>
+                        <div className="text-gray-600">Đã chấp nhận</div>
+                    </Card>
+                    <Card className="text-center hover:shadow-md transition-shadow">
+                        <div className="text-2xl font-bold text-red-600">{rejectedRequests}</div>
+                        <div className="text-gray-600">Từ chối</div>
+                    </Card>
+                </div>
 
-                    {/* Filters */}
-                    <Space
-                        style={{
-                            marginBottom: 16,
-                            width: "100%",
-                            justifyContent: "space-between",
-                            flexWrap: "wrap",
-                        }}
-                    >
-                        <Space wrap>
-                            <Input
-                                placeholder="Tìm kiếm sinh viên..."
-                                value={searchText}
-                                onChange={(e) => setSearchText(e.target.value)}
-                                prefix={<SearchOutlined />}
-                                style={{ width: 200 }}
-                                allowClear
-                            />
-                            <Select
-                                value={statusFilter}
-                                onChange={setStatusFilter}
-                                style={{ width: 150 }}
-                            >
-                                <Option value="all">Tất cả trạng thái</Option>
-                                {uniqueStatuses.map(status => (
-                                    <Option key={status} value={status}>
-                                        {formatStatus(status)}
-                                    </Option>
-                                ))}
-                            </Select>
-                            <Select
-                                value={typeFilter}
-                                onChange={setTypeFilter}
-                                style={{ width: 180 }}
-                            >
-                                <Option value="all">Tất cả loại</Option>
-                                {uniqueTypes.map(type => (
-                                    <Option key={type} value={type}>
-                                        {formatRequestType(type)}
-                                    </Option>
-                                ))}
-                            </Select>
-                            <Button
-                                onClick={() => {
-                                    setStatusFilter("all");
-                                    setTypeFilter("all");
-                                    setSearchText("");
-                                }}
-                            >
-                                Xóa bộ lọc
-                            </Button>
-                        </Space>
+                {/* Filters */}
+                <Space
+                    style={{
+                        marginBottom: 16,
+                        width: "100%",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <Space wrap>
+                        <Input
+                            placeholder="Tìm kiếm sinh viên..."
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            prefix={<SearchOutlined />}
+                            style={{ width: 200 }}
+                            allowClear
+                        />
+                        <Select
+                            value={statusFilter}
+                            onChange={setStatusFilter}
+                            style={{ width: 150 }}
+                        >
+                            <Option value="all">Tất cả trạng thái</Option>
+                            {uniqueStatuses.map(status => (
+                                <Option key={status} value={status}>
+                                    {formatStatus(status)}
+                                </Option>
+                            ))}
+                        </Select>
+                        <Select
+                            value={typeFilter}
+                            onChange={setTypeFilter}
+                            style={{ width: 180 }}
+                        >
+                            <Option value="all">Tất cả loại</Option>
+                            {uniqueTypes.map(type => (
+                                <Option key={type} value={type}>
+                                    {formatRequestType(type)}
+                                </Option>
+                            ))}
+                        </Select>
+                        <Button
+                            onClick={() => {
+                                setStatusFilter("all");
+                                setTypeFilter("all");
+                                setSearchText("");
+                            }}
+                        >
+                            Xóa bộ lọc
+                        </Button>
                     </Space>
+                </Space>
 
-                    {/* Bảng danh sách */}
-                    <Table
-                        dataSource={filteredData}
-                        columns={columns}
-                        bordered
-                        pagination={{
-                            pageSize: 10,
-                            showSizeChanger: true,
-                            showQuickJumper: true,
-                            showTotal: (total, range) =>
-                                `${range[0]}-${range[1]} của ${total} yêu cầu`
-                        }}
-                        scroll={{ x: true }}
-                        locale={{ emptyText: "Không tìm thấy yêu cầu" }}
-                        loading={isLoading}
-                    />
-                </Content>
-            </Layout>
-        </Layout>
+                {/* Bảng danh sách */}
+                <Table
+                    dataSource={filteredData}
+                    columns={columns}
+                    bordered
+                    pagination={{
+                        pageSize: 10,
+                        showSizeChanger: true,
+                        showQuickJumper: true,
+                        showTotal: (total, range) =>
+                            `${range[0]}-${range[1]} của ${total} yêu cầu`
+                    }}
+                    scroll={{ x: true }}
+                    locale={{ emptyText: "Không tìm thấy yêu cầu" }}
+                    loading={isLoading}
+                />
+            </div>
+        </LayoutGuard>
     );
 }
