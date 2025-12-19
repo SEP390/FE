@@ -165,9 +165,9 @@ export function RequestDetailPage() {
 
     // Status color mapping
     const statusColor = (status) => {
-        if (status === "ACCEPTED" || status === "CHECKED") return "green";
-        if (status === "PENDING") return "blue";
-        if (status === "REJECTED") return "red";
+        if (status === "ACCEPTED" || status === "CHECKED" || status === "APPROVED" || status === "COMPLETED") return "green";
+        if (status === "PENDING" || status === "PROCESSING") return "blue";
+        if (status === "REJECTED" || status === "CANCELLED") return "red";
         return "default";
     };
 
@@ -175,21 +175,29 @@ export function RequestDetailPage() {
     const formatStatus = (status) => {
         const statusMap = {
             PENDING: "Đang xử lý",
+            PROCESSING: "Đang xử lý",
+            APPROVED: "Đã duyệt",
             ACCEPTED: "Đã chấp nhận",
             CHECKED: "Đã kiểm tra",
-            REJECTED: "Từ chối"
+            REJECTED: "Từ chối",
+            COMPLETED: "Hoàn thành",
+            CANCELLED: "Đã hủy"
         };
         return statusMap[status] || status;
     };
 
-    // Format request type
+    // Format request type - Cập nhật đồng bộ với ManagerRequests.jsx
     const formatRequestType = (type) => {
         const typeMap = {
-            CHECKOUT: "Trả phòng",
+            CHECKOUT: "Yêu cầu trả phòng",
+            METER_READING_DISCREPANCY: "Kiểm tra sai số điện/nước",
             SECURITY_INCIDENT: "Sự cố an ninh",
-            METER_READING_DISCREPANCY: "Chênh lệch đồng hồ",
-            MAINTENANCE: "Bảo trì",
-            COMPLAINT: "Khiếu nại",
+            TECHNICAL_ISSUE: "Sự cố kỹ thuật",
+            POLICY_VIOLATION_REPORT: "Báo cáo vi phạm quy định",
+            CHANGEROOM: "Yêu cầu đổi phòng",
+            ANONYMOUS: "Yêu cầu ẩn danh",
+            MAINTENANCE: "Bảo trì", // Giữ lại để tương thích ngược nếu có
+            COMPLAINT: "Khiếu nại", // Giữ lại để tương thích ngược nếu có
             OTHER: "Khác"
         };
         return typeMap[type] || type;
@@ -310,7 +318,7 @@ export function RequestDetailPage() {
                                 Quay lại
                             </Button>
                             <Title level={2} style={{ margin: 0 }}>
-                                {requestData ? `Chi tiết Request #${requestData.requestId?.substring(0, 8)}` : "Chi tiết yêu cầu"}
+                                {requestData ? `Chi tiết Request ` : "Chi tiết yêu cầu"}
                             </Title>
                         </Space>
 
@@ -336,9 +344,7 @@ export function RequestDetailPage() {
                                     {/* Request Information */}
                                     <Card title="Thông tin Request" className="h-fit">
                                         <Descriptions column={1} bordered size="small">
-                                            <Descriptions.Item label="Request ID">
-                                                {requestData.requestId || 'N/A'}
-                                            </Descriptions.Item>
+
                                             <Descriptions.Item label="Loại Request">
                                                 {formatRequestType(requestData.requestType)}
                                             </Descriptions.Item>

@@ -225,12 +225,16 @@ export function GuardViewRequestDetail() {
         return statusMap[status] || status;
     };
 
-    // Format request type
+    // Format request type - ĐÃ CẬP NHẬT TIẾNG VIỆT
     const formatRequestType = (type) => {
         const typeMap = {
-            CHECKOUT: "Trả phòng",
+            CHECKOUT: "Yêu cầu trả phòng",
+            METER_READING_DISCREPANCY: "Kiểm tra sai số điện/nước",
             SECURITY_INCIDENT: "Sự cố an ninh",
-            METER_READING_DISCREPANCY: "Chênh lệch đồng hồ",
+            TECHNICAL_ISSUE: "Sự cố kỹ thuật",
+            POLICY_VIOLATION_REPORT: "Báo cáo vi phạm quy định",
+            CHANGEROOM: "Yêu cầu đổi phòng",
+            ANONYMOUS: "Yêu cầu ẩn danh",
             MAINTENANCE: "Bảo trì",
             COMPLAINT: "Khiếu nại",
             OTHER: "Khác"

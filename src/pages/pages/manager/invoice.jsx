@@ -189,7 +189,6 @@ function InvoiceFilter() {
     return <>
         <div className={"rounded-lg p-5 bg-white border border-gray-200 flex flex-wrap gap-5"}>
             <div>
-                <div className={"font-medium mb-3 text-lg"}>Bộ lọc</div>
                 <div className={"flex gap-3 flex-wrap"}>
                     <ResidentFilter value={userId} onChange={setUserId}/>
                     <InvoiceTypeFilter onChange={setType}/>

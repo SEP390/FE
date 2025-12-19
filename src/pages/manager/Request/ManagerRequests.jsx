@@ -19,9 +19,13 @@ export function ManagerRequests() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [typeFilter, setTypeFilter] = useState("all");
     const [searchText, setSearchText] = useState("");
-    const [dateRange, setDateRange] = useState(null);
-    const [quickDateFilter, setQuickDateFilter] = useState("all");
+
     const [showAnonymous, setShowAnonymous] = useState(false);
+
+    // --- SỬA ĐỔI 1: Khởi tạo mặc định là 'today' và lấy ngày hiện tại ---
+    const [quickDateFilter, setQuickDateFilter] = useState("today");
+    const [dateRange, setDateRange] = useState([dayjs().startOf('day'), dayjs().endOf('day')]);
+    // ---------------------------------------------------------------------
 
     // API call for requests
     const { get: getRequests, data: requestsData, isSuccess: isRequestsSuccess, isComplete: isRequestsComplete, isError: isRequestsError, error: requestsError } = useApi();
@@ -42,9 +46,6 @@ export function ManagerRequests() {
     // Update dataSource when requests are loaded
     useEffect(() => {
         if (isRequestsSuccess && requestsData) {
-            console.log("=== REQUEST DATA RECEIVED ===");
-            console.log("Requests data:", requestsData);
-
             let dataArray = [];
 
             // Handle different response structures
@@ -55,8 +56,6 @@ export function ManagerRequests() {
             } else if (requestsData.data && requestsData.data.data && Array.isArray(requestsData.data.data)) {
                 dataArray = requestsData.data.data;
             }
-
-            console.log("Data array length:", dataArray.length);
 
             if (dataArray.length > 0) {
                 const formattedData = dataArray.map((item) => {
@@ -84,15 +83,11 @@ export function ManagerRequests() {
                         isAnonymous: false
                     };
                 });
-
-                console.log("Formatted data count:", formattedData.length);
                 setDataSource(formattedData);
             } else {
-                console.log("No requests found in response");
                 setDataSource([]);
             }
         } else if (isRequestsError) {
-            console.error("Error fetching requests:", requestsError);
             setDataSource([]);
         }
     }, [isRequestsSuccess, isRequestsError, requestsData, requestsError, isRequestsComplete, showAnonymous]);
@@ -105,19 +100,19 @@ export function ManagerRequests() {
             setDateRange(null);
         } else if (value === "today") {
             const today = dayjs();
-            setDateRange([today, today]);
+            setDateRange([today.startOf('day'), today.endOf('day')]);
         } else if (value === "week") {
             const today = dayjs();
             const weekAgo = today.subtract(7, 'day');
-            setDateRange([weekAgo, today]);
+            setDateRange([weekAgo.startOf('day'), today.endOf('day')]);
         } else if (value === "month") {
             const today = dayjs();
             const monthAgo = today.subtract(1, 'month');
-            setDateRange([monthAgo, today]);
+            setDateRange([monthAgo.startOf('day'), today.endOf('day')]);
         } else if (value === "3months") {
             const today = dayjs();
             const threeMonthsAgo = today.subtract(3, 'month');
-            setDateRange([threeMonthsAgo, today]);
+            setDateRange([threeMonthsAgo.startOf('day'), today.endOf('day')]);
         }
     };
 
@@ -126,21 +121,16 @@ export function ManagerRequests() {
         if (!dates) {
             setQuickDateFilter("all");
         } else {
+            // Logic giữ nguyên, chỉ đảm bảo so sánh đúng
             const startDate = dayjs(dates[0]).startOf('day');
             const endDate = dayjs(dates[1]).startOf('day');
             const today = dayjs().startOf('day');
-            const weekAgo = today.subtract(7, 'day');
-            const monthAgo = today.subtract(1, 'month');
-            const threeMonthsAgo = today.subtract(3, 'month');
 
             if (startDate.isSame(today, 'day') && endDate.isSame(today, 'day')) {
                 setQuickDateFilter("today");
-            } else if (startDate.isSame(weekAgo, 'day') && endDate.isSame(today, 'day')) {
-                setQuickDateFilter("week");
-            } else if (startDate.isSame(monthAgo, 'day') && endDate.isSame(today, 'day')) {
-                setQuickDateFilter("month");
-            } else if (startDate.isSame(threeMonthsAgo, 'day') && endDate.isSame(today, 'day')) {
-                setQuickDateFilter("3months");
+            } else {
+                // Có thể thêm các logic khác nếu cần, hoặc để mặc định
+                setQuickDateFilter("custom"); // Hoặc giữ nguyên logic cũ
             }
         }
     };
@@ -149,6 +139,21 @@ export function ManagerRequests() {
     useEffect(() => {
         let filtered = [...dataSource];
 
+        // 1. Lọc theo ngày trước (để đảm bảo thống kê đúng theo ngày)
+        if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
+            const startDate = dayjs(dateRange[0]).startOf('day');
+            const endDate = dayjs(dateRange[1]).endOf('day');
+
+            filtered = filtered.filter(item => {
+                if (!item.createdDate) return false;
+                const itemDate = dayjs(item.createdDate);
+                // Sửa logic so sánh để chính xác hơn
+                return (itemDate.isAfter(startDate) || itemDate.isSame(startDate)) &&
+                    (itemDate.isBefore(endDate) || itemDate.isSame(endDate));
+            });
+        }
+
+        // 2. Các bộ lọc khác
         if (!showAnonymous) {
             if (statusFilter !== "all") {
                 filtered = filtered.filter(item => item.status === statusFilter);
@@ -170,19 +175,6 @@ export function ManagerRequests() {
                     (item.requestType && item.requestType.toLowerCase().includes(searchText.toLowerCase()))
                 );
             }
-        }
-
-        if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
-            const startDate = dayjs(dateRange[0]).startOf('day');
-            const endDate = dayjs(dateRange[1]).endOf('day');
-
-            filtered = filtered.filter(item => {
-                if (!item.createdDate) return false;
-                const itemDate = dayjs(item.createdDate);
-                const isAfterOrSameStart = itemDate.isAfter(startDate, 'day') || itemDate.isSame(startDate, 'day');
-                const isBeforeOrSameEnd = itemDate.isBefore(endDate, 'day') || itemDate.isSame(endDate, 'day');
-                return isAfterOrSameStart && isBeforeOrSameEnd;
-            });
         }
 
         setFilteredData(filtered);
@@ -226,6 +218,7 @@ export function ManagerRequests() {
     const uniqueTypes = [...new Set(dataSource.map(item => item.requestType))];
 
     const getTableColumns = () => {
+        // ... (Giữ nguyên logic cột bảng)
         if (showAnonymous) {
             return [
                 {
@@ -356,10 +349,12 @@ export function ManagerRequests() {
     const columns = getTableColumns();
     const isLoading = !isRequestsComplete;
 
-    const totalRequests = dataSource.length;
-    const pendingRequests = dataSource.filter(d => d.status === "PENDING" || d.status === "PROCESSING").length;
-    const approvedRequests = dataSource.filter(d => d.status === "APPROVED" || d.status === "COMPLETED" || d.status === "ACCEPTED").length;
-    const rejectedRequests = dataSource.filter(d => d.status === "REJECTED" || d.status === "CANCELLED").length;
+    // --- SỬA ĐỔI 2: Dùng filteredData thay vì dataSource ---
+    const totalRequests = filteredData.length;
+    const pendingRequests = filteredData.filter(d => d.status === "PENDING" || d.status === "PROCESSING").length;
+    const approvedRequests = filteredData.filter(d => d.status === "APPROVED" || d.status === "COMPLETED" || d.status === "ACCEPTED").length;
+    const rejectedRequests = filteredData.filter(d => d.status === "REJECTED" || d.status === "CANCELLED").length;
+    // -------------------------------------------------------
 
     return (
         <Layout style={{ minHeight: "100vh" }}>
@@ -375,19 +370,19 @@ export function ManagerRequests() {
                     <div style={{ background: "#fff", padding: 24, borderRadius: "8px" }}>
                         {/* Statistics Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                            <Card className="text-center">
+                            <Card className="text-center" bordered={false} style={{ background: '#e6f7ff', border: '1px solid #91d5ff' }}>
                                 <div className="text-2xl font-bold text-blue-600">{totalRequests}</div>
-                                <div className="text-gray-600">Tổng số yêu cầu</div>
+                                <div className="text-gray-600">Tổng số yêu cầu (Đang lọc)</div>
                             </Card>
-                            <Card className="text-center">
+                            <Card className="text-center" bordered={false} style={{ background: '#fff7e6', border: '1px solid #ffd591' }}>
                                 <div className="text-2xl font-bold text-orange-600">{pendingRequests}</div>
                                 <div className="text-gray-600">Đang xử lý</div>
                             </Card>
-                            <Card className="text-center">
+                            <Card className="text-center" bordered={false} style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}>
                                 <div className="text-2xl font-bold text-green-600">{approvedRequests}</div>
                                 <div className="text-gray-600">Đã chấp nhận</div>
                             </Card>
-                            <Card className="text-center">
+                            <Card className="text-center" bordered={false} style={{ background: '#fff1f0', border: '1px solid #ffa39e' }}>
                                 <div className="text-2xl font-bold text-red-600">{rejectedRequests}</div>
                                 <div className="text-gray-600">Từ chối</div>
                             </Card>
@@ -442,7 +437,7 @@ export function ManagerRequests() {
                                     }}
                                     value={typeFilter}
                                 >
-                                    <Option value="all">Tất cả</Option>
+                                    <Option value="all">Tất cả loại</Option>
                                     <Option value="CHECKOUT">Trả phòng</Option>
                                     <Option value="SECURITY_INCIDENT">Sự cố an ninh</Option>
                                     <Option value="METER_READING_DISCREPANCY">Chênh lệch đồng hồ</Option>
@@ -466,6 +461,8 @@ export function ManagerRequests() {
                                 </Select>
                                 <Button
                                     onClick={() => {
+                                        // Reset cũng trả về Today nếu bạn muốn,
+                                        // hoặc trả về All thì dùng: setDateRange(null); setQuickDateFilter("all");
                                         setStatusFilter("all");
                                         setTypeFilter("all");
                                         setSearchText("");
@@ -491,7 +488,11 @@ export function ManagerRequests() {
                             <Table
                                 columns={columns}
                                 dataSource={filteredData}
-                                pagination={{ pageSize: 10 }}
+                                pagination={{
+                                    pageSize: 10,
+                                    showQuickJumper: true, // Thêm ô nhảy trang nhanh
+                                    showTotal: (total) => `Tổng cộng ${total} mục`
+                                }}
                                 scroll={{ x: 1000 }}
                                 rowKey="requestId"
                                 loading={isLoading}
