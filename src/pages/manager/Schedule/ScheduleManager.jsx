@@ -4,8 +4,8 @@ import {
     Input, Row, Col, Spin, DatePicker, Checkbox, App, Divider, Table, Card
 } from 'antd';
 import {
-    PlusOutlined, ClockCircleOutlined, SettingOutlined,
-    DeleteOutlined, EditOutlined, UnorderedListOutlined, FilterOutlined
+    PlusOutlined, SettingOutlined, DeleteOutlined, EditOutlined,
+    UnorderedListOutlined, FilterOutlined, ClearOutlined
 } from "@ant-design/icons";
 import { LayoutManager } from '../../../components/layout/LayoutManager.jsx';
 import axiosClient from '../../../api/axiosClient/axiosClient.js';
@@ -54,7 +54,7 @@ export function ScheduleManager() {
     // Trạng thái lọc
     const [filterEmployeeId, setFilterEmployeeId] = useState(undefined);
     const [filterDormId, setFilterDormId] = useState(undefined);
-    const [dailyFilterDormId, setDailyFilterDormId] = useState(undefined);
+    const [dailyFilterDormId, setDailyFilterDormId] = useState(undefined); // Lọc trong Modal
 
     // --- 1. TẢI DỮ LIỆU ---
     const fetchDependencies = async () => {
@@ -100,13 +100,10 @@ export function ScheduleManager() {
     useEffect(() => { fetchDependencies(); }, []);
     useEffect(() => { fetchSchedule(currentMonth); }, [currentMonth]);
 
-    // --- SỬA LỖI TỰ MỞ MODAL KHI LỌC THÁNG/NĂM ---
     const handleSelectDate = (value, info) => {
-        // info.source sẽ cho biết hành động đến từ đâu
-        // 'date' nghĩa là người dùng click trực tiếp vào ô ngày
         if (info.source === 'date' && !isRecurringModalVisible) {
             setSelectedDate(value.format('YYYY-MM-DD'));
-            setDailyFilterDormId(undefined);
+            setDailyFilterDormId(undefined); // Reset lọc khi mở ngày mới
             setIsDailyDetailVisible(true);
         }
     };
@@ -182,7 +179,7 @@ export function ScheduleManager() {
                 {list.slice(0, 2).map(item => (
                     <li key={item.scheduleId} style={{ marginBottom: 2 }}>
                         <Tag color="blue" style={{ width: '100%', fontSize: '10px', margin: 0, overflow: 'hidden' }}>
-                            {item.shiftName.split(' ')[0]}: {item.employeeName.split(' ').pop()}
+                            {item.shiftName}
                         </Tag>
                     </li>
                 ))}
@@ -219,10 +216,7 @@ export function ScheduleManager() {
                             <Calendar
                                 cellRender={cellRender}
                                 onSelect={handleSelectDate}
-                                onPanelChange={(date) => {
-                                    setCurrentMonth(date);
-                                    // Khi đổi tháng từ thanh header, ta không chọn ngày
-                                }}
+                                onPanelChange={(date) => setCurrentMonth(date)}
                                 headerRender={({ value, onChange }) => {
                                     const currentYear = value.year();
                                     const currentMonth = value.month();
@@ -232,7 +226,6 @@ export function ScheduleManager() {
                                     for (let i = currentYear - 5; i < currentYear + 5; i++) yearOptions.push(<Option key={i} value={i}>Năm {i}</Option>);
                                     return (
                                         <div style={{ padding: '10px 0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                            {/* Đã tăng width để không bị mất chữ */}
                                             <Select size="small" value={currentMonth} onChange={(m) => onChange(value.clone().month(m))} style={{ width: 140 }}>{monthOptions}</Select>
                                             <Select size="small" value={currentYear} onChange={(y) => onChange(value.clone().year(y))} style={{ width: 120 }}>{yearOptions}</Select>
                                         </div>
@@ -255,6 +248,24 @@ export function ScheduleManager() {
                         </Button>
                     ]}
                 >
+                    {/* BỘ LỌC KHU VỰC TRONG MODAL */}
+                    <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Select
+                            placeholder="Tất cả khu vực"
+                            style={{ width: 200 }}
+                            allowClear
+                            value={dailyFilterDormId}
+                            onChange={setDailyFilterDormId}
+                        >
+                            {dorms.map(d => (
+                                <Option key={d.id} value={String(d.id)}>{d.dormName}</Option>
+                            ))}
+                        </Select>
+                        {dailyFilterDormId && (
+                            <Button type="link" icon={<ClearOutlined />} onClick={() => setDailyFilterDormId(undefined)}>Xóa lọc</Button>
+                        )}
+                    </div>
+
                     <Table
                         dataSource={useMemo(() => {
                             const list = scheduleData[selectedDate] || [];
