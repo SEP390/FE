@@ -410,10 +410,9 @@ export function StaffManager() {
                         <Form.Item label="Mật khẩu mới" name="newPassword" rules={[{required: true, min: 6, message: 'Mật khẩu phải tối thiểu 6 ký tự!'}]}>
                             <Input.Password
                                 placeholder="Nhập mật khẩu hoặc nhấn biểu tượng để tạo ngẫu nhiên"
-                                addonAfter={<ReloadOutlined style={{cursor:'pointer', color:'#1890ff'}} onClick={() => formResetPassword.setFieldsValue({newPassword: generateCustomPassword(12)})} title="Tạo mật khẩu mạnh" />}
+                                addonAfter={<ReloadOutlined style={{cursor:'pointer', color:'#1890ff'}} onClick={() => formResetPassword.setFieldsValue({newPassword: generateCustomPassword(6)})} title="Tạo mật khẩu mạnh" />}
                             />
                         </Form.Item>
-                        <Text type="secondary" style={{fontSize:'12px'}}>* Bao gồm đúng 1 chữ hoa, 1 số, 1 ký tự đặc biệt và các chữ thường.</Text>
                     </Form>
                 </Modal>
             </LayoutManager>
