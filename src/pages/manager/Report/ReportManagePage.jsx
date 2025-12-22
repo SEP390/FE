@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {Typography, Table, Button, Space, message, Tag, Dropdown, Modal, Input, Card, Select} from "antd";
+import {Typography, Table, Button, Space, message, Tag, Dropdown, Modal, Input, Card, Select, Row, Col} from "antd";
 import {EllipsisOutlined} from "@ant-design/icons";
 import {LayoutManager} from "../../../components/layout/LayoutManager.jsx";
 import axios from "axios";
@@ -297,10 +297,10 @@ export function ReportManagePage() {
     return (
         <LayoutManager active="manager-reports" header="Quản lý báo cáo">
             <Card className="h-full">
-                <Space direction="vertical" style={{width: "100%", marginBottom: 16}}>
-                    <Space wrap>
+                <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+                    <Col xs={24} sm={24} md={8} lg={6}>
                         <Select
-                            style={{width: 200}}
+                            style={{ width: "100%" }}
                             placeholder="Lọc theo loại báo cáo"
                             allowClear
                             value={selectedReportType}
@@ -310,11 +310,13 @@ export function ReportManagePage() {
                             <Option value="MAINTENANCE_REQUEST">Yêu cầu bảo trì</Option>
                             <Option value="OTHER">Khác</Option>
                         </Select>
+                    </Col>
 
-                        {!shouldHideUserAndRoom && (
-                            <>
+                    {!shouldHideUserAndRoom && (
+                        <>
+                            <Col xs={24} sm={24} md={8} lg={9}>
                                 <Select
-                                    style={{width: 250}}
+                                    style={{ width: "100%" }}
                                     placeholder="Lọc theo sinh viên"
                                     allowClear
                                     showSearch
@@ -334,48 +336,41 @@ export function ReportManagePage() {
                                         </Option>
                                     ))}
                                 </Select>
+                            </Col>
 
+                            <Col xs={24} sm={24} md={8} lg={5}>
                                 <Select
-                                    style={{ width: 200 }}
+                                    style={{ width: "100%" }}
                                     placeholder="Lọc theo phòng"
                                     allowClear
                                     showSearch
                                     loading={loadingRooms}
                                     value={selectedRoom}
                                     onChange={setSelectedRoom}
-                                    filterOption={(input, option) =>
-                                        option.children
-                                            .toString()
-                                            .toLowerCase()
-                                            .includes(input.toLowerCase())
-                                    }
                                 >
-                                    {rooms.map((room) => (
-                                        <Option
-                                            key={room.id}
-                                            value={room.id}
-                                        >
+                                    {rooms.map(room => (
+                                        <Option key={room.id} value={room.id}>
                                             {room.roomNumber}
                                         </Option>
                                     ))}
                                 </Select>
+                            </Col>
+                        </>
+                    )}
 
-
-                            </>
-                        )}
-
-                        <Button onClick={clearFilters}>
+                    <Col xs={24} sm={24} md={24} lg={4}>
+                        <Button block onClick={clearFilters}>
                             Xóa bộ lọc
                         </Button>
-                    </Space>
-                </Space>
-
+                    </Col>
+                </Row>
                 <Table
                     rowKey="reportId"
                     columns={columns}
                     dataSource={filteredReports}
                     loading={loading}
-                    pagination={{pageSize: 6}}
+                    pagination={{ pageSize: 6 }}
+                    scroll={{ x: 1200 }}
                 />
             </Card>
 
