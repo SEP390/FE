@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import {Table, Button, Tag, Dropdown, Modal, Space, Input, App, Layout} from "antd";
+import {Table, Button, Tag, Dropdown, Modal, Space, Input, App, Layout, Row, Col} from "antd";
 import { EllipsisOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { NewsDetailModal } from "../../../components/news/NewsDetailModal.jsx";
 import { useNavigate } from "react-router-dom";
@@ -200,39 +200,39 @@ export function NewsManagePage() {
     return (
         <LayoutManager active="manager-news" header="Quản lý tin tức">
             <Layout style={{ padding: 24, background: "#fff", minHeight: 600 }}>
-            <Space
-                style={{
-                    marginBottom: 16,
-                    width: "100%",
-                    justifyContent: "space-between",
-                }}
-            >
-                <Input
-                    placeholder="Tìm kiếm tin tức..."
-                    allowClear
-                    prefix={<SearchOutlined />}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    style={{ maxWidth: 400 }}
+                <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+                    <Col xs={24} sm={24} md={16} lg={18}>
+                        <Input
+                            placeholder="Tìm kiếm tin tức..."
+                            allowClear
+                            prefix={<SearchOutlined />}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            style={{ width: "100%" }}
+                        />
+                    </Col>
+                    <Col xs={24} sm={24} md={8} lg={6} style={{ textAlign: "right" }}>
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => navigate("/manager/news/create")}
+                            block
+                        >
+                            Tạo tin mới
+                        </Button>
+                    </Col>
+                </Row>
+
+                <Table
+                    rowKey="newsid"
+                    columns={columns}
+                    dataSource={filteredNews}
+                    loading={loading}
+                    bordered
+                    pagination={{ pageSize: 6 }}
+                    scroll={{ x: 1000 }}
                 />
-                <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => navigate("/manager/news/create")}
-                >
-                    Tạo tin mới
-                </Button>
-            </Space>
 
-            <Table
-                rowKey="newsid"
-                columns={columns}
-                dataSource={filteredNews}
-                loading={loading}
-                bordered
-                pagination={{ pageSize: 6 }}
-            />
-
-            <Modal
+                <Modal
                 open={modalVisible}
                 onCancel={() => setModalVisible(false)}
                 footer={null}
