@@ -50,7 +50,7 @@ export function GuardViewRequest() {
                             key: item.requestId,
                             requestId: item.requestId,
                             requestType: item.requestType,
-                            userName: item.userName,
+                            userName: item.residentName,
                             roomName: item.roomName,
                             semester: item.semesterName,
                             createdDate: item.createTime,
